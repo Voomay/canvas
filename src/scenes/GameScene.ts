@@ -28,7 +28,7 @@ export class GameScene extends Phaser.Scene {
   private scoreManager!: ScoreManager;
   private currentStreet!: StreetLevel;
 
-  private enableObstacles: boolean = false; // Road obstacles disabled for now per user request
+  private enableObstacles: boolean = true; // Stumbling blocks enabled with jump & trust mechanics
   private obstacles: Obstacle[] = [];
   private residents: Resident[] = [];
 
@@ -54,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   // Desktop Controls
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private spaceKey?: Phaser.Input.Keyboard.Key;
+  private keyW?: Phaser.Input.Keyboard.Key;
   private enterKey?: Phaser.Input.Keyboard.Key;
   private shiftKey?: Phaser.Input.Keyboard.Key;
   private keyE?: Phaser.Input.Keyboard.Key;
@@ -69,7 +70,7 @@ export class GameScene extends Phaser.Scene {
     this.scoreManager = ScoreManager.getInstance();
     this.currentStreet = STREETS[this.scoreManager.currentStreetIndex - 1] || STREETS[0];
     this.scoreManager.totalTimeRemaining = this.currentStreet.durationSeconds;
-    this.scoreManager.votes = 0; // Each ward is a fresh 10-vote sprint!
+    this.scoreManager.startNewArea(this.scoreManager.currentStreetIndex);
   }
 
   private getGroundY(): number {
@@ -92,6 +93,7 @@ export class GameScene extends Phaser.Scene {
     this.residents = [];
     this.curbsideTaxi = null;
     this.nextTaxiSpawnDistance = 2500;
+    this.nextObstacleTime = 2200; // Road starts clear - first obstacle appears smoothly
 
     // 1. Create Parallax Background (Cape Town / Hanover Park vs Johannesburg)
     this.parallaxBg = new ParallaxBackground(this, this.currentStreet.locationKey);
@@ -116,7 +118,8 @@ export class GameScene extends Phaser.Scene {
 
     // Setup Curbside Minibus Taxi (standing in the road by the curbside in Hanover Park)
     if (this.currentStreet.locationKey === 'capetown') {
-      const initialTaxiX = Math.max(680, this.scale.width * 0.65);
+      const isPortrait = this.scale.height > this.scale.width;
+      const initialTaxiX = isPortrait ? this.scale.width * 0.70 : this.scale.width * 0.72;
       this.spawnCurbsideTaxi(initialTaxiX);
     }
 
@@ -138,6 +141,7 @@ export class GameScene extends Phaser.Scene {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+      this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
       this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
       this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
       this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
@@ -152,6 +156,15 @@ export class GameScene extends Phaser.Scene {
     // Listen for Exit Menu event from HUD
     this.events.on('exit-to-menu', () => {
       this.scene.start('MainMenuScene');
+    });
+
+    // Mobile / On-screen JUMP event from HUD
+    this.events.on('player-jump', () => {
+      if (!this.hasStartedRunning) {
+        this.startCanvassing();
+        return;
+      }
+      this.player.jump();
     });
 
     // Mobile / Touch Sprint Controls
@@ -175,9 +188,9 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      // If running and tapping middle screen, trigger brief speed boost
-      if (!this.isEncounterPaused && pointer.y > 180 && pointer.y < 600) {
-        this.isSprinting = true;
+      // If running and tapping upper roadway, trigger jump!
+      if (!this.isEncounterPaused && pointer.y < this.getGroundY() - 70 && pointer.y > 90) {
+        this.player.jump();
       }
     });
 
@@ -198,6 +211,7 @@ export class GameScene extends Phaser.Scene {
         (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) ||
         (this.cursors?.up && Phaser.Input.Keyboard.JustDown(this.cursors.up)) ||
         (this.cursors?.right && Phaser.Input.Keyboard.JustDown(this.cursors.right)) ||
+        (this.keyW && Phaser.Input.Keyboard.JustDown(this.keyW)) ||
         (this.enterKey && Phaser.Input.Keyboard.JustDown(this.enterKey))
       ) {
         this.startCanvassing();
@@ -205,11 +219,19 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // Check keyboard sprint (Shift, Right arrow, or Space)
+    // Check Jump Input (Space, Up Arrow, or W key)
+    if (
+      (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) ||
+      (this.cursors?.up && Phaser.Input.Keyboard.JustDown(this.cursors.up)) ||
+      (this.keyW && Phaser.Input.Keyboard.JustDown(this.keyW))
+    ) {
+      this.player.jump();
+    }
+
+    // Check keyboard sprint (Shift or Right arrow)
     const isKeySprinting = Boolean(
       (this.shiftKey && this.shiftKey.isDown) ||
-      (this.cursors?.right && this.cursors.right.isDown) ||
-      (this.spaceKey && this.spaceKey.isDown)
+      (this.cursors?.right && this.cursors.right.isDown)
     );
 
     // Apply Sprint Speed vs Base Running Speed
@@ -228,22 +250,17 @@ export class GameScene extends Phaser.Scene {
     // Update Parallax Background
     this.parallaxBg.update(this.currentSpeed, delta);
 
-    // Update Distance & Timers
+    // Update Distance & Timers (30-second sprint per Area)
     const deltaSeconds = delta / 1000;
     this.streetDistanceCovered += this.currentSpeed * deltaSeconds;
     this.streetTimer -= deltaSeconds;
-    this.scoreManager.totalTimeRemaining -= deltaSeconds;
+    this.scoreManager.totalTimeRemaining = Math.max(0, this.streetTimer);
 
     this.hud.updateValues();
 
-    // Check Street or Game Completion
+    // Check Street Completion
     if (this.streetDistanceCovered >= this.currentStreet.targetDistance || this.streetTimer <= 0) {
       this.completeCurrentStreet();
-      return;
-    }
-
-    if (this.scoreManager.totalTimeRemaining <= 0) {
-      this.finishGame();
       return;
     }
 
@@ -272,15 +289,29 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleSpawning(delta: number) {
-    // 1. Obstacle Spawning - Disabled for now per user request
-    if (this.enableObstacles) {
+    // 1. Obstacle Spawning - Active across all areas and cities (Cape Town & Joburg)
+    const canSpawnObstacles = this.enableObstacles && 
+                              !this.isEncounterPaused && 
+                              !this.activeResidentInEncounter && 
+                              this.hasStartedRunning;
+
+    if (canSpawnObstacles) {
       this.nextObstacleTime -= delta;
       if (this.nextObstacleTime <= 0) {
-        this.spawnObstacle();
-        this.nextObstacleTime = Phaser.Math.Between(
-          this.currentStreet.obstacleSpawnRateMin,
-          this.currentStreet.obstacleSpawnRateMax
-        );
+        // Ensure no approaching resident is crowded at the spawn point
+        const spawnX = this.scale.width + 120;
+        const residentNearby = this.residents.some(r => Math.abs(r.x - spawnX) < 380);
+
+        if (!residentNearby) {
+          this.spawnObstacle();
+          this.nextObstacleTime = Phaser.Math.Between(
+            this.currentStreet.obstacleSpawnRateMin,
+            this.currentStreet.obstacleSpawnRateMax
+          );
+        } else {
+          // Push back spawn slightly to avoid crowding
+          this.nextObstacleTime = 1400;
+        }
       }
     }
 
@@ -298,8 +329,8 @@ export class GameScene extends Phaser.Scene {
   private getCurbsideY(): number {
     const isPortrait = this.scale.height > this.scale.width;
     const roadY = isPortrait ? this.scale.height - 275 : 428;
-    // Wheels grounded on road surface in the upper lane right below curb (before white line)
-    return roadY + (isPortrait ? 115 : 110);
+    // Taxi positioned on curbside upper lane along the curb, clearing ample space before the white line
+    return roadY + 70;
   }
 
   private spawnCurbsideTaxi(initialX?: number) {
@@ -348,29 +379,16 @@ export class GameScene extends Phaser.Scene {
   private spawnObstacle() {
     const pool = this.currentStreet.obstaclePool;
     const type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
-    const spawnX = this.scale.width + 80;
-    const spawnY = this.getGroundY();
+    const spawnX = this.scale.width + 100;
+
+    // brokenDrain is a curb storm inlet that sits seamlessly embedded IN the sidewalk curb,
+    // while road potholes sit in the runner's lane on the asphalt.
+    const isPortrait = this.scale.height > this.scale.width;
+    const roadY = isPortrait ? this.scale.height - 275 : 428;
+    const spawnY = (type === 'brokenDrain') ? roadY + 50 : this.getGroundY();
 
     const obstacle = new Obstacle(this, spawnX, spawnY, type);
     this.obstacles.push(obstacle);
-
-    // Physics overlap check with player
-    this.physics.add.overlap(this.player, obstacle, () => {
-      if (!obstacle.hasHit) {
-        const wasHit = this.player.onHitObstacle();
-        if (wasHit) {
-          obstacle.hasHit = true;
-          this.scoreManager.recordObstacleHit();
-          this.hud.updateValues();
-
-          // Temporarily slow running speed
-          this.targetSpeed = RUN_SPEED_SLOW;
-          this.time.delayedCall(800, () => {
-            this.targetSpeed = RUN_SPEED_BASE;
-          });
-        }
-      }
-    });
   }
 
   private spawnResident() {
@@ -383,6 +401,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateObstacles(delta: number) {
+    const playerX = this.player.x;
+    const groundY = this.getGroundY();
+
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
       if (!obs.active) {
@@ -390,6 +411,38 @@ export class GameScene extends Phaser.Scene {
         continue;
       }
       obs.updateMovement(this.currentSpeed, delta);
+
+      // Check jumping over vs stumbling
+      if (!obs.isResolved && obs.active) {
+        const dx = obs.x - playerX;
+        
+        // When obstacle enters player's interaction window (-25 to +40)
+        if (dx >= -25 && dx <= 45) {
+          const isAirborne = (this.player.playerState === 'JUMPING' && this.player.y < groundY - 20) || (this.player.y < groundY - 32);
+          
+          if (isAirborne) {
+            // Player successfully jumped over it -> FIXED! (+5s bonus)
+            obs.resolveCleared();
+            this.scoreManager.recordObstacleCleared();
+            SoundFX.getInstance().playObstacleFixed();
+            this.addTimeBonus(5, '✨ FIXED! +5s ⏱️');
+          } else if (this.player.y >= groundY - 20 && this.player.playerState !== 'JUMPING') {
+            // Player on ground collided with it -> IGNORED & STUMBLED! (-2s penalty)
+            obs.resolveStumbled();
+            const wasHit = this.player.onHitObstacle();
+            if (wasHit) {
+              this.scoreManager.recordObstacleHit();
+              this.addTimeBonus(-2, '⚠️ HIT! -2s ⏱️');
+
+              // Temporarily slow running speed
+              this.targetSpeed = RUN_SPEED_SLOW;
+              this.time.delayedCall(800, () => {
+                this.targetSpeed = RUN_SPEED_BASE;
+              });
+            }
+          }
+        }
+      }
     }
   }
 
@@ -439,17 +492,18 @@ export class GameScene extends Phaser.Scene {
     bg.lineStyle(3, 0xfcb813, 1);
     bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
 
-    const title = this.add.text(0, -42, '⚡ 30-SECOND WARD SPRINT!', {
+    const targetVotes = this.currentStreet.targetVotes || 10;
+    const title = this.add.text(0, -42, '⚡ 30-SECOND AREA SPRINT!', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '21px' : '25px',
+      fontSize: isPortrait ? '21px' : '26px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    const subtitle = this.add.text(0, -10, 'Secure at least 10 votes in 30s to win this Ward!', {
+    const subtitle = this.add.text(0, -10, `Secure at least ${targetVotes} votes in 30s to win this Area!`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13px' : '15px',
-      color: '#e2e8f0',
+      fontSize: isPortrait ? '13.5px' : '15.5px',
+      color: '#f1f5f9',
       fontStyle: '600'
     }).setOrigin(0.5, 0.5);
 
@@ -462,7 +516,7 @@ export class GameScene extends Phaser.Scene {
 
     const btnTxt = this.add.text(0, 41, '🏃 START SPRINT ➔', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '17px',
+      fontSize: '18px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -520,7 +574,8 @@ export class GameScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const isPortrait = height > width;
-    const bannerY = isPortrait ? 136 : 140;
+    // Positioned cleanly in the middle of mobile portrait view for thumb accessibility
+    const bannerY = isPortrait ? Math.round(height * 0.44) : 140;
     const banner = this.add.container(width / 2, bannerY);
     banner.setDepth(140);
 
@@ -534,7 +589,7 @@ export class GameScene extends Phaser.Scene {
 
     const title = this.add.text(0, -bannerH / 2 + 20, '👤 RESIDENT WANTS TO TALK!', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '14px' : '17px',
+      fontSize: isPortrait ? '15px' : '18px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -553,7 +608,7 @@ export class GameScene extends Phaser.Scene {
 
     const stopTxt = this.add.text(-colOffset, btnY, '✋ STOP & TALK [E]', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '12px' : '15px',
+      fontSize: isPortrait ? '13px' : '16px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -570,7 +625,7 @@ export class GameScene extends Phaser.Scene {
 
     const runTxt = this.add.text(colOffset, btnY, '🏃 KEEP RUNNING [➔]', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '12px' : '15px',
+      fontSize: isPortrait ? '13px' : '16px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -691,9 +746,25 @@ export class GameScene extends Phaser.Scene {
     this.scoreManager.recordEncounter(choice, outcome.outcome);
     this.hud.updateValues();
 
+    const targetVotes = this.currentStreet.targetVotes || 10;
+    const isTargetWon = this.scoreManager.votes >= targetVotes;
+
+    if (outcome.voteGained > 0) {
+      if (isTargetWon) {
+        this.addTimeBonus(5, `🏆 TARGET WON! ${this.scoreManager.votes}/${targetVotes} VOTES!`);
+      } else {
+        this.addTimeBonus(5, '🗳️ VOTE WON! +5s ⏱️');
+      }
+    }
+
     // Display Reaction Modal
     new ReactionModal(this, outcome, () => {
-      this.resumeRunningAfterEncounter();
+      if (isTargetWon) {
+        // Party hit the target votes (10 in Area 1, 15 in Area 2)! Transition to Area Complete Scene!
+        this.completeCurrentStreet();
+      } else {
+        this.resumeRunningAfterEncounter();
+      }
     });
   }
 
@@ -705,21 +776,56 @@ export class GameScene extends Phaser.Scene {
 
     // Generous spacing after an encounter so player has real distance to run!
     this.nextResidentTime = Phaser.Math.Between(3400, 5600);
+    this.nextObstacleTime = Phaser.Math.Between(3200, 5200);
 
-    // Push back any upcoming resident that was queued too close during the pause
+    // Push back any upcoming resident or obstacle that was queued too close during the pause
     const minDistanceAhead = this.player.x + (this.scale.height > this.scale.width ? 520 : 650);
     this.residents.forEach(res => {
       if (!res.hasEncountered && res.x < minDistanceAhead) {
         res.x = minDistanceAhead + Phaser.Math.Between(150, 400);
       }
     });
+    this.obstacles.forEach(obs => {
+      if (!obs.isResolved && obs.x < minDistanceAhead) {
+        obs.x = minDistanceAhead + Phaser.Math.Between(250, 480);
+      }
+    });
+  }
+
+  public addTimeBonus(seconds: number, toastText?: string) {
+    this.streetTimer = Math.max(0, this.streetTimer + seconds);
+    this.scoreManager.totalTimeRemaining = this.streetTimer;
+    this.hud.updateValues();
+
+    if (this.hud) {
+      this.hud.triggerTimeFlash(seconds > 0 ? 'gain' : 'loss');
+    }
+
+    if (toastText) {
+      const isPositive = seconds > 0;
+      const isPortrait = this.scale.height > this.scale.width;
+      const toastY = isPortrait ? 82 : 88;
+      const toast = this.add.text(this.scale.width / 2, toastY, toastText, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: isPortrait ? '14px' : '16px',
+        color: isPositive ? '#44dd66' : '#ff4444',
+        fontStyle: '900',
+        backgroundColor: '#0c1524',
+        padding: { left: 8, right: 8, top: 4, bottom: 4 }
+      }).setOrigin(0.5, 0.5).setDepth(160);
+
+      this.tweens.add({
+        targets: toast,
+        y: toastY - 25,
+        alpha: 0,
+        duration: 1100,
+        ease: 'Power2.easeOut',
+        onComplete: () => toast.destroy()
+      });
+    }
   }
 
   private completeCurrentStreet() {
     this.scene.start('StreetCompleteScene', { partyId: this.partyId });
-  }
-
-  private finishGame() {
-    this.scene.start('ResultsScene', { partyId: this.partyId });
   }
 }

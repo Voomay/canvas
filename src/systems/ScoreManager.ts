@@ -8,6 +8,7 @@ export interface GameStats {
   honestyGiven: number;
   liesTold: number;
   obstaclesHit: number;
+  obstaclesCleared: number;
   positiveReactions: number;
   doubtfulReactions: number;
   negativeReactions: number;
@@ -22,6 +23,12 @@ export class ScoreManager {
   public currentStreetIndex: number = 1;
   public totalStreets: number = INITIAL_VALUES.streetCount;
 
+  // Area-specific tracking
+  public currentAreaObstaclesCleared: number = 0;
+  public currentAreaObstaclesHit: number = 0;
+  public currentAreaResidentsApproached: number = 0;
+  public totalCampaignVotes: number = 0;
+
   public stats: GameStats = {
     residentsApproached: 0,
     residentsIgnored: 0,
@@ -30,6 +37,7 @@ export class ScoreManager {
     honestyGiven: 0,
     liesTold: 0,
     obstaclesHit: 0,
+    obstaclesCleared: 0,
     positiveReactions: 0,
     doubtfulReactions: 0,
     negativeReactions: 0
@@ -44,11 +52,23 @@ export class ScoreManager {
     return ScoreManager.instance;
   }
 
+  public startNewArea(streetIndex: number) {
+    this.currentStreetIndex = streetIndex;
+    this.votes = 0;
+    this.currentAreaObstaclesCleared = 0;
+    this.currentAreaObstaclesHit = 0;
+    this.currentAreaResidentsApproached = 0;
+  }
+
   public resetGame() {
     this.votes = INITIAL_VALUES.votes;
     this.trust = INITIAL_VALUES.trust;
     this.totalTimeRemaining = INITIAL_VALUES.timeSeconds;
     this.currentStreetIndex = 1;
+    this.currentAreaObstaclesCleared = 0;
+    this.currentAreaObstaclesHit = 0;
+    this.currentAreaResidentsApproached = 0;
+    this.totalCampaignVotes = 0;
     this.stats = {
       residentsApproached: 0,
       residentsIgnored: 0,
@@ -57,6 +77,7 @@ export class ScoreManager {
       honestyGiven: 0,
       liesTold: 0,
       obstaclesHit: 0,
+      obstaclesCleared: 0,
       positiveReactions: 0,
       doubtfulReactions: 0,
       negativeReactions: 0
@@ -65,6 +86,7 @@ export class ScoreManager {
 
   public addVotes(amount: number) {
     this.votes = Math.max(0, this.votes + amount);
+    this.totalCampaignVotes = Math.max(0, this.totalCampaignVotes + amount);
   }
 
   public modifyTrust(amount: number) {
@@ -79,6 +101,7 @@ export class ScoreManager {
       this.stats.residentsIgnored++;
     } else {
       this.stats.residentsApproached++;
+      this.currentAreaResidentsApproached++;
       if (responseType === 'promise') this.stats.promisesMade++;
       if (responseType === 'blame') this.stats.blamesGiven++;
       if (responseType === 'honesty') this.stats.honestyGiven++;
@@ -92,13 +115,21 @@ export class ScoreManager {
 
   public recordObstacleHit() {
     this.stats.obstaclesHit++;
+    this.currentAreaObstaclesHit++;
     this.modifyTrust(-3);
+  }
+
+  public recordObstacleCleared() {
+    this.stats.obstaclesCleared++;
+    this.currentAreaObstaclesCleared++;
+    this.modifyTrust(3);
   }
 
   public getRating(): { title: string; subtitle: string; badgeEmoji: string } {
     const { promisesMade, blamesGiven, honestyGiven } = this.stats;
+    const totalVotesEarned = this.totalCampaignVotes > 0 ? this.totalCampaignVotes : this.votes;
 
-    if (this.trust >= 75 && this.votes >= 15) {
+    if (this.trust >= 75 && totalVotesEarned >= 15) {
       return {
         title: 'Community Favourite',
         subtitle: 'The neighbourhood loves your energy and integrity! Ward councillor material.',

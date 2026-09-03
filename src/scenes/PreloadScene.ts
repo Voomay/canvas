@@ -15,33 +15,36 @@ export class PreloadScene extends Phaser.Scene {
     bg.fillStyle(0x0c1524, 1);
     bg.fillRect(0, 0, width, height);
 
-    this.add.text(width / 2, height / 2 - 68, 'CANVASSING SA', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '44px',
-      color: '#fcb813',
-      fontStyle: '900',
-      stroke: '#080d14',
-      strokeThickness: 5
-    }).setOrigin(0.5, 0.5);
+    const isPortrait = height > width;
+    const logoSize = isPortrait ? Math.min(width * 0.62, 250) : 220;
+    const logoY = isPortrait ? height / 2 - 95 : height / 2 - 85;
 
-    this.add.text(width / 2, height / 2 - 20, 'Join your political party canvassing around South Africa', {
+    // Official Canvassing SA Logo (Nice & Big)
+    if (this.textures.exists('logo_canvassing_sa')) {
+      const logo = this.add.image(width / 2, logoY, 'logo_canvassing_sa');
+      logo.setDisplaySize(logoSize, logoSize);
+    }
+
+    const subY = logoY + logoSize / 2 + (isPortrait ? 28 : 22);
+    this.add.text(width / 2, subY, 'Join your political party canvassing around South Africa', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '16px',
+      fontSize: isPortrait ? '16px' : '17px',
       color: '#cbd5e1',
       fontStyle: '600'
     }).setOrigin(0.5, 0.5);
 
-    this.add.text(width / 2, height / 2 + 10, 'Loading South African Neighbourhood...', {
+    this.add.text(width / 2, subY + 28, 'Loading South African Neighbourhood...', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '14px',
-      color: '#94a3b8'
+      color: '#94a3b8',
+      fontStyle: '600'
     }).setOrigin(0.5, 0.5);
 
     // Loading bar container
-    const barW = 340;
+    const barW = Math.min(width - 48, 360);
     const barH = 14;
     const barX = width / 2 - barW / 2;
-    const barY = height / 2 + 35;
+    const barY = subY + 54;
 
     const barBg = this.add.graphics();
     barBg.fillStyle(0x1a2638, 1);
@@ -89,6 +92,13 @@ export class PreloadScene extends Phaser.Scene {
       frameWidth: 380,
       frameHeight: 230
     });
+
+    // 5. Load Stumbling Blocks / Obstacles
+    this.load.image('obs_brokenDrain', 'assets/obstacles/broken_drain.png');
+    this.load.image('obs_potholeWater', 'assets/obstacles/pothole_water.png');
+    this.load.image('obs_potholeLarge', 'assets/obstacles/pothole_water.png');
+    this.load.image('obs_potholeSmall', 'assets/obstacles/pothole_small.png');
+    this.load.image('obs_openManhole', 'assets/obstacles/open_manhole.png');
   }
 
   public create() {

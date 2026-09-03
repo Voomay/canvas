@@ -27,9 +27,9 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     const isPortrait = scene.scale.height > scene.scale.width;
 
     const bubbleX = isPortrait ? cx : cx + 70;
-    const bubbleY = isPortrait ? Math.max(160, scene.scale.height / 2 - 100) : 240;
+    const bubbleY = isPortrait ? Math.max(420, Math.round(scene.scale.height - 245)) : 240;
     const statsX = isPortrait ? cx : cx - 220;
-    const statsY = isPortrait ? bubbleY + 110 : 320;
+    const statsY = isPortrait ? bubbleY - 95 : 320;
 
     // 1. Reaction speech bubble above resident
     const reactionBubble = this.createReactionBubble(scene, bubbleX, bubbleY, outcome.reactionText, outcome.outcome);
@@ -68,7 +68,7 @@ export class ReactionModal extends Phaser.GameObjects.Container {
   ): Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
     const isPortrait = scene.scale.height > scene.scale.width;
-    const bubbleW = isPortrait ? Math.min(410, scene.scale.width - 24) : 420;
+    const bubbleW = Math.min(410, scene.scale.width - 24);
     const bubbleH = 95;
 
     let strokeColor = 0x27ae60;
@@ -87,24 +87,28 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     bg.lineStyle(4, strokeColor, 1);
     bg.strokeRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 18);
 
-    // Tail
+    // Tail pointing directly to resident on sidewalk
+    const tailX = isPortrait ? 55 : -30;
+    const tailTipX = isPortrait ? 75 : -50;
+    const tailW = 20;
+
     bg.fillStyle(0xffffff, 1);
     bg.beginPath();
-    bg.moveTo(-30, bubbleH / 2 - 2);
-    bg.lineTo(-50, bubbleH / 2 + 20);
-    bg.lineTo(-10, bubbleH / 2 - 2);
+    bg.moveTo(tailX, bubbleH / 2 - 2);
+    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.closePath();
     bg.fill();
 
     bg.lineStyle(4, strokeColor, 1);
     bg.beginPath();
-    bg.moveTo(-30, bubbleH / 2 - 2);
-    bg.lineTo(-50, bubbleH / 2 + 20);
-    bg.lineTo(-10, bubbleH / 2 - 2);
+    bg.moveTo(tailX, bubbleH / 2 - 2);
+    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.stroke();
 
     bg.fillStyle(0xffffff, 1);
-    bg.fillRect(-28, bubbleH / 2 - 4, 16, 4);
+    bg.fillRect(tailX + 2, bubbleH / 2 - 4, tailW - 4, 4);
 
     const emojiText = scene.add.text(-bubbleW / 2 + 35, 0, emoji, {
       fontSize: '32px'
@@ -161,7 +165,8 @@ export class ReactionModal extends Phaser.GameObjects.Container {
 
     const trustPrefix = outcome.trustChange >= 0 ? '+' : '';
     const trustColor = outcome.trustChange >= 0 ? '#55dd88' : '#ff5555';
-    const tLabel = scene.add.text(0, 14, `Trust: ${trustPrefix}${outcome.trustChange}%`, {
+    const timeBonusText = outcome.voteGained > 0 ? ' • +5s ⏱️' : '';
+    const tLabel = scene.add.text(0, 14, `Trust: ${trustPrefix}${outcome.trustChange}%${timeBonusText}`, {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '15px',
       color: trustColor,

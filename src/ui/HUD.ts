@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ScoreManager } from '../systems/ScoreManager';
+import { STREETS } from '../data/streets';
 
 export class HUD extends Phaser.GameObjects.Container {
   private votesText!: Phaser.GameObjects.Text;
@@ -11,7 +12,6 @@ export class HUD extends Phaser.GameObjects.Container {
   private streetProgressNodes: (Phaser.GameObjects.Arc | Phaser.GameObjects.Text)[] = [];
   private streetProgressLine: Phaser.GameObjects.Graphics;
   private streetLabelText!: Phaser.GameObjects.Text;
-  private jumpTouchBtn?: Phaser.GameObjects.Container;
   private scoreManager: ScoreManager;
 
   constructor(scene: Phaser.Scene) {
@@ -44,10 +44,8 @@ export class HUD extends Phaser.GameObjects.Container {
     const trackY = isPortrait ? height - 32 : height - 35;
     this.createStreetProgressBar(scene, width / 2, trackY, isPortrait);
 
-    // 5. Mobile Jump Button (Bottom Right)
-    const jumpX = isPortrait ? width - 64 : width - 80;
-    const jumpY = isPortrait ? height - 120 : height - 110;
-    this.createMobileJumpButton(scene, jumpX, jumpY, isPortrait);
+    // 5. Action Controls: JUMP & SPRINT Buttons
+    this.createActionButtons(scene, width, height, isPortrait);
 
     // 6. Utility Controls (Menu & Fullscreen)
     this.createUtilityButtons(scene, width, isPortrait);
@@ -68,23 +66,26 @@ export class HUD extends Phaser.GameObjects.Container {
 
     const title = scene.add.text(0, -20, 'WARD VOTES', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '11px' : '12px',
+      fontSize: isPortrait ? '12px' : '13px',
       color: '#fcb813',
-      fontStyle: 'bold'
+      fontStyle: '800'
     }).setOrigin(0.5, 0.5);
 
-    this.votesText = scene.add.text(0, 0, '0/10', {
+    const currentStreet = STREETS[this.scoreManager.currentStreetIndex - 1] || STREETS[0];
+    const targetVotes = currentStreet.targetVotes || 10;
+
+    this.votesText = scene.add.text(0, 0, `0/${targetVotes}`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '24px' : '26px',
+      fontSize: isPortrait ? '26px' : '28px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    this.goalSubtitleText = scene.add.text(0, 20, '10 votes needed', {
+    this.goalSubtitleText = scene.add.text(0, 20, `${targetVotes} votes needed`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '10px' : '11px',
-      color: '#94a3b8',
-      fontStyle: 'bold'
+      fontSize: isPortrait ? '11px' : '12px',
+      color: '#cbd5e1',
+      fontStyle: '700'
     }).setOrigin(0.5, 0.5);
 
     // Attached Tab Below: "📣 NEW RESIDENT!"
@@ -100,7 +101,7 @@ export class HUD extends Phaser.GameObjects.Container {
 
     const tabTxt = scene.add.text(0, 0, '📣 NEW RESIDENT!', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '9px',
+      fontSize: '10.5px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -155,9 +156,9 @@ export class HUD extends Phaser.GameObjects.Container {
 
     const title = scene.add.text(0, -20, 'TRUST', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '11px' : '13px',
+      fontSize: isPortrait ? '12px' : '13px',
       color: '#fcb813',
-      fontStyle: 'bold'
+      fontStyle: '800'
     }).setOrigin(0.5, 0.5);
 
     this.trustText = scene.add.text(0, 0, '50%', {
@@ -169,9 +170,9 @@ export class HUD extends Phaser.GameObjects.Container {
 
     this.trustSubText = scene.add.text(0, 20, '👥 MEET & EARN TRUST', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '8.5px' : '10px',
-      color: '#94a3b8',
-      fontStyle: 'bold'
+      fontSize: isPortrait ? '9.5px' : '11px',
+      color: '#cbd5e1',
+      fontStyle: '700'
     }).setOrigin(0.5, 0.5);
 
     const badgeContainer = scene.add.container(x, y, [bg, title, this.trustText, this.trustSubText]);
@@ -215,53 +216,88 @@ export class HUD extends Phaser.GameObjects.Container {
     this.add(this.streetLabelText);
   }
 
-  private createMobileJumpButton(scene: Phaser.Scene, x: number, y: number, isPortrait: boolean) {
-    const btnW = isPortrait ? 96 : 108;
-    const btnH = isPortrait ? 52 : 56;
-    const bg = scene.add.graphics();
+  private createActionButtons(scene: Phaser.Scene, width: number, height: number, isPortrait: boolean) {
+    const btnW = isPortrait ? 78 : 96;
+    const btnH = isPortrait ? 50 : 54;
+    const jumpX = isPortrait ? width - 52 : width - 75;
+    const sprintX = isPortrait ? width - 138 : width - 185;
+    const btnY = isPortrait ? height - 115 : height - 105;
 
-    // Prominent Blue Rounded Pill Button for SPRINT / RUN FASTER
-    bg.fillStyle(0x0f5ba6, 0.95);
-    bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
-    bg.lineStyle(3, 0xffea77, 1);
-    bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
+    // 1. DEDICATED JUMP BUTTON (Vibrant emerald green with gold border)
+    const jumpBg = scene.add.graphics();
+    jumpBg.fillStyle(0x1f9137, 0.95);
+    jumpBg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
+    jumpBg.lineStyle(3, 0xffea77, 1);
+    jumpBg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
 
-    const txt = scene.add.text(0, -6, 'RUN', {
+    const jumpTxt = scene.add.text(0, -6, 'JUMP ⬆️', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13px' : '14px',
+      fontSize: isPortrait ? '12px' : '14px',
       color: '#ffffff',
       fontStyle: '900',
       stroke: '#081d38',
       strokeThickness: 2
     }).setOrigin(0.5, 0.5);
 
-    const subTxt = scene.add.text(0, 10, 'FASTER ⚡', {
+    const jumpSubTxt = scene.add.text(0, 11, '[SPACE]', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '11px' : '12px',
+      fontSize: isPortrait ? '9px' : '10px',
       color: '#ffea77',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    this.jumpTouchBtn = scene.add.container(x, y, [bg, txt, subTxt]);
-    this.jumpTouchBtn.setSize(btnW, btnH);
-    this.jumpTouchBtn.setInteractive({ useHandCursor: true });
+    const jumpBtn = scene.add.container(jumpX, btnY, [jumpBg, jumpTxt, jumpSubTxt]);
+    jumpBtn.setSize(btnW, btnH);
+    jumpBtn.setInteractive({ useHandCursor: true });
 
-    this.jumpTouchBtn.on('pointerdown', () => {
+    jumpBtn.on('pointerdown', () => {
+      this.scene.events.emit('player-jump');
+      jumpBtn.setScale(0.9);
+    });
+    jumpBtn.on('pointerup', () => jumpBtn.setScale(1.0));
+    jumpBtn.on('pointerout', () => jumpBtn.setScale(1.0));
+    this.add(jumpBtn);
+
+    // 2. SPRINT / BOOST BUTTON (Navy blue with cyan border)
+    const sprintBg = scene.add.graphics();
+    sprintBg.fillStyle(0x0f5ba6, 0.92);
+    sprintBg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
+    sprintBg.lineStyle(2.5, 0x4fc3f7, 1);
+    sprintBg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 14);
+
+    const sprintTxt = scene.add.text(0, -6, 'SPRINT ⚡', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '11px' : '13px',
+      color: '#ffffff',
+      fontStyle: '900',
+      stroke: '#081d38',
+      strokeThickness: 2
+    }).setOrigin(0.5, 0.5);
+
+    const sprintSubTxt = scene.add.text(0, 11, '[SHIFT]', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '9px' : '10px',
+      color: '#90caf9',
+      fontStyle: '800'
+    }).setOrigin(0.5, 0.5);
+
+    const sprintBtn = scene.add.container(sprintX, btnY, [sprintBg, sprintTxt, sprintSubTxt]);
+    sprintBtn.setSize(btnW, btnH);
+    sprintBtn.setInteractive({ useHandCursor: true });
+
+    sprintBtn.on('pointerdown', () => {
       this.scene.events.emit('sprint-start');
-      this.jumpTouchBtn?.setScale(0.92);
+      sprintBtn.setScale(0.9);
     });
-
-    this.jumpTouchBtn.on('pointerup', () => {
+    sprintBtn.on('pointerup', () => {
       this.scene.events.emit('sprint-end');
-      this.jumpTouchBtn?.setScale(1.0);
+      sprintBtn.setScale(1.0);
     });
-
-    this.jumpTouchBtn.on('pointerout', () => {
+    sprintBtn.on('pointerout', () => {
       this.scene.events.emit('sprint-end');
-      this.jumpTouchBtn?.setScale(1.0);
+      sprintBtn.setScale(1.0);
     });
-
-    this.add(this.jumpTouchBtn);
+    this.add(sprintBtn);
   }
 
   private createUtilityButtons(scene: Phaser.Scene, width: number, isPortrait: boolean) {
@@ -321,15 +357,17 @@ export class HUD extends Phaser.GameObjects.Container {
   }
 
   public updateValues() {
+    const currentStreet = STREETS[this.scoreManager.currentStreetIndex - 1] || STREETS[0];
+    const targetVotes = currentStreet.targetVotes || 10;
     const votes = this.scoreManager.votes;
-    this.votesText.setText(`${votes}/10`);
-    if (votes >= 10) {
+    this.votesText.setText(`${votes}/${targetVotes}`);
+    if (votes >= targetVotes) {
       this.votesText.setColor('#44dd66');
-      this.goalSubtitleText.setText('Ward target won! 🏆');
+      this.goalSubtitleText.setText('Area target won! 🏆');
       this.goalSubtitleText.setColor('#44dd66');
     } else {
       this.votesText.setColor('#fcb813');
-      const needed = 10 - votes;
+      const needed = targetVotes - votes;
       this.goalSubtitleText.setText(`${needed} votes needed`);
       this.goalSubtitleText.setColor('#94a3b8');
     }
@@ -398,6 +436,28 @@ export class HUD extends Phaser.GameObjects.Container {
           node.setScale(1.25);
         } else {
           node.setScale(1.0);
+        }
+      }
+    });
+  }
+
+  public triggerTimeFlash(type: 'gain' | 'loss') {
+    if (!this.timerText || !this.timerText.scene) return;
+
+    const flashColor = type === 'gain' ? '#44dd66' : '#ff4444';
+    this.timerText.setColor(flashColor);
+
+    this.scene.tweens.add({
+      targets: this.timerText,
+      scaleX: 1.35,
+      scaleY: 1.35,
+      duration: 180,
+      yoyo: true,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        if (this.timerText && this.timerText.scene) {
+          this.timerText.setScale(1);
+          this.updateValues();
         }
       }
     });

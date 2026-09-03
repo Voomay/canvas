@@ -55,18 +55,19 @@ export class Button extends Phaser.GameObjects.Container {
     this.drawBackground(this.bgColor);
     this.add(this.bgGraphics);
 
-    // If there's a category tag / badge, shift main text slightly down for balanced layout
+    // If there's a category tag / badge, shift main text down for balanced layout
     const hasTag = Boolean(options.categoryTag || options.shortcutKeyText);
-    const textOffsetY = hasTag ? 7 : 0;
+    const textOffsetY = hasTag ? 11 : 0;
 
-    // Text Label with clean horizontal padding
+    // Text Label with clean horizontal padding and line spacing
     this.labelText = scene.add.text(0, textOffsetY, text, {
       fontFamily: 'Outfit, sans-serif',
       fontSize: options.fontSize || '16px',
       color: options.textColor || '#ffffff',
       fontStyle: '900',
       align: 'center',
-      wordWrap: { width: this.btnWidth - 18 }
+      lineSpacing: 2,
+      wordWrap: { width: this.btnWidth - 16 }
     });
     this.labelText.setOrigin(0.5, 0.5);
     this.add(this.labelText);
@@ -75,19 +76,19 @@ export class Button extends Phaser.GameObjects.Container {
     if (options.categoryTag) {
       const tagText = options.categoryTag;
       const tagBg = scene.add.graphics();
-      const tagW = Math.min(this.btnWidth - 20, tagText.length * 7.5 + 16);
-      const tagH = 16;
-      const tagY = -this.btnHeight / 2 + 10;
+      const tagW = Math.min(this.btnWidth - 14, tagText.length * 8 + 18);
+      const tagH = 18;
+      const tagY = -this.btnHeight / 2 + 12;
 
       const pillColor = options.tagBgColor ?? 0x0c1524;
       tagBg.fillStyle(pillColor, 0.95);
-      tagBg.fillRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 5);
+      tagBg.fillRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 6);
       tagBg.lineStyle(1.5, 0xffffff, 0.85);
-      tagBg.strokeRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 5);
+      tagBg.strokeRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 6);
 
       const tagTxtObj = scene.add.text(0, 0, tagText, {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '10px',
+        fontSize: '11px',
         color: '#ffea77',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);

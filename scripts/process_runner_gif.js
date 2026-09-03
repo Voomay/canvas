@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DA_GIF_PATH = 'E:/Downloads/Untitled design.gif';
-const ANC_GIF_PATH = 'E:/Downloads/download (1).gif';
+const ANC_GIF_PATH = 'E:/Downloads/download (2).gif';
 
 const DA_CROP_BOX = { left: 200, top: 120, width: 540, height: 790 };
 const ANC_CROP_BOX = { left: 215, top: 150, width: 550, height: 785 };
@@ -16,11 +16,11 @@ const DA_LOOP_START = 85;
 const DA_LOOP_COUNT = 31;
 const DA_JUMP_FRAME = 105;
 
-// ANC (Cyril Ramaphosa): 26-frame loop (frames 65 to 91) expanded seamlessly to 31 frames
-const ANC_LOOP_START = 65;
-const ANC_CYCLE_LEN = 26;
+// ANC (Cyril Ramaphosa): 31-frame seamless loop from download (2).gif (frames 134 to 164)
+const ANC_LOOP_START = 134;
+const ANC_CYCLE_LEN = 31;
 const ANC_LOOP_COUNT = 31;
-const ANC_JUMP_FRAME = 74;
+const ANC_JUMP_FRAME = 144;
 
 const UPLOADED_DIR = 'C:/Users/Cheslin Gabriels/.gemini/antigravity-ide/brain/58a26776-398e-49c4-9d31-5b484e6f74e2/.user_uploaded/';
 const CANDIDATE_FILES = {

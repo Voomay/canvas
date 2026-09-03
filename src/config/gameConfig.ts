@@ -18,6 +18,13 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
+  roundPixels: true,
+  render: {
+    antialias: true,
+    antialiasGL: true,
+    roundPixels: true,
+    powerPreference: 'high-performance'
+  },
   physics: {
     default: 'arcade',
     arcade: {

@@ -43,7 +43,46 @@ if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || wi
   });
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+// Global High-Resolution Text Pipeline:
+// Guarantees all text objects render at high-DPI internal canvas resolution (2.5x - 3.5x)
+// completely eliminating blurry canvas wording on mobile, laptops, and desktop screens.
+const originalAddText = Phaser.GameObjects.GameObjectFactory.prototype.text;
+Phaser.GameObjects.GameObjectFactory.prototype.text = function(
+  x: number,
+  y: number,
+  text: string | string[],
+  style?: Phaser.Types.GameObjects.Text.TextStyle
+) {
+  const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+  const defaultRes = Math.min(Math.max(Math.round(dpr * 2), 2.5), 3.5);
+
+  const enhancedStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+    resolution: defaultRes,
+    padding: { left: 4, right: 4, top: 2, bottom: 2 },
+    ...style
+  };
+
+  if (style && style.resolution !== undefined && style.resolution > 0) {
+    enhancedStyle.resolution = style.resolution;
+  }
+  if (style && style.padding) {
+    enhancedStyle.padding = style.padding;
+  }
+
+  return originalAddText.call(this, x, y, text, enhancedStyle);
+};
+
+async function initGame() {
+  // Ensure Google Web Fonts ('Outfit', 'Inter') are fully loaded and ready before rendering text
+  if (document.fonts && typeof document.fonts.ready?.then === 'function') {
+    try {
+      await document.fonts.ready;
+      console.log('[Canvassing SA] Typography fonts fully loaded and ready');
+    } catch (err) {
+      console.warn('[Canvassing SA] Font loading check warning:', err);
+    }
+  }
+
   const game = new Phaser.Game(GAME_CONFIG);
 
   let resizeTimeout: number | undefined;
@@ -57,4 +96,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('resize', handleResize);
   window.addEventListener('orientationchange', handleResize);
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initGame);
+} else {
+  initGame();
+}
+

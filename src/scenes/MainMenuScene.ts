@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Button } from '../ui/Button';
 import { ScoreManager } from '../systems/ScoreManager';
+import { AdvertiseModal } from '../ui/AdvertiseModal';
 
 interface PartyCardContainer {
   partyId: 'da' | 'anc' | 'pa';
@@ -60,66 +61,26 @@ export class MainMenuScene extends Phaser.Scene {
       // ----------------------------------------------------
       // MOBILE PORTRAIT VIEW (Clean, stacked, thumb-friendly)
       // ----------------------------------------------------
-      const titleW = Math.min(width - 20, 430);
-      const titleH = 86;
-      const titleBox = this.add.graphics();
-      titleBox.fillStyle(0x0c1524, 0.95);
-      titleBox.fillRoundedRect(width / 2 - titleW / 2, 12, titleW, titleH, 14);
-      titleBox.lineStyle(2.5, 0x1f3c6e, 1);
-      titleBox.strokeRoundedRect(width / 2 - titleW / 2, 12, titleW, titleH, 14);
-
+      // Prominent centered official logo (Nice & Big on Mobile)
+      const mobileLogoSize = Math.min(width * 0.35, 130);
+      const logoCenterY = mobileLogoSize / 2 + 8;
       if (this.textures.exists('logo_canvassing_sa')) {
-        const logo = this.add.image(width / 2 - titleW / 2 + 46, 12 + titleH / 2, 'logo_canvassing_sa');
-        logo.setDisplaySize(68, 68);
-
-        this.add.text(width / 2 - titleW / 2 + 88, 36, 'CANVASSING SA', {
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '22px',
-          color: '#fcb813',
-          fontStyle: '900',
-          stroke: '#080d14',
-          strokeThickness: 4
-        }).setOrigin(0, 0.5);
-
-        this.add.text(width / 2 - titleW / 2 + 88, 66, 'Join your political party canvassing around South Africa', {
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '10.5px',
-          color: '#e2e8f0',
-          fontStyle: '600',
-          wordWrap: { width: titleW - 96 }
-        }).setOrigin(0, 0.5);
-      } else {
-        this.add.text(width / 2, 38, 'CANVASSING SA', {
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '26px',
-          color: '#fcb813',
-          fontStyle: '900',
-          stroke: '#080d14',
-          strokeThickness: 4
-        }).setOrigin(0.5, 0.5);
-
-        this.add.text(width / 2, 68, 'Join your political party canvassing around South Africa', {
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '11px',
-          color: '#ffffff',
-          fontStyle: '600',
-          align: 'center',
-          wordWrap: { width: titleW - 24 }
-        }).setOrigin(0.5, 0.5);
+        const logo = this.add.image(width / 2, logoCenterY, 'logo_canvassing_sa');
+        logo.setDisplaySize(mobileLogoSize, mobileLogoSize);
       }
 
-      this.add.text(width / 2, 118, '🗳️ SELECT YOUR PARTY TO CANVASS', {
+      this.add.text(width / 2, mobileLogoSize + 18, '🗳️ SELECT YOUR PARTY TO CANVASS', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '15px',
+        fontSize: '14.5px',
         color: '#fcb813',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
 
       // 3 Vertically Stacked Party Cards
       const cardW = Math.min(width - 24, 424);
-      const cardH = 92;
-      const startY = 180;
-      const cardGap = 100;
+      const cardH = 80;
+      const startY = mobileLogoSize + 56;
+      const cardGap = 84;
 
       partyList.forEach((p, index) => {
         const cardY = startY + index * cardGap;
@@ -129,8 +90,8 @@ export class MainMenuScene extends Phaser.Scene {
 
       // How to Play brief
       const infoW = cardW;
-      const infoH = 78;
-      const infoY = startY + 3 * cardGap + 6;
+      const infoH = 92;
+      const infoY = startY + 2 * cardGap + 46;
 
       const infoBg = this.add.graphics();
       infoBg.fillStyle(0x0c1524, 0.92);
@@ -138,7 +99,7 @@ export class MainMenuScene extends Phaser.Scene {
       infoBg.lineStyle(2, 0x223552, 1);
       infoBg.strokeRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 12);
 
-      this.add.text(width / 2, infoY + 16, '🎮 HOW TO PLAY', {
+      this.add.text(width / 2, infoY + 13, '🎮 HOW TO PLAY', {
         fontFamily: 'Outfit, sans-serif',
         fontSize: '12px',
         color: '#fcb813',
@@ -146,21 +107,23 @@ export class MainMenuScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
 
       const instructions = [
-        '• Tap JUMP! or screen to leap over sidewalk obstacles',
-        '• Meet residents on sidewalk: Stop to talk or keep running',
-        '• Promise, Blame, or Funny Honesty to win votes & trust!'
+        '• Run down the neighbourhood canvassing (Tap to Jump)',
+        '• Meet residents: Stop to talk to gain votes, or keep running',
+        '• Choose Promise, Blame, or Honesty to win votes & trust!',
+        '• Jump over potholes to fix them & gain extra time for votes!'
       ];
 
       instructions.forEach((inst, i) => {
-        this.add.text(width / 2, infoY + 36 + i * 16, inst, {
+        this.add.text(width / 2, infoY + 30 + i * 15, inst, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '10px',
-          color: '#cbd5e1'
+          fontSize: '11px',
+          color: '#f1f5f9',
+          fontStyle: '600'
         }).setOrigin(0.5, 0.5);
       });
 
-      // START CANVASSING button (Prominent)
-      const btnY = infoY + infoH + 34;
+      // START CANVASSING button (Prominent Primary Mobile Action)
+      const btnY = infoY + infoH + 30;
       new Button(this, width / 2, btnY, 'START CANVASSING ➔', () => {
         ScoreManager.getInstance().resetGame();
         this.scene.start('GameScene', { partyId: this.selectedPartyId });
@@ -172,44 +135,25 @@ export class MainMenuScene extends Phaser.Scene {
         fontSize: '20px'
       });
 
-      // Mobile Bottom Bar: INSTALL APP & FULLSCREEN buttons
-      const utilY = btnY + 48;
-      const utilBtnW = (cardW - 16) / 2;
+      // Advertise with Us link for mobile
+      const adMobileText = this.add.text(width / 2, btnY + 38, '📢 Want to feature your brand in-game? Advertise With Us ➔', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#fcb813',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+      adMobileText.setInteractive({ useHandCursor: true });
+      adMobileText.on('pointerover', () => adMobileText.setColor('#ffffff'));
+      adMobileText.on('pointerout', () => adMobileText.setColor('#fcb813'));
+      adMobileText.on('pointerdown', () => AdvertiseModal.open());
 
-      new Button(this, width / 2 - utilBtnW / 2 - 4, utilY, '📲 INSTALL APP', async () => {
-        if (typeof (window as any).promptPwaInstall === 'function') {
-          const accepted = await (window as any).promptPwaInstall();
-          if (accepted) console.log('User installed PWA!');
-        } else {
-          alert('To install: tap your browser menu and choose "Add to Home screen" / "Install app"');
-        }
-      }, {
-        width: utilBtnW,
-        height: 38,
-        bgColor: 0x132338,
-        hoverColor: 0x1f3c6e,
-        fontSize: '13px'
-      });
-
-      new Button(this, width / 2 + utilBtnW / 2 + 4, utilY, '⛶ FULLSCREEN', () => {
-        if (this.scale.isFullscreen) {
-          this.scale.stopFullscreen();
-        } else {
-          this.scale.startFullscreen();
-        }
-      }, {
-        width: utilBtnW,
-        height: 38,
-        bgColor: 0x132338,
-        hoverColor: 0x1f3c6e,
-        fontSize: '13px'
-      });
-
+      // Floating PWA Install Prompt for mobile (disappears once installed)
+      this.showPwaInstallPrompt(width, height);
     } else {
       // ----------------------------------------------------
       // DESKTOP & LANDSCAPE VIEW (Side-by-side wide layout)
       // ----------------------------------------------------
-      const titleBoxW = Math.min(width - 40, 880);
+      const titleBoxW = Math.min(width - 40, 780);
       const titleBoxH = 108;
       const titleBox = this.add.graphics();
       titleBox.fillStyle(0x0c1524, 0.95);
@@ -218,24 +162,34 @@ export class MainMenuScene extends Phaser.Scene {
       titleBox.strokeRoundedRect(width / 2 - titleBoxW / 2, 20, titleBoxW, titleBoxH, 18);
 
       if (this.textures.exists('logo_canvassing_sa')) {
-        const logo = this.add.image(width / 2 - titleBoxW / 2 + 68, 20 + titleBoxH / 2, 'logo_canvassing_sa');
-        logo.setDisplaySize(92, 92);
-
-        this.add.text(width / 2 - titleBoxW / 2 + 130, 52, 'CANVASSING SA', {
+        const titleText = this.add.text(0, 0, 'CANVASSING SA', {
           fontFamily: 'Outfit, sans-serif',
           fontSize: '38px',
           color: '#fcb813',
           fontStyle: '900',
           stroke: '#080d14',
           strokeThickness: 5
-        }).setOrigin(0, 0.5);
+        });
 
-        this.add.text(width / 2 - titleBoxW / 2 + 130, 92, 'Join your political party canvassing around South Africa', {
+        const subText = this.add.text(0, 0, 'Join your political party canvassing around South Africa', {
           fontFamily: 'Outfit, sans-serif',
           fontSize: '17px',
           color: '#ffffff',
           fontStyle: '600'
-        }).setOrigin(0, 0.5);
+        });
+
+        const logoSize = 92;
+        const logoGap = 22;
+        const textBlockWidth = Math.max(titleText.width, subText.width);
+        const totalContentWidth = logoSize + logoGap + textBlockWidth;
+
+        const contentStartX = width / 2 - totalContentWidth / 2;
+        const logo = this.add.image(contentStartX + logoSize / 2, 20 + titleBoxH / 2, 'logo_canvassing_sa');
+        logo.setDisplaySize(logoSize, logoSize);
+
+        const textX = contentStartX + logoSize + logoGap;
+        titleText.setPosition(textX, 52).setOrigin(0, 0.5);
+        subText.setPosition(textX, 92).setOrigin(0, 0.5);
       } else {
         this.add.text(width / 2, 52, 'CANVASSING SA', {
           fontFamily: 'Outfit, sans-serif',
@@ -275,11 +229,11 @@ export class MainMenuScene extends Phaser.Scene {
 
       const infoBg = this.add.graphics();
       infoBg.fillStyle(0x0c1524, 0.92);
-      infoBg.fillRoundedRect(width / 2 - 380, 445, 760, 110, 14);
+      infoBg.fillRoundedRect(width / 2 - 380, 440, 760, 126, 14);
       infoBg.lineStyle(2, 0x223552, 1);
-      infoBg.strokeRoundedRect(width / 2 - 380, 445, 760, 110, 14);
+      infoBg.strokeRoundedRect(width / 2 - 380, 440, 760, 126, 14);
 
-      this.add.text(width / 2, 468, '🎮 HOW TO PLAY', {
+      this.add.text(width / 2, 460, '🎮 HOW TO PLAY', {
         fontFamily: 'Outfit, sans-serif',
         fontSize: '15px',
         color: '#fcb813',
@@ -287,16 +241,18 @@ export class MainMenuScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
 
       const instructions = [
-        '• Run down neighbourhood streets (Spacebar / Up Arrow / Tap to Jump)',
-        '• Meet residents on sidewalk: Stop to talk or keep running',
-        '• Choose Promise, Blame, or Funny Honesty to win votes & trust!'
+        '• Run down the neighbourhood canvassing (Spacebar / Up Arrow / Tap to Jump)',
+        '• Meet residents: Stop to talk to gain votes, or keep running',
+        '• Choose Promise, Blame, or Honesty to win votes & trust!',
+        '• Jump over potholes to fix them & gain extra time to reach your vote target!'
       ];
 
       instructions.forEach((inst, i) => {
-        this.add.text(width / 2, 496 + i * 20, inst, {
+        this.add.text(width / 2, 484 + i * 19, inst, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '13px',
-          color: '#cbd5e1'
+          fontSize: '13.5px',
+          color: '#f1f5f9',
+          fontStyle: '600'
         }).setOrigin(0.5, 0.5);
       });
 
@@ -310,6 +266,49 @@ export class MainMenuScene extends Phaser.Scene {
         hoverColor: 0x27ab42,
         fontSize: '24px'
       });
+
+      // Advertise with Us Link & Top Sponsor Badge
+      const adDesktopText = this.add.text(width / 2, 676, '📢 Want your brand on in-game minibus taxis & billboards? Advertise With Us ➔', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '13px',
+        color: '#fcb813',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+      adDesktopText.setInteractive({ useHandCursor: true });
+      adDesktopText.on('pointerover', () => adDesktopText.setColor('#ffffff'));
+      adDesktopText.on('pointerout', () => adDesktopText.setColor('#fcb813'));
+      adDesktopText.on('pointerdown', () => AdvertiseModal.open());
+
+      // Top corner sponsor button
+      const sponsorBadge = this.add.container(width - 110, 32);
+      const sbBg = this.add.graphics();
+      sbBg.fillStyle(0x0c1524, 0.94);
+      sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
+      sbBg.lineStyle(1.5, 0xfcb813, 0.9);
+      sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
+      const sbTxt = this.add.text(0, 0, '📢 ADVERTISE WITH US', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#fcb813',
+        fontStyle: '800'
+      }).setOrigin(0.5, 0.5);
+      const sbZone = this.add.zone(0, 0, 172, 30).setInteractive({ useHandCursor: true });
+      sbZone.on('pointerover', () => {
+        sbBg.clear();
+        sbBg.fillStyle(0x1f3c6e, 1);
+        sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
+        sbBg.lineStyle(1.5, 0xfcb813, 1);
+        sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
+      });
+      sbZone.on('pointerout', () => {
+        sbBg.clear();
+        sbBg.fillStyle(0x0c1524, 0.94);
+        sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
+        sbBg.lineStyle(1.5, 0xfcb813, 0.9);
+        sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
+      });
+      sbZone.on('pointerdown', () => AdvertiseModal.open());
+      sponsorBadge.add([sbBg, sbTxt, sbZone]);
     }
 
     this.updateSelection();
@@ -360,11 +359,11 @@ export class MainMenuScene extends Phaser.Scene {
     // Full name in banner
     const fullText = this.add.text(-w / 2 + 5 + badgeW / 2, 16, fullName, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '8px',
-      color: textColor === '#ffffff' ? '#f1f5f9' : '#1e293b',
-      fontStyle: 'bold',
+      fontSize: '10.5px',
+      color: textColor === '#ffffff' ? '#f8fafc' : '#0f172a',
+      fontStyle: '800',
       align: 'center',
-      wordWrap: { width: badgeW - 8 }
+      wordWrap: { width: badgeW - 6 }
     }).setOrigin(0.5, 0.5);
     container.add(fullText);
 
@@ -377,15 +376,15 @@ export class MainMenuScene extends Phaser.Scene {
     // Slogan in middle
     const sloganText = this.add.text(-w / 2 + badgeW + 74, 0, slogan, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '11px',
-      color: '#94a3b8',
+      fontSize: '12.5px',
+      color: '#e2e8f0',
       fontStyle: '600',
       wordWrap: { width: Math.max(80, w - badgeW - 170) }
     }).setOrigin(0, 0.5);
     container.add(sloganText);
 
     // Status Tag (Selected / Locked)
-    const tagW = isAvailable ? 74 : 96;
+    const tagW = isAvailable ? 78 : 100;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 8, 0);
     const tagBg = this.add.graphics();
 
@@ -394,7 +393,7 @@ export class MainMenuScene extends Phaser.Scene {
       tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
       const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '10px',
+        fontSize: '11px',
         color: '#111111',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
@@ -404,7 +403,7 @@ export class MainMenuScene extends Phaser.Scene {
       tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
       const tagTxt = this.add.text(0, 0, 'COMING SOON 🔒', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '9px',
+        fontSize: '10px',
         color: '#ffffff',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
@@ -467,9 +466,9 @@ export class MainMenuScene extends Phaser.Scene {
 
     const fullText = this.add.text(0, -h / 2 + 60, fullName, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '11px',
-      color: '#94a3b8',
-      fontStyle: 'bold'
+      fontSize: '13px',
+      color: '#e2e8f0',
+      fontStyle: '700'
     }).setOrigin(0.5, 0.5);
     container.add(fullText);
 
@@ -478,16 +477,16 @@ export class MainMenuScene extends Phaser.Scene {
     sprite.setScale(0.72);
     container.add(sprite);
 
-    const tagW = isAvailable ? 76 : 106;
+    const tagW = isAvailable ? 82 : 110;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 8, -h / 2 + 16);
     const tagBg = this.add.graphics();
 
     if (isAvailable) {
       tagBg.fillStyle(0xfcb813, 1);
-      tagBg.fillRoundedRect(-38, -11, 76, 22, 6);
+      tagBg.fillRoundedRect(-tagW / 2, -12, tagW, 24, 6);
       const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '10px',
+        fontSize: '11px',
         color: '#111111',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
@@ -495,10 +494,10 @@ export class MainMenuScene extends Phaser.Scene {
       selectedTag.setVisible(true);
     } else {
       tagBg.fillStyle(0xd93838, 1);
-      tagBg.fillRoundedRect(-53, -11, 106, 22, 6);
+      tagBg.fillRoundedRect(-tagW / 2, -12, tagW, 24, 6);
       const tagTxt = this.add.text(0, 0, 'COMING SOON 🔒', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '9px',
+        fontSize: '10.5px',
         color: '#ffffff',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
@@ -599,5 +598,94 @@ export class MainMenuScene extends Phaser.Scene {
         item.container.setScale(1.0);
       }
     });
+  }
+
+  private showPwaInstallPrompt(width: number, height: number) {
+    const isStandalone = (typeof window !== 'undefined') && (
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (navigator as any).standalone === true ||
+      sessionStorage.getItem('pwa_prompt_dismissed') === 'true'
+    );
+    if (isStandalone) return;
+
+    const existing = this.children.getByName('pwaInstallBanner');
+    if (existing) existing.destroy();
+
+    const bannerW = Math.min(width - 24, 400);
+    const bannerH = 46;
+    const bannerY = Math.min(height - bannerH / 2 - 14, 760);
+
+    const banner = this.add.container(width / 2, bannerY);
+    banner.setName('pwaInstallBanner');
+    banner.setDepth(120);
+
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0c1524, 0.96);
+    bg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 12);
+    bg.lineStyle(2, 0xfcb813, 0.9);
+    bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 12);
+
+    const msg = this.add.text(-bannerW / 2 + 14, 0, '📲 Install on phone & enjoy!', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '12px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5);
+
+    // Install action button
+    const instBtnW = 74;
+    const instBtnH = 28;
+    const instBtnX = bannerW / 2 - 58;
+    const instBg = this.add.graphics();
+    instBg.fillStyle(0x1f9137, 1);
+    instBg.fillRoundedRect(instBtnX - instBtnW / 2, -instBtnH / 2, instBtnW, instBtnH, 6);
+    const instTxt = this.add.text(instBtnX, 0, 'INSTALL', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '11px',
+      color: '#ffffff',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+
+    const instZone = this.add.zone(instBtnX, 0, instBtnW, instBtnH).setInteractive({ useHandCursor: true });
+    instZone.on('pointerdown', async () => {
+      if (typeof (window as any).promptPwaInstall === 'function') {
+        const accepted = await (window as any).promptPwaInstall();
+        if (accepted) {
+          banner.destroy();
+        }
+      } else {
+        alert('To install: tap your browser menu and choose "Add to Home screen" / "Install app"');
+      }
+    });
+
+    // Close button (X)
+    const closeTxt = this.add.text(bannerW / 2 - 12, 0, '✕', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '14px',
+      color: '#94a3b8',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0.5);
+    const closeZone = this.add.zone(bannerW / 2 - 12, 0, 24, 28).setInteractive({ useHandCursor: true });
+    closeZone.on('pointerdown', () => {
+      sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+      banner.destroy();
+    });
+
+    banner.add([bg, msg, instBg, instTxt, instZone, closeTxt, closeZone]);
+
+    // Animate banner entry
+    banner.setAlpha(0);
+    this.tweens.add({
+      targets: banner,
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2.easeOut'
+    });
+
+    // Listen for PWA installation event to automatically remove prompt
+    const onInstalled = () => {
+      if (banner.active) banner.destroy();
+    };
+    window.addEventListener('pwa-installed', onInstalled, { once: true });
   }
 }

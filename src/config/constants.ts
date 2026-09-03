@@ -42,10 +42,9 @@ export function getDynamicGroundY(height: number, width: number): number {
 }
 
 export function getCurbsideTaxiY(height: number, width: number): number {
-  const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
-  // Taxi placed on upper lane asphalt right below curb (before white line)
-  return isPortrait ? roadY + 115 : 538;
+  // Taxi positioned on curbside upper lane right along the curb, clearing ample space on the road
+  return roadY + 70;
 }
 
 export const RUN_SPEED_BASE = 420;

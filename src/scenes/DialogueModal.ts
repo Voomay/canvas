@@ -24,9 +24,9 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
 
-    // 1. Comic Speech Bubble above resident / pavement
+    // 1. Comic Speech Bubble anchored above resident
     const bubbleX = isPortrait ? cx : Math.min(scene.scale.width - 240, cx - 40);
-    const bubbleY = isPortrait ? 175 : 195;
+    const bubbleY = isPortrait ? Math.max(420, Math.round(scene.scale.height - 245)) : 195;
     this.speechBubble = this.createSpeechBubble(scene, bubbleX, bubbleY, config.complaint.complaintText);
     this.add(this.speechBubble);
 
@@ -54,7 +54,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
     const isPortrait = scene.scale.height > scene.scale.width;
     const bubbleW = Math.min(isPortrait ? 410 : 540, scene.scale.width - 24);
-    const bubbleH = isPortrait ? 100 : 105;
+    const bubbleH = isPortrait ? 95 : 105;
 
     const bg = scene.add.graphics();
     // Shadow
@@ -67,34 +67,38 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.lineStyle(4, 0x111111, 1);
     bg.strokeRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 18);
 
-    // Pointer tail pointing to resident
+    // Pointer tail pointing directly to resident on sidewalk
+    const tailX = isPortrait ? 55 : -25;
+    const tailTipX = isPortrait ? 75 : -45;
+    const tailW = 20;
+
     bg.fillStyle(0xffffff, 1);
     bg.beginPath();
-    bg.moveTo(-20, bubbleH / 2 - 2);
-    bg.lineTo(-40, bubbleH / 2 + 20);
-    bg.lineTo(0, bubbleH / 2 - 2);
+    bg.moveTo(tailX, bubbleH / 2 - 2);
+    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.closePath();
     bg.fill();
 
     bg.lineStyle(4, 0x111111, 1);
     bg.beginPath();
-    bg.moveTo(-20, bubbleH / 2 - 2);
-    bg.lineTo(-40, bubbleH / 2 + 20);
-    bg.lineTo(0, bubbleH / 2 - 2);
+    bg.moveTo(tailX, bubbleH / 2 - 2);
+    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.stroke();
 
     // Cover outline inside tail
     bg.fillStyle(0xffffff, 1);
-    bg.fillRect(-18, bubbleH / 2 - 4, 16, 4);
+    bg.fillRect(tailX + 2, bubbleH / 2 - 4, tailW - 4, 4);
 
     // Complaint text
     const label = scene.add.text(0, 0, text, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: text.length > 70 ? '14px' : (text.length > 45 ? '16px' : (isPortrait ? '17px' : '20px')),
-      color: '#111111',
+      fontSize: text.length > 70 ? '15px' : (text.length > 45 ? '16.5px' : (isPortrait ? '17.5px' : '21px')),
+      color: '#0f172a',
       fontStyle: '900',
       align: 'center',
-      wordWrap: { width: bubbleW - 40 }
+      wordWrap: { width: bubbleW - 36 }
     }).setOrigin(0.5, 0.5);
 
     container.add([bg, label]);
@@ -119,11 +123,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
     const colSpacing = isPortrait ? 104 : Math.min(270, scene.scale.width * 0.23);
-    const btnWidth = isPortrait ? 200 : Math.min(480, colSpacing * 2 - 20);
-    const btnHeight = isPortrait ? 60 : 70;
+    const btnWidth = isPortrait ? Math.min(196, (scene.scale.width - 24) / 2) : Math.min(480, colSpacing * 2 - 20);
+    const btnHeight = isPortrait ? 80 : 72;
 
-    const row1Y = isPortrait ? 275 : 535;
-    const row2Y = isPortrait ? 346 : 620;
+    const row1Y = isPortrait ? Math.max(180, Math.round(scene.scale.height * 0.28)) : 535;
+    const row2Y = isPortrait ? row1Y + 92 : 620;
 
     const promiseChoice = getComplaintChoice(complaint, 'promise', partyId);
     const blameChoice = getComplaintChoice(complaint, 'blame', partyId);
@@ -140,7 +144,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0x27ab42,
       categoryTag: '[1] ✅ TRUTH / ACTION',
       tagBgColor: 0x0f421a,
-      fontSize: isPortrait ? (promiseChoice.text.length > 25 ? '11.5px' : '13px') : (promiseChoice.text.length > 30 ? '14px' : '16px')
+      fontSize: isPortrait ? (promiseChoice.text.length > 25 ? '12px' : '13px') : (promiseChoice.text.length > 30 ? '15px' : '17px')
     });
     container.add(btn1);
 
@@ -154,7 +158,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0xf06a1a,
       categoryTag: '[2] 👉 EXCUSE / BLAME',
       tagBgColor: 0x5e2303,
-      fontSize: isPortrait ? (blameChoice.text.length > 25 ? '11px' : '12.5px') : (blameChoice.text.length > 30 ? '13px' : '15px')
+      fontSize: isPortrait ? (blameChoice.text.length > 25 ? '11.5px' : '12.5px') : (blameChoice.text.length > 30 ? '14px' : '16px')
     });
     container.add(btn2);
 
@@ -168,7 +172,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0xab47bc,
       categoryTag: '[3] 🤥 BOLD LIE',
       tagBgColor: 0x3d0b4d,
-      fontSize: isPortrait ? (lieChoice.text.length > 25 ? '11px' : '12.5px') : (lieChoice.text.length > 30 ? '13px' : '15px')
+      fontSize: isPortrait ? (lieChoice.text.length > 25 ? '11.5px' : '12.5px') : (lieChoice.text.length > 30 ? '14px' : '16px')
     });
     container.add(btn3);
 
@@ -182,7 +186,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0x2480e6,
       categoryTag: '[4] 🔄 SPIN / DEFLECTION',
       tagBgColor: 0x0b2f56,
-      fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '11px' : '12.5px') : (honestyChoice.text.length > 30 ? '13px' : '15px')
+      fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '11.5px' : '12.5px') : (honestyChoice.text.length > 30 ? '14px' : '16px')
     });
     container.add(btn4);
 

@@ -3,6 +3,8 @@ import { ScoreManager } from '../systems/ScoreManager';
 import { PARTIES } from '../data/parties';
 import { Button } from '../ui/Button';
 import { SoundFX } from '../systems/SoundFX';
+import { ShareModal } from '../ui/ShareModal';
+import { AdvertiseModal } from '../ui/AdvertiseModal';
 
 export class ResultsScene extends Phaser.Scene {
   private partyId: 'da' | 'anc' | 'pa' = 'da';
@@ -37,8 +39,8 @@ export class ResultsScene extends Phaser.Scene {
     overlay.fillRect(0, 0, width, height);
 
     const isPortrait = height > width;
-    const cw = isPortrait ? Math.min(width - 24, 424) : 880;
-    const ch = isPortrait ? Math.min(height - 30, 680) : 580;
+    const cw = isPortrait ? Math.min(width - 24, 424) : 900;
+    const ch = isPortrait ? Math.min(height - 24, 700) : 610;
 
     // Main Results Container Card
     const card = this.add.graphics();
@@ -86,23 +88,41 @@ export class ResultsScene extends Phaser.Scene {
 
     this.add.text(width / 2, ratingY + (isPortrait ? 14 : 18), rating.subtitle, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '10.5px' : '14px',
-      color: '#e2e8f0',
+      fontSize: isPortrait ? '11px' : '15px',
+      color: '#f1f5f9',
       align: 'center',
       wordWrap: { width: ratingW - 20 }
     }).setOrigin(0.5, 0.5);
 
     // Statistics Breakdown Grid
+    const totalVotes = scoreManager.totalCampaignVotes > 0 ? scoreManager.totalCampaignVotes : scoreManager.votes;
     const statsList = [
-      { label: 'TOTAL VOTES', val: `${scoreManager.votes}`, color: '#44dd66', icon: '🗳️' },
+      { label: 'TOTAL VOTES', val: `${totalVotes}`, color: '#44dd66', icon: '🗳️' },
       { label: 'COMMUNITY TRUST', val: `${Math.round(scoreManager.trust)}%`, color: '#fcb813', icon: '🤝' },
+      { label: 'INFRA FIXED', val: `${scoreManager.stats.obstaclesCleared}`, color: '#38bdf8', icon: '🛠️' },
       { label: 'RESIDENTS MET', val: `${scoreManager.stats.residentsApproached}`, color: '#ffffff', icon: '🗣️' },
-      { label: 'IGNORED', val: `${scoreManager.stats.residentsIgnored}`, color: '#a0aec0', icon: '🏃' },
       { label: 'PROMISES', val: `${scoreManager.stats.promisesMade}`, color: '#55dd88', icon: '📜' },
       { label: 'BLAMES', val: `${scoreManager.stats.blamesGiven}`, color: '#f59e0b', icon: '👉' },
       { label: 'HONESTY', val: `${scoreManager.stats.honestyGiven}`, color: '#38bdf8', icon: '😂' },
-      { label: 'OBSTACLES HIT', val: `${scoreManager.stats.obstaclesHit}`, color: '#ef4444', icon: '💥' }
+      { label: 'HAZARDS HIT', val: `${scoreManager.stats.obstaclesHit}`, color: '#ef4444', icon: '💥' }
     ];
+
+    const openShareCampaign = () => {
+      ShareModal.open({
+        partyName: party.name,
+        partyFullName: party.fullName,
+        partyId: this.partyId,
+        wardName: 'South Africa (National Election)',
+        suburb: 'National Campaign',
+        votesSecured: totalVotes,
+        targetVotes: scoreManager.totalStreets * 10,
+        trustPercent: scoreManager.trust,
+        obstaclesCleared: scoreManager.stats.obstaclesCleared,
+        residentsApproached: scoreManager.stats.residentsApproached,
+        areaIndex: scoreManager.totalStreets,
+        isTotalCampaign: true
+      });
+    };
 
     if (isPortrait) {
       const boxW = (cw - 36) / 2;
@@ -124,14 +144,14 @@ export class ResultsScene extends Phaser.Scene {
 
         this.add.text(bx - boxW / 2 + 10, by, `${st.icon} ${st.label}`, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '9.5px',
-          color: '#94a3b8',
-          fontStyle: 'bold'
+          fontSize: '11px',
+          color: '#cbd5e1',
+          fontStyle: '700'
         }).setOrigin(0, 0.5);
 
         this.add.text(bx + boxW / 2 - 10, by, st.val, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '16px',
+          fontSize: '17px',
           color: st.color,
           fontStyle: '900'
         }).setOrigin(1, 0.5);
@@ -139,14 +159,23 @@ export class ResultsScene extends Phaser.Scene {
 
       // Portrait Action Buttons
       const btnW = (cw - 36) / 2;
-      const btnY = topOffset + ch - 36;
+      const btnY = topOffset + ch - 62;
+
+      // Share Campaign Results button
+      new Button(this, width / 2, btnY - 48, '📤 SHARE CAMPAIGN RESULTS 🔗', openShareCampaign, {
+        width: cw - 32,
+        height: 42,
+        bgColor: 0x005ba6,
+        hoverColor: 0x1a75c2,
+        fontSize: '14px'
+      });
 
       new Button(this, width / 2 - btnW / 2 - 4, btnY, '↺ AGAIN', () => {
         ScoreManager.getInstance().resetGame();
         this.scene.start('MainMenuScene');
       }, {
         width: btnW,
-        height: 44,
+        height: 40,
         bgColor: 0x1f9137,
         hoverColor: 0x27ab42,
         fontSize: '14px'
@@ -156,18 +185,31 @@ export class ResultsScene extends Phaser.Scene {
         this.scene.start('MainMenuScene');
       }, {
         width: btnW,
-        height: 44,
+        height: 40,
         bgColor: 0x1f3c6e,
         hoverColor: 0x2b5294,
         fontSize: '14px'
       });
+
+      // Advertise Link
+      const adText = this.add.text(width / 2, topOffset + ch - 18, '📢 Want to advertise your brand in-game? Click here ➔', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#fcb813',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+
+      adText.setInteractive({ useHandCursor: true });
+      adText.on('pointerover', () => adText.setColor('#ffffff'));
+      adText.on('pointerout', () => adText.setColor('#fcb813'));
+      adText.on('pointerdown', () => AdvertiseModal.open());
 
     } else {
       statsList.forEach((st, idx) => {
         const col = idx % 4;
         const row = Math.floor(idx / 4);
         const bx = width / 2 - 315 + col * 210;
-        const by = 330 + row * 95;
+        const by = 325 + row * 92;
 
         const statBox = this.add.graphics();
         statBox.fillStyle(0x0a121d, 0.9);
@@ -177,40 +219,64 @@ export class ResultsScene extends Phaser.Scene {
 
         this.add.text(bx, by - 16, `${st.icon} ${st.label}`, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '11px',
-          color: '#94a3b8',
-          fontStyle: 'bold'
+          fontSize: '12.5px',
+          color: '#cbd5e1',
+          fontStyle: '700'
         }).setOrigin(0.5, 0.5);
 
         this.add.text(bx, by + 14, st.val, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '24px',
+          fontSize: '26px',
           color: st.color,
           fontStyle: '900'
         }).setOrigin(0.5, 0.5);
       });
 
-      // Action Buttons: PLAY AGAIN & MAIN MENU
-      new Button(this, width / 2 - 190, 580, '↺ CANVASS AGAIN', () => {
+      // Action Buttons: PLAY AGAIN, SHARE, & MAIN MENU
+      const btnRowY = topOffset + ch - 65;
+      const bW = 260;
+
+      new Button(this, width / 2 - 280, btnRowY, '↺ CANVASS AGAIN', () => {
         ScoreManager.getInstance().resetGame();
         this.scene.start('MainMenuScene');
       }, {
-        width: 320,
-        height: 60,
+        width: bW,
+        height: 52,
         bgColor: 0x1f9137,
         hoverColor: 0x27ab42,
-        fontSize: '20px'
+        fontSize: '18px'
       });
 
-      new Button(this, width / 2 + 190, 580, '🏠 MAIN MENU', () => {
+      new Button(this, width / 2, btnRowY, '📤 SHARE RESULTS 🔗', openShareCampaign, {
+        width: bW,
+        height: 52,
+        bgColor: 0x005ba6,
+        hoverColor: 0x1a75c2,
+        fontSize: '18px'
+      });
+
+      new Button(this, width / 2 + 280, btnRowY, '🏠 MAIN MENU', () => {
         this.scene.start('MainMenuScene');
       }, {
-        width: 320,
-        height: 60,
+        width: bW,
+        height: 52,
         bgColor: 0x176bc4,
         hoverColor: 0x2480e6,
-        fontSize: '20px'
+        fontSize: '18px'
       });
+
+      // Advertise with Us Link
+      const adText = this.add.text(width / 2, topOffset + ch - 22, '📢 Want your brand featured on in-game minibus taxis & billboards? Advertise With Us ➔', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '13px',
+        color: '#fcb813',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+
+      adText.setInteractive({ useHandCursor: true });
+      adText.on('pointerover', () => adText.setColor('#ffffff'));
+      adText.on('pointerout', () => adText.setColor('#fcb813'));
+      adText.on('pointerdown', () => AdvertiseModal.open());
     }
   }
 }
