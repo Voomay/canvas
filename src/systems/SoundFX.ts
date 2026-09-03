@@ -6,9 +6,22 @@ export class SoundFX {
   private static instance: SoundFX;
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
+  private isMusicMuted: boolean = false;
+  private isBgmPlaying: boolean = false;
+  private bgmAudio: HTMLAudioElement | null = null;
+  private bgmNormalVolume: number = 0.35;
+  private bgmCurrentVolume: number = 0.35;
+  private fadeInterval: number | null = null;
 
   private constructor() {
-    // Initialize Web Audio on user gesture
+    try {
+      this.isMusicMuted = localStorage.getItem('canvassing_sa_music_muted') === 'true';
+      this.isMuted = localStorage.getItem('canvassing_sa_sfx_muted') === 'true';
+    } catch {
+      // Storage unavailable
+    }
+
+    // Initialize Web Audio & unlock HTML5 Audio on first user gesture
     const initAudio = () => {
       if (!this.ctx) {
         const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -19,6 +32,9 @@ export class SoundFX {
       if (this.ctx && this.ctx.state === 'suspended') {
         this.ctx.resume();
       }
+      if (this.bgmAudio && this.isBgmPlaying && !this.isMusicMuted && this.bgmAudio.paused) {
+        this.bgmAudio.play().catch(() => {});
+      }
       window.removeEventListener('click', initAudio);
       window.removeEventListener('keydown', initAudio);
       window.removeEventListener('touchstart', initAudio);
@@ -27,6 +43,19 @@ export class SoundFX {
     window.addEventListener('click', initAudio, { once: false });
     window.addEventListener('keydown', initAudio, { once: false });
     window.addEventListener('touchstart', initAudio, { once: false });
+
+    // Handle tab visibility (pause when backgrounded, resume when active)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (this.bgmAudio && !this.bgmAudio.paused) {
+          this.bgmAudio.pause();
+        }
+      } else {
+        if (this.bgmAudio && this.isBgmPlaying && !this.isMusicMuted) {
+          this.bgmAudio.play().catch(() => {});
+        }
+      }
+    });
   }
 
   public static getInstance(): SoundFX {
@@ -36,13 +65,161 @@ export class SoundFX {
     return SoundFX.instance;
   }
 
+  // --- Background Music (BGM) Management ---
+
+  private initBGM() {
+    if (this.bgmAudio) return;
+    try {
+      this.bgmAudio = new Audio();
+      this.bgmAudio.loop = true;
+      this.bgmAudio.preload = 'auto';
+
+      const mp3Path = 'assets/audio/game_jingle.mp3';
+      const wavPath = 'assets/audio/game_jingle.wav';
+
+      // Fallback seamlessly to WAV if MP3 is missing
+      this.bgmAudio.src = mp3Path;
+      this.bgmAudio.onerror = () => {
+        if (this.bgmAudio && !this.bgmAudio.src.endsWith(wavPath)) {
+          this.bgmAudio.src = wavPath;
+          if (this.isBgmPlaying && !this.isMusicMuted) {
+            this.bgmAudio.play().catch(() => {});
+          }
+        }
+      };
+
+      this.bgmAudio.volume = this.isMusicMuted ? 0 : this.bgmCurrentVolume;
+    } catch {
+      // Audio element not supported
+    }
+  }
+
+  public playBGM() {
+    this.isBgmPlaying = true;
+    this.initBGM();
+    if (!this.bgmAudio) return;
+
+    if (this.isMusicMuted) {
+      this.bgmAudio.volume = 0;
+      return;
+    }
+
+    this.fadeToVolume(this.bgmNormalVolume, 400);
+    this.bgmAudio.play().catch(() => {
+      // Will auto-play on next interaction
+    });
+  }
+
+  public stopBGM(fadeOut: boolean = false) {
+    this.isBgmPlaying = false;
+    if (!this.bgmAudio) return;
+
+    if (fadeOut) {
+      this.fadeToVolume(0, 500, () => {
+        if (this.bgmAudio && !this.isBgmPlaying) {
+          this.bgmAudio.pause();
+        }
+      });
+    } else {
+      this.clearFade();
+      this.bgmAudio.pause();
+      this.bgmAudio.currentTime = 0;
+    }
+  }
+
+  public duckBGM(duckVolume: number = 0.10) {
+    if (!this.isBgmPlaying || this.isMusicMuted) return;
+    this.fadeToVolume(duckVolume, 220);
+  }
+
+  public unduckBGM() {
+    if (!this.isBgmPlaying || this.isMusicMuted) return;
+    this.fadeToVolume(this.bgmNormalVolume, 300);
+  }
+
+  public toggleMusicMute(): boolean {
+    this.isMusicMuted = !this.isMusicMuted;
+    try {
+      localStorage.setItem('canvassing_sa_music_muted', String(this.isMusicMuted));
+    } catch {}
+
+    if (this.bgmAudio) {
+      if (this.isMusicMuted) {
+        this.clearFade();
+        this.bgmAudio.volume = 0;
+      } else {
+        this.bgmAudio.volume = this.bgmCurrentVolume;
+        if (this.isBgmPlaying) {
+          this.bgmAudio.play().catch(() => {});
+        }
+      }
+    }
+    return this.isMusicMuted;
+  }
+
+  public isMusicMutedState(): boolean {
+    return this.isMusicMuted;
+  }
+
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
+    try {
+      localStorage.setItem('canvassing_sa_sfx_muted', String(this.isMuted));
+    } catch {}
     return this.isMuted;
   }
 
   public getMuted(): boolean {
     return this.isMuted;
+  }
+
+  private clearFade() {
+    if (this.fadeInterval !== null) {
+      clearInterval(this.fadeInterval);
+      this.fadeInterval = null;
+    }
+  }
+
+  private fadeToVolume(targetVol: number, durationMs: number, onComplete?: () => void) {
+    this.clearFade();
+    if (!this.bgmAudio) return;
+
+    if (this.isMusicMuted) {
+      this.bgmAudio.volume = 0;
+      if (onComplete) onComplete();
+      return;
+    }
+
+    const startVol = this.bgmAudio.volume;
+    const diff = targetVol - startVol;
+    if (Math.abs(diff) < 0.01) {
+      this.bgmAudio.volume = targetVol;
+      this.bgmCurrentVolume = targetVol;
+      if (onComplete) onComplete();
+      return;
+    }
+
+    const steps = 12;
+    const stepInterval = durationMs / steps;
+    let step = 0;
+
+    this.fadeInterval = window.setInterval(() => {
+      step++;
+      const current = startVol + (diff * (step / steps));
+      if (this.bgmAudio) {
+        this.bgmAudio.volume = Math.max(0, Math.min(1, current));
+      }
+      this.bgmCurrentVolume = current;
+
+      if (step >= steps) {
+        this.clearFade();
+        if (this.bgmAudio) {
+          this.bgmAudio.volume = targetVol;
+        }
+        this.bgmCurrentVolume = targetVol;
+        if (onComplete) onComplete();
+      }
+    }, stepInterval);
   }
 
   private ensureContext(): AudioContext | null {

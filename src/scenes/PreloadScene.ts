@@ -66,6 +66,7 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('real_bg_road', 'assets/roads/clean/pavement_road.png');
     this.load.image('real_bg_clouds', 'assets/backgrounds/clouds/clouds_sky.png');
     this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png');
+    this.load.image('prop_curb_banner_pa', 'assets/decorations/banner_pole_pa.png');
 
     // 2. Load Player Sprite Frames for DA, ANC, PA
     const parties = ['da', 'anc', 'pa'];

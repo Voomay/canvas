@@ -23,15 +23,21 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
+    const height = scene.scale.height;
 
-    // 1. Comic Speech Bubble anchored above resident
-    const bubbleX = isPortrait ? cx : Math.min(scene.scale.width - 240, cx - 40);
-    const bubbleY = isPortrait ? Math.max(420, Math.round(scene.scale.height - 245)) : 195;
+    // Center dialogue block in the clear sky area between top HUD (y~110) and characters (y~height-200)
+    const skyCenterY = isPortrait 
+      ? Math.round(110 + (height - 210 - 110) / 2) 
+      : Math.round(height * 0.42);
+
+    // 1. Comic Speech Bubble (On top of the 4 answers)
+    const bubbleX = cx;
+    const bubbleY = isPortrait ? skyCenterY - 96 : 160;
     this.speechBubble = this.createSpeechBubble(scene, bubbleX, bubbleY, config.complaint.complaintText);
     this.add(this.speechBubble);
 
-    // 2. 4 Response Buttons in a clear 2x2 Grid (Promise, Blame, Lie, Honesty)
-    this.buttonsContainer = this.createResponseButtons(scene, config);
+    // 2. 4 Response Buttons below the question bubble in a clear 2x2 Grid (Truth, Excuse, Lie, Spin)
+    this.buttonsContainer = this.createResponseButtons(scene, config, bubbleY);
     this.add(this.buttonsContainer);
 
     // Keyboard shortcuts (1, 2, 3, 4)
@@ -53,8 +59,8 @@ export class DialogueModal extends Phaser.GameObjects.Container {
   private createSpeechBubble(scene: Phaser.Scene, x: number, y: number, text: string): Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
     const isPortrait = scene.scale.height > scene.scale.width;
-    const bubbleW = Math.min(isPortrait ? 410 : 540, scene.scale.width - 24);
-    const bubbleH = isPortrait ? 95 : 105;
+    const bubbleW = Math.min(isPortrait ? 414 : 560, scene.scale.width - 24);
+    const bubbleH = isPortrait ? 88 : 96;
 
     const bg = scene.add.graphics();
     // Shadow
@@ -67,15 +73,15 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.lineStyle(4, 0x111111, 1);
     bg.strokeRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 18);
 
-    // Pointer tail pointing directly to resident on sidewalk
-    const tailX = isPortrait ? 55 : -25;
-    const tailTipX = isPortrait ? 75 : -45;
-    const tailW = 20;
+    // Pointer tail pointing directly down to resident on sidewalk
+    const tailX = isPortrait ? 40 : 60;
+    const tailTipX = isPortrait ? 55 : 75;
+    const tailW = 18;
 
     bg.fillStyle(0xffffff, 1);
     bg.beginPath();
     bg.moveTo(tailX, bubbleH / 2 - 2);
-    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailTipX, bubbleH / 2 + 16);
     bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.closePath();
     bg.fill();
@@ -83,7 +89,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.lineStyle(4, 0x111111, 1);
     bg.beginPath();
     bg.moveTo(tailX, bubbleH / 2 - 2);
-    bg.lineTo(tailTipX, bubbleH / 2 + 20);
+    bg.lineTo(tailTipX, bubbleH / 2 + 16);
     bg.lineTo(tailX + tailW, bubbleH / 2 - 2);
     bg.stroke();
 
@@ -94,11 +100,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     // Complaint text
     const label = scene.add.text(0, 0, text, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: text.length > 70 ? '15px' : (text.length > 45 ? '16.5px' : (isPortrait ? '17.5px' : '21px')),
+      fontSize: text.length > 70 ? '14px' : (text.length > 45 ? '15.5px' : (isPortrait ? '16.5px' : '19px')),
       color: '#0f172a',
       fontStyle: '900',
       align: 'center',
-      wordWrap: { width: bubbleW - 36 }
+      wordWrap: { width: bubbleW - 32 }
     }).setOrigin(0.5, 0.5);
 
     container.add([bg, label]);
@@ -116,18 +122,19 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     return container;
   }
 
-  private createResponseButtons(scene: Phaser.Scene, config: DialogueModalConfig): Phaser.GameObjects.Container {
+  private createResponseButtons(scene: Phaser.Scene, config: DialogueModalConfig, bubbleY: number): Phaser.GameObjects.Container {
     const container = scene.add.container(0, 0);
     const { complaint, onChoiceSelected, partyId } = config;
 
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
     const colSpacing = isPortrait ? 104 : Math.min(270, scene.scale.width * 0.23);
-    const btnWidth = isPortrait ? Math.min(196, (scene.scale.width - 24) / 2) : Math.min(480, colSpacing * 2 - 20);
-    const btnHeight = isPortrait ? 80 : 72;
+    const btnWidth = isPortrait ? Math.min(198, (scene.scale.width - 24) / 2) : Math.min(480, colSpacing * 2 - 20);
+    const btnHeight = isPortrait ? 76 : 72;
 
-    const row1Y = isPortrait ? Math.max(180, Math.round(scene.scale.height * 0.28)) : 535;
-    const row2Y = isPortrait ? row1Y + 92 : 620;
+    // Position rows directly underneath question bubble
+    const row1Y = isPortrait ? bubbleY + 92 : 270;
+    const row2Y = isPortrait ? row1Y + 84 : 355;
 
     const promiseChoice = getComplaintChoice(complaint, 'promise', partyId);
     const blameChoice = getComplaintChoice(complaint, 'blame', partyId);

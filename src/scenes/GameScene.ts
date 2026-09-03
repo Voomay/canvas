@@ -149,52 +149,41 @@ export class GameScene extends Phaser.Scene {
       this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
       this.escKey.on('down', () => {
+        SoundFX.getInstance().stopBGM(true);
         this.scene.start('MainMenuScene');
       });
     }
 
     // Listen for Exit Menu event from HUD
     this.events.on('exit-to-menu', () => {
+      SoundFX.getInstance().stopBGM(true);
       this.scene.start('MainMenuScene');
     });
 
-    // Mobile / On-screen JUMP event from HUD
-    this.events.on('player-jump', () => {
-      if (!this.hasStartedRunning) {
-        this.startCanvassing();
-        return;
-      }
-      this.player.jump();
+    this.events.on('shutdown', () => {
+      SoundFX.getInstance().stopBGM(true);
     });
 
-    // Mobile / Touch Sprint Controls
-    this.events.on('sprint-start', () => {
-      if (!this.hasStartedRunning) {
-        this.startCanvassing();
-        return;
-      }
-      this.isSprinting = true;
-    });
-
-    this.events.on('sprint-end', () => {
-      this.isSprinting = false;
-    });
-
-    // Touch / Mobile Tap Controls
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    // Mobile / Touch Controls (Tap to Jump, Hold to Sprint)
+    this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer) => {
       // If hasn't started running yet, tap anywhere starts running!
       if (!this.hasStartedRunning) {
         this.startCanvassing();
         return;
       }
 
-      // If running and tapping upper roadway, trigger jump!
-      if (!this.isEncounterPaused && pointer.y < this.getGroundY() - 70 && pointer.y > 90) {
+      // If running, tapping triggers jump and holding triggers sprint
+      if (!this.isEncounterPaused) {
         this.player.jump();
+        this.isSprinting = true;
       }
     });
 
     this.input.on('pointerup', () => {
+      this.isSprinting = false;
+    });
+
+    this.input.on('gameout', () => {
       this.isSprinting = false;
     });
 
@@ -483,8 +472,8 @@ export class GameScene extends Phaser.Scene {
     const banner = this.add.container(width / 2, bannerY);
     banner.setDepth(150);
 
-    const w = Math.min(width - 32, 490);
-    const h = 175;
+    const w = Math.min(width - 28, 500);
+    const h = isPortrait ? 205 : 190;
 
     const bg = this.add.graphics();
     bg.fillStyle(0x0c1524, 0.96);
@@ -493,38 +482,56 @@ export class GameScene extends Phaser.Scene {
     bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
 
     const targetVotes = this.currentStreet.targetVotes || 10;
-    const title = this.add.text(0, -42, '⚡ 30-SECOND AREA SPRINT!', {
+    const title = this.add.text(0, -h / 2 + 30, '⚡ 30-SECOND AREA SPRINT!', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '21px' : '26px',
+      fontSize: isPortrait ? '20px' : '25px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    const subtitle = this.add.text(0, -10, `Secure at least ${targetVotes} votes in 30s to win this Area!`, {
+    const subtitle = this.add.text(0, -h / 2 + 60, `Target: Win ${targetVotes} votes in 30s to unlock next area!`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13.5px' : '15.5px',
+      fontSize: isPortrait ? '13px' : '15px',
       color: '#f1f5f9',
       fontStyle: '600'
     }).setOrigin(0.5, 0.5);
 
+    // Control hint badges
+    const hintBg = this.add.graphics();
+    hintBg.fillStyle(0x132238, 0.9);
+    hintBg.fillRoundedRect(-w / 2 + 16, -h / 2 + 82, w - 32, 34, 8);
+    hintBg.lineStyle(1.5, 0x4fc3f7, 0.7);
+    hintBg.strokeRoundedRect(-w / 2 + 16, -h / 2 + 82, w - 32, 34, 8);
+
+    const hintText = this.add.text(0, -h / 2 + 99, '👆 TAP Screen to JUMP  •  ✋ HOLD to SPRINT', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '12px' : '13.5px',
+      color: '#ffea77',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+
     // Green action button
+    const btnW = Math.min(280, w - 40);
+    const btnH = 46;
+    const btnY = h / 2 - 32;
+
     const btnBg = this.add.graphics();
     btnBg.fillStyle(0x1f9137, 1);
-    btnBg.fillRoundedRect(-140, 18, 280, 46, 12);
+    btnBg.fillRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
     btnBg.lineStyle(2, 0xffffff, 0.9);
-    btnBg.strokeRoundedRect(-140, 18, 280, 46, 12);
+    btnBg.strokeRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
 
-    const btnTxt = this.add.text(0, 41, '🏃 START SPRINT ➔', {
+    const btnTxt = this.add.text(0, btnY, '🏃 START SPRINT ➔', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '18px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    const btnZone = this.add.zone(0, 41, 280, 46).setInteractive({ useHandCursor: true });
+    const btnZone = this.add.zone(0, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
     btnZone.on('pointerdown', () => this.startCanvassing());
 
-    banner.add([bg, title, subtitle, btnBg, btnTxt, btnZone]);
+    banner.add([bg, title, subtitle, hintBg, hintText, btnBg, btnTxt, btnZone]);
 
     // Entrance pop
     banner.setScale(0.9);
@@ -538,8 +545,8 @@ export class GameScene extends Phaser.Scene {
 
     this.startBanner = banner;
 
-    // Natural auto-start after 1.8 seconds if user has not clicked
-    this.time.delayedCall(1800, () => {
+    // Natural auto-start after 2.4 seconds if user has not clicked
+    this.time.delayedCall(2400, () => {
       if (!this.hasStartedRunning) {
         this.startCanvassing();
       }
@@ -565,6 +572,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player.setPlayerState('RUNNING');
     this.targetSpeed = RUN_SPEED_BASE;
+    SoundFX.getInstance().playBGM();
   }
 
   private showEncounterChoiceBanner(resident: Resident) {
@@ -669,6 +677,7 @@ export class GameScene extends Phaser.Scene {
     this.currentSpeed = 0;
     this.targetSpeed = 0;
     this.player.setPlayerState('TALKING');
+    SoundFX.getInstance().duckBGM(0.08);
 
     // Smoothly position resident facing representative
     const isPortrait = this.scale.height > this.scale.width;
@@ -773,6 +782,7 @@ export class GameScene extends Phaser.Scene {
     this.activeResidentInEncounter = null;
     this.player.setPlayerState('RUNNING_AGAIN');
     this.targetSpeed = RUN_SPEED_BASE;
+    SoundFX.getInstance().unduckBGM();
 
     // Generous spacing after an encounter so player has real distance to run!
     this.nextResidentTime = Phaser.Math.Between(3400, 5600);
@@ -826,6 +836,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private completeCurrentStreet() {
+    SoundFX.getInstance().stopBGM(true);
     this.scene.start('StreetCompleteScene', { partyId: this.partyId });
   }
 }

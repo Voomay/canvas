@@ -8,6 +8,7 @@ export class ParallaxBackground {
   private roadTile: Phaser.GameObjects.TileSprite;
   private sandyVerge?: Phaser.GameObjects.Graphics;
   private streetlights: Phaser.GameObjects.Sprite[] = [];
+  private curbBanners: Phaser.GameObjects.Sprite[] = [];
 
   constructor(scene: Phaser.Scene, locationKey: 'capetown' | 'joburg' = 'capetown') {
     this.scene = scene;
@@ -72,8 +73,51 @@ export class ParallaxBackground {
     this.roadTile = scene.add.tileSprite(0, roadY, width, roadHeight, roadKey).setOrigin(0, 0);
     this.roadTile.setDepth(3);
 
-    // 7. Sandy Roadside Verge with grass tufts at the very bottom (as in sample screenshot)
+    // 7. Curbside Election Banners on the sidewalk curb
+    this.spawnInitialCurbBanners(width, locationKey);
+
+    // 8. Sandy Roadside Verge with grass tufts at the very bottom (as in sample screenshot)
     this.drawSandyVerge(width, height, isPortrait);
+  }
+
+  private getCurbY(): number {
+    const isPortrait = this.scene.scale.height > this.scene.scale.width;
+    const roadY = isPortrait ? this.scene.scale.height - 275 : 428;
+    return isPortrait ? roadY + 52 : roadY + 50;
+  }
+
+  private spawnInitialCurbBanners(width: number, _locationKey: string) {
+    if (!this.scene.textures.exists('prop_curb_banner_pa')) return;
+    const isPortrait = this.scene.scale.height > this.scene.scale.width;
+    
+    // Spawn initial PA banner right on the curb in view
+    const initialX = isPortrait ? width * 0.38 : 340;
+    this.createCurbBanner(initialX);
+
+    // Spawn additional banner further down the road
+    this.createCurbBanner(initialX + (isPortrait ? 620 : 750));
+  }
+
+  private createCurbBanner(x: number, key: string = 'prop_curb_banner_pa'): Phaser.GameObjects.Sprite | null {
+    if (!this.scene.textures.exists(key)) return null;
+    const curbY = this.getCurbY();
+    const banner = this.scene.add.sprite(x, curbY, key);
+    banner.setOrigin(0.5, 1);
+    banner.setDisplaySize(68, 210);
+    banner.setDepth(4); // Behind residents (6) & player (7), standing on road curb (3)
+
+    // Gentle breeze sway
+    this.scene.tweens.add({
+      targets: banner,
+      angle: { from: -1.2, to: 1.2 },
+      duration: Phaser.Math.Between(1800, 2400),
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    this.curbBanners.push(banner);
+    return banner;
   }
 
   private drawSandyVerge(width: number, height: number, isPortrait: boolean) {
@@ -136,6 +180,11 @@ export class ParallaxBackground {
     this.roadTile.setSize(width, roadHeight);
     this.roadTile.y = roadY;
 
+    const newCurbY = this.getCurbY();
+    this.curbBanners.forEach(b => {
+      b.y = newCurbY;
+    });
+
     this.drawSandyVerge(width, h, isPortrait);
   }
 
@@ -164,6 +213,25 @@ export class ParallaxBackground {
       const rightmostX = Math.max(...this.streetlights.map(l => l.x));
       if (rightmostX < this.scene.scale.width) {
         this.createStreetlight(rightmostX + Phaser.Math.Between(340, 420));
+      }
+    }
+
+    // Curb Banners move with the pavement/road (1.0x runner speed)
+    if (this.curbBanners.length > 0) {
+      const bannerMove = speed * dt;
+      for (let i = this.curbBanners.length - 1; i >= 0; i--) {
+        const banner = this.curbBanners[i];
+        banner.x -= bannerMove;
+        if (banner.x < -120) {
+          banner.destroy();
+          this.curbBanners.splice(i, 1);
+        }
+      }
+
+      // Spawn new curb banners as player runs down the street
+      const rightmostX = Math.max(...this.curbBanners.map(b => b.x));
+      if (rightmostX < this.scene.scale.width + 100) {
+        this.createCurbBanner(rightmostX + Phaser.Math.Between(680, 980));
       }
     }
 

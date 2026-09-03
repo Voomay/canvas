@@ -25,13 +25,18 @@ export class ReactionModal extends Phaser.GameObjects.Container {
 
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
+    const height = scene.scale.height;
+
+    const skyCenterY = isPortrait 
+      ? Math.round(110 + (height - 210 - 110) / 2) 
+      : Math.round(height * 0.42);
 
     const bubbleX = isPortrait ? cx : cx + 70;
-    const bubbleY = isPortrait ? Math.max(420, Math.round(scene.scale.height - 245)) : 240;
+    const bubbleY = isPortrait ? skyCenterY + 10 : 220;
     const statsX = isPortrait ? cx : cx - 220;
-    const statsY = isPortrait ? bubbleY - 95 : 320;
+    const statsY = isPortrait ? bubbleY - 95 : 300;
 
-    // 1. Reaction speech bubble above resident
+    // 1. Reaction speech bubble
     const reactionBubble = this.createReactionBubble(scene, bubbleX, bubbleY, outcome.reactionText, outcome.outcome);
     this.add(reactionBubble);
 
