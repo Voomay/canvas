@@ -38,93 +38,151 @@ export class StreetCompleteScene extends Phaser.Scene {
     overlay.fillStyle(0x0c1524, 0.88);
     overlay.fillRect(0, 0, width, height);
 
+    const isWardWon = scoreManager.votes >= 10;
+    const isPortrait = height > width;
+    const cw = isPortrait ? Math.min(width - 24, 424) : Math.min(740, width - 40);
+    const ch = isPortrait ? Math.min(height - 40, 520) : 500;
+
     // Summary Card
     const card = this.add.graphics();
-    const cw = 700;
-    const ch = 480;
     card.fillStyle(0x131f30, 0.96);
-    card.fillRoundedRect(width / 2 - cw / 2, height / 2 - ch / 2 - 20, cw, ch, 20);
-    card.lineStyle(4, 0xfcb813, 1);
-    card.strokeRoundedRect(width / 2 - cw / 2, height / 2 - ch / 2 - 20, cw, ch, 20);
+    card.fillRoundedRect(width / 2 - cw / 2, height / 2 - ch / 2, cw, ch, 20);
+    card.lineStyle(3, 0xfcb813, 1);
+    card.strokeRoundedRect(width / 2 - cw / 2, height / 2 - ch / 2, cw, ch, 20);
 
-    // Header
-    this.add.text(width / 2, height / 2 - 210, `🎉 STREET ${completedStreetIndex} COMPLETED!`, {
+    if (isWardWon) {
+      SoundFX.getInstance().playStreetVictory();
+    } else {
+      SoundFX.getInstance().playVoteNegative();
+    }
+
+    // Header & Badge
+    const headerTitle = isWardWon ? `🎉 SELECTED FOR AREA ${completedStreetIndex}!` : `❌ AREA ${completedStreetIndex} NOT WON`;
+    const headerColor = isWardWon ? '#2ecc71' : '#ff5555';
+    const subMsg = isWardWon
+      ? `🏆 VICTORY! You secured ${scoreManager.votes}/10 votes in 30s and won this Area election!`
+      : `⚠️ You got ${scoreManager.votes}/10 votes. You needed at least 10 votes in 30s to win this Area!`;
+
+    const topOffset = height / 2 - ch / 2;
+
+    this.add.text(width / 2, topOffset + (isPortrait ? 38 : 50), headerTitle, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '38px',
-      color: '#fcb813',
+      fontSize: isPortrait ? '23px' : '36px',
+      color: headerColor,
       fontStyle: '900',
       stroke: '#080d14',
-      strokeThickness: 5
+      strokeThickness: 4
     }).setOrigin(0.5, 0.5);
 
-    this.add.text(width / 2, height / 2 - 165, currentStreetData.suburb, {
+    this.add.text(width / 2, topOffset + (isPortrait ? 74 : 95), currentStreetData.suburb, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '20px',
+      fontSize: isPortrait ? '16px' : '20px',
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5, 0.5);
 
-    this.add.text(width / 2, height / 2 - 135, `Theme: "${currentStreetData.theme}"`, {
+    this.add.text(width / 2, topOffset + (isPortrait ? 112 : 135), subMsg, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '15px',
-      color: '#a0aec0',
-      fontStyle: 'italic'
+      fontSize: isPortrait ? '12px' : '15px',
+      color: isWardWon ? '#86efac' : '#fca5a5',
+      fontStyle: 'bold',
+      align: 'center',
+      wordWrap: { width: cw - 36 }
     }).setOrigin(0.5, 0.5);
 
     // Stats Grid
     const statItems = [
-      { label: 'Total Votes Won', val: `${scoreManager.votes} 🗳️`, color: '#44dd66' },
+      { label: 'Area Votes Secured', val: `${scoreManager.votes} / 10 🗳️`, color: isWardWon ? '#44dd66' : '#ff7777' },
       { label: 'Community Trust', val: `${Math.round(scoreManager.trust)}%`, color: '#fcb813' },
       { label: 'Residents Approached', val: `${scoreManager.stats.residentsApproached} 🗣️`, color: '#ffffff' },
-      { label: 'Potholes / Hazards Hit', val: `${scoreManager.stats.obstaclesHit} 💥`, color: '#ff6b6b' }
+      { label: 'Area Status', val: isWardWon ? 'ELECTED! 🏆' : 'DEFEATED ❌', color: isWardWon ? '#44dd66' : '#ff5555' }
     ];
+
+    const statBoxW = isPortrait ? (cw - 36) / 2 : 280;
+    const statBoxH = isPortrait ? 58 : 68;
+    const colGap = isPortrait ? statBoxW / 2 + 4 : 160;
 
     statItems.forEach((st, idx) => {
       const col = idx % 2;
       const row = Math.floor(idx / 2);
-      const sx = width / 2 - 160 + col * 320;
-      const sy = height / 2 - 60 + row * 90;
+      const sx = col === 0 ? width / 2 - colGap : width / 2 + colGap;
+      const sy = topOffset + (isPortrait ? 180 : 215) + row * (statBoxH + 12);
 
       const statBg = this.add.graphics();
       statBg.fillStyle(0x0c1524, 0.9);
-      statBg.fillRoundedRect(sx - 140, sy - 34, 280, 68, 12);
+      statBg.fillRoundedRect(sx - statBoxW / 2, sy - statBoxH / 2, statBoxW, statBoxH, 10);
       statBg.lineStyle(2, 0x1f3c6e, 1);
-      statBg.strokeRoundedRect(sx - 140, sy - 34, 280, 68, 12);
+      statBg.strokeRoundedRect(sx - statBoxW / 2, sy - statBoxH / 2, statBoxW, statBoxH, 10);
 
-      this.add.text(sx, sy - 12, st.label, {
+      this.add.text(sx, sy - (isPortrait ? 10 : 12), st.label, {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '13px',
+        fontSize: isPortrait ? '11px' : '13px',
         color: '#a0aec0',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
 
-      this.add.text(sx, sy + 14, st.val, {
+      this.add.text(sx, sy + (isPortrait ? 12 : 14), st.val, {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '22px',
+        fontSize: isPortrait ? '18px' : '22px',
         color: st.color,
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
     });
 
-    // Button: Next Street or Final Results
+    // Buttons: Win vs Retry Loop
     const hasMoreStreets = completedStreetIndex < scoreManager.totalStreets;
-    const btnText = hasMoreStreets 
-      ? `PROCEED TO STREET ${completedStreetIndex + 1} ➔` 
-      : 'VIEW FINAL ELECTION RESULTS ➔';
+    const btnY = topOffset + (isPortrait ? 360 : 395);
 
-    new Button(this, width / 2, height / 2 + 165, btnText, () => {
-      if (hasMoreStreets) {
-        scoreManager.currentStreetIndex++;
+    if (isWardWon) {
+      const btnText = hasMoreStreets 
+        ? `PROCEED TO NEXT AREA ➔` 
+        : 'VIEW FINAL ELECTION RESULTS ➔';
+
+      new Button(this, width / 2, btnY, btnText, () => {
+        if (hasMoreStreets) {
+          scoreManager.currentStreetIndex++;
+          this.scene.start('GameScene', { partyId: this.partyId });
+        } else {
+          this.scene.start('ResultsScene', { partyId: this.partyId });
+        }
+      }, {
+        width: isPortrait ? cw - 32 : 440,
+        height: isPortrait ? 48 : 64,
+        bgColor: 0x1f9137,
+        hoverColor: 0x27ab42,
+        fontSize: isPortrait ? '17px' : '22px'
+      });
+    } else {
+      const btnW = isPortrait ? (cw - 36) / 2 : 300;
+      const btnH = isPortrait ? 48 : 64;
+      const btnColOffset = isPortrait ? btnW / 2 + 4 : 160;
+
+      // High-Urgency Retry Button
+      new Button(this, width / 2 - btnColOffset, btnY, isPortrait ? 'RETRY AREA ↺' : '⚡ RETRY AREA (30s) ↺', () => {
         this.scene.start('GameScene', { partyId: this.partyId });
-      } else {
-        this.scene.start('ResultsScene', { partyId: this.partyId });
-      }
-    }, {
-      width: 440,
-      height: 64,
-      bgColor: 0x1f9137,
-      hoverColor: 0x27ab42,
-      fontSize: '22px'
-    });
+      }, {
+        width: btnW,
+        height: btnH,
+        bgColor: 0xdb580a,
+        hoverColor: 0xf06a1a,
+        fontSize: isPortrait ? '13px' : '20px'
+      });
+
+      // Continue button anyway
+      new Button(this, width / 2 + btnColOffset, btnY, isPortrait ? 'CONTINUE ➔' : 'CONTINUE ANYWAY ➔', () => {
+        if (hasMoreStreets) {
+          scoreManager.currentStreetIndex++;
+          this.scene.start('GameScene', { partyId: this.partyId });
+        } else {
+          this.scene.start('ResultsScene', { partyId: this.partyId });
+        }
+      }, {
+        width: btnW,
+        height: btnH,
+        bgColor: 0x1f3c6e,
+        hoverColor: 0x2b5294,
+        fontSize: isPortrait ? '13px' : '18px'
+      });
+    }
   }
 }

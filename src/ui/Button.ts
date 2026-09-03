@@ -12,14 +12,15 @@ export interface ButtonOptions {
   borderWidth?: number;
   radius?: number;
   emoji?: string;
+  categoryTag?: string;
+  tagBgColor?: number;
   shortcutKeyText?: string;
 }
 
 export class Button extends Phaser.GameObjects.Container {
   private bgGraphics: Phaser.GameObjects.Graphics;
   private labelText: Phaser.GameObjects.Text;
-  private emojiText?: Phaser.GameObjects.Text;
-  private shortcutText?: Phaser.GameObjects.Text;
+  private tagContainer?: Phaser.GameObjects.Container;
   private btnWidth: number;
   private btnHeight: number;
   private bgColor: number;
@@ -54,37 +55,53 @@ export class Button extends Phaser.GameObjects.Container {
     this.drawBackground(this.bgColor);
     this.add(this.bgGraphics);
 
-    // Text Label
-    this.labelText = scene.add.text(0, 0, text, {
+    // If there's a category tag / badge, shift main text slightly down for balanced layout
+    const hasTag = Boolean(options.categoryTag || options.shortcutKeyText);
+    const textOffsetY = hasTag ? 7 : 0;
+
+    // Text Label with clean horizontal padding
+    this.labelText = scene.add.text(0, textOffsetY, text, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: options.fontSize || '20px',
+      fontSize: options.fontSize || '16px',
       color: options.textColor || '#ffffff',
-      fontStyle: 'bold',
+      fontStyle: '900',
       align: 'center',
-      wordWrap: { width: this.btnWidth - 40 }
+      wordWrap: { width: this.btnWidth - 18 }
     });
     this.labelText.setOrigin(0.5, 0.5);
     this.add(this.labelText);
 
-    // Optional Emoji on the right
-    if (options.emoji) {
-      this.emojiText = scene.add.text(this.btnWidth / 2 - 32, 0, options.emoji, {
-        fontSize: '28px'
-      });
-      this.emojiText.setOrigin(0.5, 0.5);
-      this.add(this.emojiText);
-    }
+    // Crisp Category Tag Pill on top of button (e.g. "[1] TRUTH", "[2] BLAME", "[3] LIE", "[4] SPIN")
+    if (options.categoryTag) {
+      const tagText = options.categoryTag;
+      const tagBg = scene.add.graphics();
+      const tagW = Math.min(this.btnWidth - 20, tagText.length * 7.5 + 16);
+      const tagH = 16;
+      const tagY = -this.btnHeight / 2 + 10;
 
-    // Optional Keyboard Shortcut badge
-    if (options.shortcutKeyText) {
-      this.shortcutText = scene.add.text(-this.btnWidth / 2 + 24, -this.btnHeight / 2 + 10, options.shortcutKeyText, {
+      const pillColor = options.tagBgColor ?? 0x0c1524;
+      tagBg.fillStyle(pillColor, 0.95);
+      tagBg.fillRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 5);
+      tagBg.lineStyle(1.5, 0xffffff, 0.85);
+      tagBg.strokeRoundedRect(-tagW / 2, -tagH / 2, tagW, tagH, 5);
+
+      const tagTxtObj = scene.add.text(0, 0, tagText, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '10px',
+        color: '#ffea77',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      this.tagContainer = scene.add.container(0, tagY, [tagBg, tagTxtObj]);
+      this.add(this.tagContainer);
+    } else if (options.shortcutKeyText) {
+      const shortcutText = scene.add.text(-this.btnWidth / 2 + 20, -this.btnHeight / 2 + 10, options.shortcutKeyText, {
         fontFamily: 'Outfit, sans-serif',
         fontSize: '11px',
         color: '#ffdd77',
         fontStyle: 'bold'
-      });
-      this.shortcutText.setOrigin(0.5, 0.5);
-      this.add(this.shortcutText);
+      }).setOrigin(0.5, 0.5);
+      this.add(shortcutText);
     }
 
     // Interactivity

@@ -1,4 +1,4 @@
-import { ComplaintData, ResponseType } from '../data/complaints';
+import { ComplaintData, ResponseType, getComplaintReaction } from '../data/complaints';
 import { PersonalityType, PERSONALITIES } from '../data/personalities';
 
 export interface DialogueOutcome {
@@ -24,6 +24,7 @@ export class DialogueSystem {
     let positiveRate = 0.5;
     let doubtfulRate = 0.3;
     let baseTrustChange = 0;
+    let maxVoteReward = 1;
 
     // Apply response modifiers from personality
     if (responseType === 'promise') {
@@ -43,9 +44,20 @@ export class DialogueSystem {
       this.recentPromiseCount = Math.max(0, this.recentPromiseCount - 1);
 
       if (responseType === 'blame') {
-        positiveRate = personality.blameMod.positiveRate;
-        doubtfulRate = personality.blameMod.doubtfulRate;
-        baseTrustChange = personality.blameMod.trustChange;
+        // Partisans love blaming opposition; sceptical/frustrated citizens hate buck-passing
+        if (personalityType === 'Loyal') {
+          positiveRate = 0.75;
+          doubtfulRate = 0.15;
+          baseTrustChange = 3;
+        } else if (personalityType === 'Sceptical' || personalityType === 'Frustrated') {
+          positiveRate = 0.20;
+          doubtfulRate = 0.30;
+          baseTrustChange = -4;
+        } else {
+          positiveRate = personality.blameMod.positiveRate;
+          doubtfulRate = personality.blameMod.doubtfulRate;
+          baseTrustChange = personality.blameMod.trustChange;
+        }
 
         // Party trait: ANC resilience bonus
         if (partyId === 'anc') {
@@ -61,6 +73,25 @@ export class DialogueSystem {
           positiveRate = Math.min(0.95, positiveRate + 0.08);
           baseTrustChange += 2;
         }
+      } else if (responseType === 'lie') {
+        // High Risk / High Reward!
+        // Hopeful/Undecided personalities fall for it (+2 votes!)
+        // Sceptical/Frustrated personalities smell the lie and call you out!
+        maxVoteReward = 2;
+        if (personalityType === 'Hopeful' || personalityType === 'Undecided') {
+          positiveRate = 0.72;
+          doubtfulRate = 0.18;
+          baseTrustChange = 5;
+        } else if (personalityType === 'Sceptical' || personalityType === 'Frustrated') {
+          // Sharp citizens smell the lie immediately!
+          positiveRate = 0.10;
+          doubtfulRate = 0.18;
+          baseTrustChange = -7;
+        } else {
+          positiveRate = 0.35;
+          doubtfulRate = 0.35;
+          baseTrustChange = -2;
+        }
       }
     }
 
@@ -72,24 +103,22 @@ export class DialogueSystem {
 
     if (roll < positiveRate) {
       outcome = 'positive';
-      voteGained = 1;
-      trustChange = Math.max(3, baseTrustChange + 2);
+      voteGained = maxVoteReward;
+      // Votes directly boost trust (+6% to +9%)
+      trustChange = Math.max(6, baseTrustChange + (voteGained * 5));
     } else if (roll < positiveRate + doubtfulRate) {
       outcome = 'doubtful';
       // 30% chance for a doubtful resident to still give a sympathetic vote
       voteGained = Math.random() < 0.3 ? 1 : 0;
-      trustChange = Math.floor(baseTrustChange * 0.5);
+      trustChange = voteGained > 0 ? 3 : Math.floor(baseTrustChange * 0.5);
     } else {
       outcome = 'negative';
       voteGained = 0;
-      trustChange = Math.min(-2, baseTrustChange - 4);
+      trustChange = responseType === 'lie' ? -10 : Math.min(-3, baseTrustChange - 4);
     }
 
-    // Extract reaction text (party-tailored if available)
-    let reactionText = complaint.reactions[responseType][outcome];
-    if (complaint.partyReactions?.[partyId]?.[responseType]?.[outcome]) {
-      reactionText = complaint.partyReactions[partyId]![responseType]![outcome];
-    }
+    // Extract reaction text
+    const reactionText = getComplaintReaction(complaint, responseType, outcome, partyId);
 
     return {
       responseType,

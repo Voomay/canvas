@@ -19,7 +19,7 @@ export class Resident extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, allowedCategories?: string[], partyId?: 'da' | 'anc' | 'pa') {
     super(scene, x, y);
 
-    const residentSpriteId = Phaser.Math.Between(2, 6).toString();
+    const residentSpriteId = Phaser.Math.Between(2, 12).toString();
     this.residentId = residentSpriteId;
     this.soundFX = SoundFX.getInstance();
 
@@ -28,20 +28,20 @@ export class Resident extends Phaser.GameObjects.Container {
     this.personality = ALL_PERSONALITIES[pIdx];
 
     // Filter complaints:
-    // Party-eligible complaints: targetParty matches partyId OR targetParty === 'all' OR undefined
+    // Strictly party-eligible: targetParty matches partyId OR targetParty === 'all' (never a rival party's complaint)
     let partyEligible = COMPLAINTS.filter(c => !c.targetParty || c.targetParty === 'all' || (partyId && c.targetParty === partyId));
 
-    // If allowedCategories specified, apply category filter, but ALWAYS include party-tailored complaints for this party!
+    // If allowedCategories specified, apply category filter, while keeping party-tailored complaints
     if (allowedCategories && allowedCategories.length > 0) {
       partyEligible = partyEligible.filter(c => 
         allowedCategories.includes(c.category) || (partyId && c.targetParty === partyId)
       );
     }
 
-    // Give 55% priority to party-specific complaints if any exist for this party
+    // Give 75% priority to party-specific complaints for deep party personalization
     const specificToParty = partyId ? partyEligible.filter(c => c.targetParty === partyId) : [];
     let chosenComplaint: ComplaintData;
-    if (specificToParty.length > 0 && Math.random() < 0.55) {
+    if (specificToParty.length > 0 && Math.random() < 0.75) {
       const idx = Phaser.Math.Between(0, specificToParty.length - 1);
       chosenComplaint = specificToParty[idx];
     } else {

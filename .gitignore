@@ -21,5 +21,6 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Root temporary screenshots/mockups (only root pngs)
+# Root temporary screenshots/mockups (only root pngs and gifs)
 /*.png
+/*.gif

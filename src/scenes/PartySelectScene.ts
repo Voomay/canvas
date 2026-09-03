@@ -104,7 +104,7 @@ export class PartySelectScene extends Phaser.Scene {
     const nameText = this.add.text(0, -h / 2 + 42, party.name, {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '34px',
-      color: '#ffffff',
+      color: party.textColor,
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
     container.add(nameText);
@@ -157,7 +157,7 @@ export class PartySelectScene extends Phaser.Scene {
     container.add(traitText);
 
     // Selected or Locked Tag container (Top right corner of card)
-    const isAvailable = party.id === 'da';
+    const isAvailable = party.id === 'da' || party.id === 'anc';
     const tagW = isAvailable ? 90 : 130;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 10, -h / 2 + 20);
     const tagBg = this.add.graphics();
@@ -195,7 +195,7 @@ export class PartySelectScene extends Phaser.Scene {
         this.selectedPartyId = party.id;
         this.updateSelection();
       } else {
-        this.showUnavailableToast(`${party.name} is currently locked! Only DA is available to canvass.`);
+        this.showUnavailableToast("PA is not available yet! Play as DA or ANC to start canvassing now.");
       }
     });
 
@@ -252,14 +252,17 @@ export class PartySelectScene extends Phaser.Scene {
         item.borderGraphics.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
         item.selectedTag.setVisible(true);
         item.container.setScale(1.03);
+        item.container.setAlpha(1.0);
       } else {
         // Standard party colored border
         item.borderGraphics.lineStyle(2, party.colorNum, 0.6);
         item.borderGraphics.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
-        if (item.partyId === 'da') {
+        if (item.partyId === 'da' || item.partyId === 'anc') {
           item.selectedTag.setVisible(false);
+          item.container.setAlpha(0.90);
         } else {
           item.selectedTag.setVisible(true); // Locked badge remains visible
+          item.container.setAlpha(0.72);
         }
         item.container.setScale(1.0);
       }

@@ -6,6 +6,7 @@ export interface GameStats {
   promisesMade: number;
   blamesGiven: number;
   honestyGiven: number;
+  liesTold: number;
   obstaclesHit: number;
   positiveReactions: number;
   doubtfulReactions: number;
@@ -27,6 +28,7 @@ export class ScoreManager {
     promisesMade: 0,
     blamesGiven: 0,
     honestyGiven: 0,
+    liesTold: 0,
     obstaclesHit: 0,
     positiveReactions: 0,
     doubtfulReactions: 0,
@@ -53,6 +55,7 @@ export class ScoreManager {
       promisesMade: 0,
       blamesGiven: 0,
       honestyGiven: 0,
+      liesTold: 0,
       obstaclesHit: 0,
       positiveReactions: 0,
       doubtfulReactions: 0,
@@ -69,7 +72,7 @@ export class ScoreManager {
   }
 
   public recordEncounter(
-    responseType: 'promise' | 'blame' | 'honesty' | 'ignored',
+    responseType: 'promise' | 'blame' | 'honesty' | 'lie' | 'ignored',
     outcome?: 'positive' | 'doubtful' | 'negative'
   ) {
     if (responseType === 'ignored') {
@@ -79,6 +82,7 @@ export class ScoreManager {
       if (responseType === 'promise') this.stats.promisesMade++;
       if (responseType === 'blame') this.stats.blamesGiven++;
       if (responseType === 'honesty') this.stats.honestyGiven++;
+      if (responseType === 'lie') this.stats.liesTold++;
 
       if (outcome === 'positive') this.stats.positiveReactions++;
       if (outcome === 'doubtful') this.stats.doubtfulReactions++;

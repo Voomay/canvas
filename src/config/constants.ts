@@ -1,22 +1,63 @@
-export const GAME_HEIGHT = 720;
+export const GAME_LANDSCAPE_HEIGHT = 720;
+export const GAME_LANDSCAPE_WIDTH = 1280;
 
-export function calculateGameWidth(): number {
-  if (typeof window === 'undefined') return 1280;
-  const ratio = window.innerWidth / Math.max(1, window.innerHeight);
-  return Math.max(1280, Math.round(GAME_HEIGHT * ratio));
+export function isDevicePortrait(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerHeight > window.innerWidth;
 }
 
-export const GAME_WIDTH = calculateGameWidth();
+export function getGameDimensions(): { width: number; height: number; isPortrait: boolean } {
+  if (typeof window === 'undefined') {
+    return { width: 1280, height: 720, isPortrait: false };
+  }
+  const isPortrait = window.innerHeight > window.innerWidth;
+  if (isPortrait) {
+    const ratio = window.innerHeight / Math.max(1, window.innerWidth);
+    // Base width 450 with targetHeight proportional to exact viewport aspect ratio (zero side bars)
+    const targetHeight = Math.round(450 * ratio);
+    return { width: 450, height: targetHeight, isPortrait: true };
+  } else {
+    const ratio = window.innerWidth / Math.max(1, window.innerHeight);
+    const targetWidth = Math.max(1280, Math.round(720 * ratio));
+    return { width: targetWidth, height: 720, isPortrait: false };
+  }
+}
 
-export const RUN_SPEED_BASE = 320;
-export const RUN_SPEED_SLOW = 180;
+export const GAME_HEIGHT = getGameDimensions().height;
+export const GAME_WIDTH = getGameDimensions().width;
+
+export function calculateGameWidth(): number {
+  return getGameDimensions().width;
+}
+
+export function getDynamicRoadY(height: number, width: number): number {
+  const isPortrait = height > width;
+  return isPortrait ? height - 275 : 428;
+}
+
+export function getDynamicGroundY(height: number, width: number): number {
+  const isPortrait = height > width;
+  // Characters brought DOWN to lower lane (below dashed white line at y=122 in road image)
+  return isPortrait ? height - 65 : 560;
+}
+
+export function getCurbsideTaxiY(height: number, width: number): number {
+  const isPortrait = height > width;
+  const roadY = getDynamicRoadY(height, width);
+  // Taxi placed on upper lane asphalt right below curb (before white line)
+  return isPortrait ? roadY + 115 : 538;
+}
+
+export const RUN_SPEED_BASE = 420;
+export const RUN_SPEED_SPRINT = 640;
+export const RUN_SPEED_SLOW = 240;
 export const JUMP_VELOCITY = -560;
 export const GRAVITY_Y = 1300;
 
 export const PLAYER_X_RATIO = 0.30; // 30% from left
-export const GROUND_Y = 560; // Road asphalt surface contact line
+export const GROUND_Y = 560; // Landscape default contact line
 export const RUN_FRAME_COUNT = 31; // 31 seamless run frames from GIF
-export const RUN_FRAME_DURATION = 32; // ~31 FPS animation cycle
+export const RUN_FRAME_DURATION = 30; // ~33 FPS animation cycle
 
 export const COLORS = {
   sky: 0x5da8f0,
@@ -33,6 +74,8 @@ export const COLORS = {
   greenBtnHover: 0x27ab42,
   orangeBtn: 0xdb580a,
   orangeBtnHover: 0xf06a1a,
+  purpleBtn: 0x8e24aa,
+  purpleBtnHover: 0xab47bc,
   blueBtn: 0x176bc4,
   blueBtnHover: 0x2480e6,
   textWhite: '#ffffff',
@@ -42,8 +85,11 @@ export const COLORS = {
 
 export const INITIAL_VALUES = {
   votes: 0,
-  trust: 50,
-  timeSeconds: 120, // 2 minutes total
+  trust: 45, // Starts at 45% per user request
+  timeSeconds: 30, // 30 seconds sprint per ward
   streetCount: 5,
-  streetDurationSeconds: 24 // ~24s per street
+  areaCount: 5,
+  streetDurationSeconds: 30, // 30s ward sprint
+  wardTargetVotes: 10 // Need 10 votes in 30s to win ward
 };
+

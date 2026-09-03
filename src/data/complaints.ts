@@ -1,4 +1,4 @@
-export type ResponseType = 'promise' | 'blame' | 'honesty';
+export type ResponseType = 'promise' | 'blame' | 'honesty' | 'lie';
 
 export interface ResidentReactionTexts {
   positive: string;
@@ -8,7 +8,7 @@ export interface ResidentReactionTexts {
 
 export interface ComplaintData {
   id: string;
-  category: 'roads' | 'streetlights' | 'water' | 'rubbish' | 'electricity' | 'housing' | 'safety' | 'health' | 'jobs' | 'promises';
+  category: 'roads' | 'streetlights' | 'water' | 'rubbish' | 'electricity' | 'housing' | 'safety' | 'health' | 'jobs' | 'promises' | 'socialmedia';
   targetParty?: 'da' | 'anc' | 'pa' | 'all';
   complaintText: string;
   responses: {
@@ -16,26 +16,153 @@ export interface ComplaintData {
     blame: string;
     honesty: string;
     honestyEmoji?: string;
+    lie?: string;
   };
   partyResponses?: Partial<Record<'da' | 'anc' | 'pa', {
     promise?: string;
     blame?: string;
     honesty?: string;
     honestyEmoji?: string;
+    lie?: string;
   }>>;
   reactions: {
     promise: ResidentReactionTexts;
     blame: ResidentReactionTexts;
     honesty: ResidentReactionTexts;
+    lie?: ResidentReactionTexts;
   };
   partyReactions?: Partial<Record<'da' | 'anc' | 'pa', {
     promise?: ResidentReactionTexts;
     blame?: ResidentReactionTexts;
     honesty?: ResidentReactionTexts;
+    lie?: ResidentReactionTexts;
   }>>;
 }
 
+export function getComplaintChoice(
+  complaint: ComplaintData,
+  type: ResponseType,
+  partyId?: 'da' | 'anc' | 'pa'
+): { text: string; emoji?: string } {
+  const partySpecific = partyId && complaint.partyResponses?.[partyId];
+  if (type === 'promise') {
+    return { text: partySpecific?.promise || complaint.responses.promise };
+  }
+  if (type === 'blame') {
+    return { text: partySpecific?.blame || complaint.responses.blame };
+  }
+  if (type === 'honesty') {
+    // Honesty / Spin / Deflection option
+    return {
+      text: partySpecific?.honesty || complaint.responses.honesty
+    };
+  }
+  if (type === 'lie') {
+    const customLie = partySpecific?.lie || complaint.responses.lie;
+    if (customLie) return { text: customLie };
+    const defaultLies: Record<string, string> = {
+      socialmedia: 'WE NEVER PAID 1 CENT! THAT HASHTAG WAS 100% ORGANIC PASSION!',
+      roads: 'WE APPROVED R50 MILLION FOR THIS ROAD LAST NIGHT!',
+      streetlights: 'SOLAR SATELLITE LIGHTING IS ON ITS WAY FROM GERMANY!',
+      water: 'THE MAIN RESERVOIR HAS BEEN UPGRADED AND WATER IS FLOWING RIGHT NOW!',
+      electricity: 'LOADSHEDDING IN THIS AREA HAS BEEN PERMANENTLY EXEMPTED!',
+      rubbish: '20 NEW COMPACTOR TRUCKS ARE PARKED JUST AROUND THE CORNER!',
+      housing: 'YOUR TITLE DEEDS ARE PRINTED AND SITTING ON MY DESK RIGHT NOW!',
+      safety: 'WE HAVE DEPLOYED 500 UNDERCOVER METRO OFFICERS ON THIS STREET!',
+      jobs: 'WE HAVE 10,000 GUARANTEED HIGH-PAYING METRO JOBS STARTING MONDAY!'
+    };
+    return { text: defaultLies[complaint.category] || 'OUR AUDIT SHOWS THIS WAS ALREADY 100% FIXED YESTERDAY!' };
+  }
+  return { text: 'NO COMMENT' };
+}
+
+export function getComplaintReaction(
+  complaint: ComplaintData,
+  type: ResponseType,
+  outcome: 'positive' | 'doubtful' | 'negative',
+  partyId?: 'da' | 'anc' | 'pa'
+): string {
+  const partySpecificReaction = partyId && complaint.partyReactions?.[partyId]?.[type]?.[outcome];
+  if (partySpecificReaction) return partySpecificReaction;
+
+  const baseReaction = complaint.reactions[type]?.[outcome];
+  if (baseReaction) return baseReaction;
+
+  if (type === 'lie') {
+    if (outcome === 'positive') {
+      return 'Yoh! R50 million approved already?! God bless you, take my vote!';
+    }
+    if (outcome === 'doubtful') {
+      return 'Mxm... that sounds way too good to be true, politician.';
+    }
+    return 'YOH! You think we cannot smell a lie?! You are lying through your teeth!';
+  }
+
+  return 'The resident stares at you skeptically...';
+}
+
 export const COMPLAINTS: ComplaintData[] = [
+  // ==========================================
+  // 0. SOCIAL MEDIA & INFLUENCER WARS COMPLAINT
+  // ==========================================
+  {
+    id: 'socialmedia_feud',
+    category: 'socialmedia',
+    targetParty: 'all',
+    complaintText: 'WHY ARE YOU GUYS FIGHTING ON SOCIAL MEDIA?! ARE YOU PAYING INFLUENCERS TO TRASH EACH OTHER INSTEAD OF FIXING OUR ROADS?!',
+    responses: {
+      promise: 'WE WILL BAN OUR COALITION PARTNERS FROM TWITTER/X!',
+      blame: 'BLAME THE OPPOSITION INFLUENCER TROLL FARMS!',
+      lie: 'WE NEVER SPENT 1 CENT! THAT VIRAL HASHTAG WAS 100% ORGANIC!',
+      honesty: 'HONESTLY... OUR PR TEAM DRANK 4 RED BULLS AND WENT ROGUE!',
+      honestyEmoji: '🤦'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE ARE ENACTING STRICT DIGITAL DISCIPLINE PROTOCOLS!',
+        blame: 'BLAME OPPOSITION BOT FARMS FOR STARTING THE HASHTAG WAR!',
+        lie: 'NONE OF OUR MEMBERS USE TWITTER! WE ONLY READ POLICY BRIEFS!',
+        honesty: 'HONESTLY... WE CONFISCATED OUR COUNCILLOR\'S PHONE AFTER MIDNIGHT!',
+        honestyEmoji: '📱'
+      },
+      anc: {
+        promise: 'WE WILL DEPLOY REVOLUTIONARY DISCIPLINE ON ALL SOCIAL PLATFORMS!',
+        blame: 'BLAME AGENTS OF COUNTER-REVOLUTIONARY TWITTER ALGORITHMS!',
+        lie: 'WE HAVE ZERO INFLUENCERS ON THE PAYROLL, COMRADE!',
+        honesty: 'HONESTLY... THE COALITION GROUP CHAT GOT VERY MESSY!',
+        honestyEmoji: '😂'
+      },
+      pa: {
+        promise: 'WE WILL DEAL WITH THIS LIVE ON FACEBOOK TONIGHT!',
+        blame: 'BLAME THE SOFT COCKTAIL-PARTY TWEETERS IN PARLIAMENT!',
+        lie: 'OUR INFLUENCERS WORK FOR FREE PATRIOTIC LOVE!',
+        honesty: 'HONESTLY... SOMETIMES YOU HAVE TO CLAP BACK ON TIKTOK!',
+        honestyEmoji: '🔥'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Good! Put the phones down and pick up the spades!',
+        doubtful: 'Until the next trending hashtag, then you start tweeting again.',
+        negative: 'Promises on paper, but drama on the timeline!'
+      },
+      blame: {
+        positive: 'Ey, that is true! Those troll bots are completely out of control!',
+        doubtful: 'Both sides are tweeting nonsense while our water is cut.',
+        negative: 'Stop blaming other parties! Take responsibility for your own drama!'
+      },
+      lie: {
+        positive: 'Ah, so it really was just enthusiastic youth! Fair enough!',
+        doubtful: 'Mxm... that trending hashtag felt very coordinated.',
+        negative: 'YOH! You think we cannot smell a lie?! You paid those influencers R50,000!'
+      },
+      honesty: {
+        positive: 'Hahaha! At least you admitted your PR team is completely unhinged!',
+        doubtful: 'Funny, but revoke their internet access before they tweet again.',
+        negative: 'Laughing about paid influencers will not fix our municipal taps!'
+      }
+    }
+  },
   // ==========================================
   // 1. GENERAL COMMUNITY COMPLAINTS
   // ==========================================

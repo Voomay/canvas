@@ -6,16 +6,19 @@ export class ParallaxBackground {
   private cloudsTile: Phaser.GameObjects.TileSprite;
   private housesTile: Phaser.GameObjects.TileSprite;
   private roadTile: Phaser.GameObjects.TileSprite;
+  private sandyVerge?: Phaser.GameObjects.Graphics;
   private streetlights: Phaser.GameObjects.Sprite[] = [];
 
   constructor(scene: Phaser.Scene, locationKey: 'capetown' | 'joburg' = 'capetown') {
     this.scene = scene;
 
     const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+    const isPortrait = height > width;
 
-    // 1. Fixed Sky Gradient Fallback
+    // 1. Fixed Sky Gradient
     this.skyImage = scene.add.image(0, 0, 'bg_sky').setOrigin(0, 0);
-    this.skyImage.setDisplaySize(width, 720);
+    this.skyImage.setDisplaySize(width, height);
     this.skyImage.setDepth(0);
 
     // 2. Select Location Artwork (Cape Town / Hanover Park vs Johannesburg)
@@ -30,16 +33,19 @@ export class ParallaxBackground {
       selectedLocationTexture = 'bg_houses';
     }
 
-    // 3. Location Panorama Layer (Spans from y=0 down to y=432, meeting the road at y=428)
+    // 3. Road & Panorama positioning (calibrated for zoomed-in mobile portrait)
+    const roadHeight = 292;
+    const roadY = isPortrait ? height - 275 : 428;
+
     const isCustomLocation = selectedLocationTexture.startsWith('bg_location_');
-    const locY = isCustomLocation ? 0 : 170;
     const locHeight = isCustomLocation ? 432 : 260;
+    // In portrait, position location so Table Mountain / city panorama sits right behind road curb
+    const locY = isPortrait ? roadY - locHeight + 28 : (isCustomLocation ? 0 : 170);
 
     this.housesTile = scene.add.tileSprite(0, locY, width, locHeight, selectedLocationTexture).setOrigin(0, 0);
     this.housesTile.setDepth(1);
 
     // 4. Clouds Layer in the Sky (TileSprite)
-    // Sits directly in the open blue sky above the mountain & city skyline
     let cloudKey = 'bg_clouds_sky';
     if (scene.textures.exists('bg_clouds_sky')) {
       cloudKey = 'bg_clouds_sky';
@@ -49,8 +55,9 @@ export class ParallaxBackground {
       cloudKey = 'bg_clouds';
     }
 
-    const cloudY = isCustomLocation ? 15 : 30;
-    const cloudHeight = isCustomLocation ? 120 : 200;
+    // Bring clouds lower down so they are beautifully visible across the blue sky below the top HUD badges
+    const cloudY = isPortrait ? 98 : (isCustomLocation ? 15 : 30);
+    const cloudHeight = isPortrait ? 130 : (isCustomLocation ? 120 : 200);
 
     this.cloudsTile = scene.add.tileSprite(0, cloudY, width, cloudHeight, cloudKey).setOrigin(0, 0);
     this.cloudsTile.setDepth(2);
@@ -62,8 +69,45 @@ export class ParallaxBackground {
 
     // 6. Road & Pavement Layer (TileSprite in foreground where candidate runs)
     const roadKey = scene.textures.exists('real_bg_road') ? 'real_bg_road' : 'bg_road';
-    this.roadTile = scene.add.tileSprite(0, 428, width, 292, roadKey).setOrigin(0, 0);
+    this.roadTile = scene.add.tileSprite(0, roadY, width, roadHeight, roadKey).setOrigin(0, 0);
     this.roadTile.setDepth(3);
+
+    // 7. Sandy Roadside Verge with grass tufts at the very bottom (as in sample screenshot)
+    this.drawSandyVerge(width, height, isPortrait);
+  }
+
+  private drawSandyVerge(width: number, height: number, isPortrait: boolean) {
+    if (this.sandyVerge) {
+      this.sandyVerge.destroy();
+    }
+
+    this.sandyVerge = this.scene.add.graphics();
+    this.sandyVerge.setDepth(4);
+
+    const vergeHeight = isPortrait ? 38 : 36;
+    const vergeY = height - vergeHeight;
+
+    // Sandy soil base
+    this.sandyVerge.fillStyle(0x8a6a3b, 1);
+    this.sandyVerge.fillRect(0, vergeY, width, vergeHeight);
+
+    // Top curb lip / gravel line
+    this.sandyVerge.lineStyle(2, 0x5a4524, 1);
+    this.sandyVerge.lineBetween(0, vergeY, width, vergeY);
+
+    // Subtle grass tufts along roadside
+    const seedStep = isPortrait ? 60 : 90;
+    for (let x = 15; x < width; x += seedStep) {
+      // Grass blades
+      this.sandyVerge.lineStyle(3, 0x4a7c29, 0.9);
+      this.sandyVerge.lineBetween(x, vergeY + 6, x - 4, vergeY - 8);
+      this.sandyVerge.lineBetween(x, vergeY + 6, x + 2, vergeY - 10);
+      this.sandyVerge.lineBetween(x, vergeY + 6, x + 7, vergeY - 6);
+
+      // Small roadside pebble
+      this.sandyVerge.fillStyle(0x4a3c28, 0.8);
+      this.sandyVerge.fillCircle(x + 24, vergeY + 12, 3);
+    }
   }
 
   private spawnInitialStreetlights(width: number) {
@@ -79,11 +123,20 @@ export class ParallaxBackground {
     this.streetlights.push(lamp);
   }
 
-  public resize(width: number) {
-    this.skyImage.setDisplaySize(width, 720);
+  public resize(width: number, height?: number) {
+    const h = height ?? this.scene.scale.height;
+    const isPortrait = h > width;
+    const roadHeight = 292;
+    const roadY = isPortrait ? h - 275 : 428;
+
+    this.skyImage.setDisplaySize(width, h);
     this.cloudsTile.setSize(width, this.cloudsTile.height);
     this.housesTile.setSize(width, this.housesTile.height);
-    this.roadTile.setSize(width, 292);
+    this.housesTile.y = isPortrait ? roadY - this.housesTile.height + 28 : 0;
+    this.roadTile.setSize(width, roadHeight);
+    this.roadTile.y = roadY;
+
+    this.drawSandyVerge(width, h, isPortrait);
   }
 
   public update(speed: number, delta: number) {

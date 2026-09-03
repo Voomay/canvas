@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ComplaintData, ResponseType } from '../data/complaints';
+import { ComplaintData, ResponseType, getComplaintChoice } from '../data/complaints';
 import { Button } from '../ui/Button';
 
 export interface DialogueModalConfig {
@@ -14,6 +14,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
   private key1?: Phaser.Input.Keyboard.Key;
   private key2?: Phaser.Input.Keyboard.Key;
   private key3?: Phaser.Input.Keyboard.Key;
+  private key4?: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene, config: DialogueModalConfig) {
     super(scene, 0, 0);
@@ -21,24 +22,29 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     this.setDepth(150);
 
     const cx = scene.scale.width / 2;
+    const isPortrait = scene.scale.height > scene.scale.width;
 
     // 1. Comic Speech Bubble above resident / pavement
-    this.speechBubble = this.createSpeechBubble(scene, Math.min(scene.scale.width - 240, cx - 60), 220, config.complaint.complaintText);
+    const bubbleX = isPortrait ? cx : Math.min(scene.scale.width - 240, cx - 40);
+    const bubbleY = isPortrait ? 175 : 195;
+    this.speechBubble = this.createSpeechBubble(scene, bubbleX, bubbleY, config.complaint.complaintText);
     this.add(this.speechBubble);
 
-    // 2. 3 Bottom Response Buttons matching reference screenshot
+    // 2. 4 Response Buttons in a clear 2x2 Grid (Promise, Blame, Lie, Honesty)
     this.buttonsContainer = this.createResponseButtons(scene, config);
     this.add(this.buttonsContainer);
 
-    // Keyboard shortcuts (1, 2, 3)
+    // Keyboard shortcuts (1, 2, 3, 4)
     if (scene.input.keyboard) {
       this.key1 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
       this.key2 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
       this.key3 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+      this.key4 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR);
 
       this.key1.once('down', () => config.onChoiceSelected('promise'));
       this.key2.once('down', () => config.onChoiceSelected('blame'));
-      this.key3.once('down', () => config.onChoiceSelected('honesty'));
+      this.key3.once('down', () => config.onChoiceSelected('lie'));
+      this.key4.once('down', () => config.onChoiceSelected('honesty'));
     }
 
     scene.add.existing(this);
@@ -46,44 +52,45 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
   private createSpeechBubble(scene: Phaser.Scene, x: number, y: number, text: string): Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
-    const bubbleW = 440;
-    const bubbleH = 110;
+    const isPortrait = scene.scale.height > scene.scale.width;
+    const bubbleW = Math.min(isPortrait ? 410 : 540, scene.scale.width - 24);
+    const bubbleH = isPortrait ? 100 : 105;
 
     const bg = scene.add.graphics();
     // Shadow
-    bg.fillStyle(0x000000, 0.4);
-    bg.fillRoundedRect(-bubbleW / 2 + 4, -bubbleH / 2 + 6, bubbleW, bubbleH, 20);
+    bg.fillStyle(0x000000, 0.45);
+    bg.fillRoundedRect(-bubbleW / 2 + 4, -bubbleH / 2 + 6, bubbleW, bubbleH, 18);
 
     // Bubble body
     bg.fillStyle(0xffffff, 1);
-    bg.fillRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 20);
+    bg.fillRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 18);
     bg.lineStyle(4, 0x111111, 1);
-    bg.strokeRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 20);
+    bg.strokeRoundedRect(-bubbleW / 2, -bubbleH / 2, bubbleW, bubbleH, 18);
 
     // Pointer tail pointing to resident
     bg.fillStyle(0xffffff, 1);
     bg.beginPath();
-    bg.moveTo(-30, bubbleH / 2 - 2);
-    bg.lineTo(-50, bubbleH / 2 + 22);
-    bg.lineTo(-10, bubbleH / 2 - 2);
+    bg.moveTo(-20, bubbleH / 2 - 2);
+    bg.lineTo(-40, bubbleH / 2 + 20);
+    bg.lineTo(0, bubbleH / 2 - 2);
     bg.closePath();
     bg.fill();
 
     bg.lineStyle(4, 0x111111, 1);
     bg.beginPath();
-    bg.moveTo(-30, bubbleH / 2 - 2);
-    bg.lineTo(-50, bubbleH / 2 + 22);
-    bg.lineTo(-10, bubbleH / 2 - 2);
+    bg.moveTo(-20, bubbleH / 2 - 2);
+    bg.lineTo(-40, bubbleH / 2 + 20);
+    bg.lineTo(0, bubbleH / 2 - 2);
     bg.stroke();
 
     // Cover outline inside tail
     bg.fillStyle(0xffffff, 1);
-    bg.fillRect(-28, bubbleH / 2 - 4, 16, 4);
+    bg.fillRect(-18, bubbleH / 2 - 4, 16, 4);
 
     // Complaint text
     const label = scene.add.text(0, 0, text, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: text.length > 50 ? '18px' : '20px',
+      fontSize: text.length > 70 ? '14px' : (text.length > 45 ? '16px' : (isPortrait ? '17px' : '20px')),
       color: '#111111',
       fontStyle: '900',
       align: 'center',
@@ -98,7 +105,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       targets: container,
       scaleX: 1.0,
       scaleY: 1.0,
-      duration: 250,
+      duration: 220,
       ease: 'Back.easeOut'
     });
 
@@ -110,57 +117,74 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const { complaint, onChoiceSelected, partyId } = config;
 
     const cx = scene.scale.width / 2;
-    const spacing = Math.min(400, (scene.scale.width - 60) / 3);
-    const btnWidth = Math.min(370, spacing - 16);
-    const btnHeight = 78;
-    const btnY = 610;
+    const isPortrait = scene.scale.height > scene.scale.width;
+    const colSpacing = isPortrait ? 104 : Math.min(270, scene.scale.width * 0.23);
+    const btnWidth = isPortrait ? 200 : Math.min(480, colSpacing * 2 - 20);
+    const btnHeight = isPortrait ? 60 : 70;
 
-    // Party-tailored responses if available
-    const partyResp = (partyId && complaint.partyResponses) ? complaint.partyResponses[partyId] : undefined;
-    const promiseText = partyResp?.promise || complaint.responses.promise;
-    const blameText = partyResp?.blame || complaint.responses.blame;
-    const honestyText = partyResp?.honesty || complaint.responses.honesty;
-    const honestyEmoji = partyResp?.honestyEmoji || complaint.responses.honestyEmoji || '😂';
+    const row1Y = isPortrait ? 275 : 535;
+    const row2Y = isPortrait ? 346 : 620;
 
-    // 1. Green Button: PROMISE / WE WILL FIX IT!
-    const btn1 = new Button(scene, cx - spacing, btnY, promiseText, () => {
+    const promiseChoice = getComplaintChoice(complaint, 'promise', partyId);
+    const blameChoice = getComplaintChoice(complaint, 'blame', partyId);
+    const lieChoice = getComplaintChoice(complaint, 'lie', partyId);
+    const honestyChoice = getComplaintChoice(complaint, 'honesty', partyId);
+
+    // 1. Green: TRUTH / DIRECT PROMISE
+    const btn1 = new Button(scene, cx - colSpacing, row1Y, promiseChoice.text, () => {
       onChoiceSelected('promise');
     }, {
       width: btnWidth,
       height: btnHeight,
       bgColor: 0x1f9137,
       hoverColor: 0x27ab42,
-      fontSize: promiseText.length > 25 ? '16px' : (promiseText.length > 18 ? '18px' : '21px'),
-      shortcutKeyText: '[1]'
+      categoryTag: '[1] ✅ TRUTH / ACTION',
+      tagBgColor: 0x0f421a,
+      fontSize: isPortrait ? (promiseChoice.text.length > 25 ? '11.5px' : '13px') : (promiseChoice.text.length > 30 ? '14px' : '16px')
     });
     container.add(btn1);
 
-    // 2. Orange Button: BLAME THE OTHER PARTIES / OPPOSITION
-    const btn2 = new Button(scene, cx, btnY, blameText, () => {
+    // 2. Orange: EXCUSE / BLAME
+    const btn2 = new Button(scene, cx + colSpacing, row1Y, blameChoice.text, () => {
       onChoiceSelected('blame');
     }, {
       width: btnWidth,
       height: btnHeight,
       bgColor: 0xdb580a,
       hoverColor: 0xf06a1a,
-      fontSize: blameText.length > 35 ? '14px' : (blameText.length > 22 ? '16px' : '19px'),
-      shortcutKeyText: '[2]'
+      categoryTag: '[2] 👉 EXCUSE / BLAME',
+      tagBgColor: 0x5e2303,
+      fontSize: isPortrait ? (blameChoice.text.length > 25 ? '11px' : '12.5px') : (blameChoice.text.length > 30 ? '13px' : '15px')
     });
     container.add(btn2);
 
-    // 3. Blue Button: Tailored Funny Honesty + Emoji
-    const btn3 = new Button(scene, cx + spacing, btnY, honestyText, () => {
+    // 3. Purple: BOLD LIE (High risk / High reward!)
+    const btn3 = new Button(scene, cx - colSpacing, row2Y, lieChoice.text, () => {
+      onChoiceSelected('lie');
+    }, {
+      width: btnWidth,
+      height: btnHeight,
+      bgColor: 0x8e24aa,
+      hoverColor: 0xab47bc,
+      categoryTag: '[3] 🤥 BOLD LIE',
+      tagBgColor: 0x3d0b4d,
+      fontSize: isPortrait ? (lieChoice.text.length > 25 ? '11px' : '12.5px') : (lieChoice.text.length > 30 ? '13px' : '15px')
+    });
+    container.add(btn3);
+
+    // 4. Blue: SPIN / DEFLECTION (Talking about something else / humorous pivot)
+    const btn4 = new Button(scene, cx + colSpacing, row2Y, honestyChoice.text, () => {
       onChoiceSelected('honesty');
     }, {
       width: btnWidth,
       height: btnHeight,
       bgColor: 0x176bc4,
       hoverColor: 0x2480e6,
-      fontSize: honestyText.length > 35 ? '14px' : (honestyText.length > 22 ? '16px' : '18px'),
-      emoji: honestyEmoji,
-      shortcutKeyText: '[3]'
+      categoryTag: '[4] 🔄 SPIN / DEFLECTION',
+      tagBgColor: 0x0b2f56,
+      fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '11px' : '12.5px') : (honestyChoice.text.length > 30 ? '13px' : '15px')
     });
-    container.add(btn3);
+    container.add(btn4);
 
     return container;
   }
@@ -169,6 +193,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     if (this.key1) this.key1.destroy();
     if (this.key2) this.key2.destroy();
     if (this.key3) this.key3.destroy();
+    if (this.key4) this.key4.destroy();
     this.destroy();
   }
 }

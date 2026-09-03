@@ -24,19 +24,25 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     }
 
     const cx = scene.scale.width / 2;
+    const isPortrait = scene.scale.height > scene.scale.width;
+
+    const bubbleX = isPortrait ? cx : cx + 70;
+    const bubbleY = isPortrait ? Math.max(160, scene.scale.height / 2 - 100) : 240;
+    const statsX = isPortrait ? cx : cx - 220;
+    const statsY = isPortrait ? bubbleY + 110 : 320;
 
     // 1. Reaction speech bubble above resident
-    const reactionBubble = this.createReactionBubble(scene, cx + 70, 240, outcome.reactionText, outcome.outcome);
+    const reactionBubble = this.createReactionBubble(scene, bubbleX, bubbleY, outcome.reactionText, outcome.outcome);
     this.add(reactionBubble);
 
     // 2. Floating stats notification
-    const statsPopup = this.createStatsPopup(scene, cx - 220, 320, outcome);
+    const statsPopup = this.createStatsPopup(scene, statsX, statsY, outcome);
     this.add(statsPopup);
 
     scene.add.existing(this);
 
     // Click anywhere to fast forward
-    const clickZone = scene.add.zone(cx, 360, scene.scale.width, 720).setInteractive();
+    const clickZone = scene.add.zone(cx, scene.scale.height / 2, scene.scale.width, scene.scale.height).setInteractive();
     clickZone.once('pointerdown', () => {
       clickZone.destroy();
       this.destroy();
@@ -61,7 +67,8 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     outcome: 'positive' | 'doubtful' | 'negative'
   ): Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
-    const bubbleW = 420;
+    const isPortrait = scene.scale.height > scene.scale.width;
+    const bubbleW = isPortrait ? Math.min(410, scene.scale.width - 24) : 420;
     const bubbleH = 95;
 
     let strokeColor = 0x27ae60;
@@ -136,16 +143,18 @@ export class ReactionModal extends Phaser.GameObjects.Container {
 
     const bg = scene.add.graphics();
     bg.fillStyle(0x0c1524, 0.95);
-    bg.fillRoundedRect(-110, -35, 220, 70, 14);
+    bg.fillRoundedRect(-125, -35, 250, 70, 14);
     bg.lineStyle(3, 0xfcb813, 1);
-    bg.strokeRoundedRect(-110, -35, 220, 70, 14);
+    bg.strokeRoundedRect(-125, -35, 250, 70, 14);
 
-    const voteText = outcome.voteGained > 0 ? `+${outcome.voteGained} VOTE! 🗳️` : 'NO VOTE ❌';
+    const voteText = outcome.voteGained > 0
+      ? (outcome.voteGained > 1 ? `+${outcome.voteGained} VOTES! 🗳️🎉` : `+${outcome.voteGained} VOTE! 🗳️`)
+      : (outcome.responseType === 'lie' ? 'CAUGHT LYING! 🤥 0 VOTES' : 'NO VOTE ❌');
     const voteColor = outcome.voteGained > 0 ? '#44dd66' : '#ff7777';
 
     const vLabel = scene.add.text(0, -12, voteText, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '18px',
+      fontSize: outcome.voteGained > 1 ? '17px' : '18px',
       color: voteColor,
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);

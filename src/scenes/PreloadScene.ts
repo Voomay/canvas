@@ -15,17 +15,26 @@ export class PreloadScene extends Phaser.Scene {
     bg.fillStyle(0x0c1524, 1);
     bg.fillRect(0, 0, width, height);
 
-    this.add.text(width / 2, height / 2 - 60, 'CAMPAIGN TRAIL', {
+    this.add.text(width / 2, height / 2 - 68, 'CANVASSING SA', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '44px',
       color: '#fcb813',
-      fontStyle: '900'
+      fontStyle: '900',
+      stroke: '#080d14',
+      strokeThickness: 5
     }).setOrigin(0.5, 0.5);
 
-    this.add.text(width / 2, height / 2 - 10, 'Loading South African Neighbourhood...', {
+    this.add.text(width / 2, height / 2 - 20, 'Join your political party canvassing around South Africa', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '18px',
-      color: '#ffffff'
+      fontSize: '16px',
+      color: '#cbd5e1',
+      fontStyle: '600'
+    }).setOrigin(0.5, 0.5);
+
+    this.add.text(width / 2, height / 2 + 10, 'Loading South African Neighbourhood...', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '14px',
+      color: '#94a3b8'
     }).setOrigin(0.5, 0.5);
 
     // Loading bar container
@@ -53,6 +62,7 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('real_bg_houses', 'assets/backgrounds/houses/suburb_houses.png');
     this.load.image('real_bg_road', 'assets/roads/clean/pavement_road.png');
     this.load.image('real_bg_clouds', 'assets/backgrounds/clouds/clouds_sky.png');
+    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png');
 
     // 2. Load Player Sprite Frames for DA, ANC, PA
     const parties = ['da', 'anc', 'pa'];
@@ -66,18 +76,34 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image(`player_${p}_talk`, `assets/players/${p}/${p}_talk.png`);
     });
 
-    // 3. Load Residents 2 through 6 (Idle, Happy, Doubtful, Frustrated)
-    for (let i = 2; i <= 6; i++) {
+    // 3. Load Residents 1 through 12 (Idle, Happy, Doubtful, Frustrated)
+    for (let i = 1; i <= 12; i++) {
       this.load.image(`resident_${i}`, `assets/residents/idle/resident_${i}.png`);
       this.load.image(`resident_${i}_happy`, `assets/residents/happy/resident_${i}_happy.png`);
       this.load.image(`resident_${i}_doubtful`, `assets/residents/doubtful/resident_${i}_doubtful.png`);
       this.load.image(`resident_${i}_frustrated`, `assets/residents/frustrated/resident_${i}_frustrated.png`);
     }
+
+    // 4. Load Minibus Taxi Spritesheet for Cape Town / Hanover Park
+    this.load.spritesheet('vehicle_taxi_minibus', 'assets/vehicles/taxi_minibus.png', {
+      frameWidth: 380,
+      frameHeight: 230
+    });
   }
 
   public create() {
     // Generate fallback textures only for items without PNGs (obstacles, UI icons, etc.)
     PlaceholderGenerator.generateAll(this);
+
+    // Register Minibus Taxi Animation (51 frames, authentic Cape Town "BELLVILLE! BELLVILLE!" shout)
+    if (this.textures.exists('vehicle_taxi_minibus')) {
+      this.anims.create({
+        key: 'taxi_minibus_anim',
+        frames: this.anims.generateFrameNumbers('vehicle_taxi_minibus', { start: 0, end: 50 }),
+        frameRate: 16,
+        repeat: -1
+      });
+    }
 
     this.time.delayedCall(150, () => {
       this.scene.start('MainMenuScene');

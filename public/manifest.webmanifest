@@ -1,0 +1,46 @@
+{
+  "name": "Canvassing SA",
+  "short_name": "Canvassing SA",
+  "description": "Join your political party canvassing around South Africa! Run neighbourhood streets, listen to community complaints, and win votes!",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d131a",
+  "theme_color": "#0d131a",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Canvassing",
+      "short_name": "Canvass",
+      "description": "Start running the neighbourhood trail",
+      "url": "/",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

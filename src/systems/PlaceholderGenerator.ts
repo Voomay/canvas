@@ -24,10 +24,11 @@ export class PlaceholderGenerator {
     if (!canvas) return;
     const ctx = canvas.getContext();
 
-    const grad = ctx.createLinearGradient(0, 0, 0, 500);
-    grad.addColorStop(0, '#3a8ee6');
-    grad.addColorStop(0.6, '#6eb3fa');
-    grad.addColorStop(1, '#a1d2fc');
+    // Identical vibrant South African clear sky blue matching Cape Town & Joburg artwork (#007dfb / #0183fb)
+    const grad = ctx.createLinearGradient(0, 0, 0, 720);
+    grad.addColorStop(0, '#007dfb');
+    grad.addColorStop(0.5, '#0080fb');
+    grad.addColorStop(1, '#0183fb');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1280, 720);
 
