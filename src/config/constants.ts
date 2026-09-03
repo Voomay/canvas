@@ -13,9 +13,9 @@ export function getGameDimensions(): { width: number; height: number; isPortrait
   const isPortrait = window.innerHeight > window.innerWidth;
   if (isPortrait) {
     const ratio = window.innerHeight / Math.max(1, window.innerWidth);
-    // Base width 450 with targetHeight proportional to exact viewport aspect ratio (zero side bars)
-    const targetHeight = Math.round(450 * ratio);
-    return { width: 450, height: targetHeight, isPortrait: true };
+    // Base width 520 (zoomed out for expanded reaction distance and wide street visibility)
+    const targetHeight = Math.round(520 * ratio);
+    return { width: 520, height: targetHeight, isPortrait: true };
   } else {
     const ratio = window.innerWidth / Math.max(1, window.innerHeight);
     const targetWidth = Math.max(1280, Math.round(720 * ratio));

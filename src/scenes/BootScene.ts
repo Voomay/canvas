@@ -6,8 +6,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   public preload() {
-    // Preload logo first so PreloadScene can immediately display the official logo
-    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png');
+    // Preload logo and app icon first so scenes can immediately display them
+    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png?v=2');
+    this.load.image('app_icon', 'assets/icons/icon-192.png?v=2');
   }
 
   public create() {

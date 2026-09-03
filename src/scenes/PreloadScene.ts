@@ -16,16 +16,17 @@ export class PreloadScene extends Phaser.Scene {
     bg.fillRect(0, 0, width, height);
 
     const isPortrait = height > width;
-    const logoSize = isPortrait ? Math.min(width * 0.62, 250) : 220;
+    const logoW = isPortrait ? Math.min(width * 0.65, 260) : 240;
+    const logoH = Math.round(logoW * (445 / 831));
     const logoY = isPortrait ? height / 2 - 95 : height / 2 - 85;
 
-    // Official Canvassing SA Logo (Nice & Big)
+    // Official Canvassing SA Logo (Preserving correct un-distorted aspect ratio)
     if (this.textures.exists('logo_canvassing_sa')) {
       const logo = this.add.image(width / 2, logoY, 'logo_canvassing_sa');
-      logo.setDisplaySize(logoSize, logoSize);
+      logo.setDisplaySize(logoW, logoH);
     }
 
-    const subY = logoY + logoSize / 2 + (isPortrait ? 28 : 22);
+    const subY = logoY + logoH / 2 + (isPortrait ? 24 : 20);
     this.add.text(width / 2, subY, 'Join your political party canvassing around South Africa', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: isPortrait ? '16px' : '17px',
@@ -58,15 +59,25 @@ export class PreloadScene extends Phaser.Scene {
       barFill.fillRoundedRect(barX, barY, Math.max(10, barW * value), barH, 7);
     });
 
-    // 1. Load Backgrounds & Locations
-    this.load.image('bg_location_capetown', 'assets/backgrounds/locations/capetown.png');
+    // 1. Load Backgrounds & Locations (Ultra High-Res Cape Town & Joburg Locations)
+    this.load.image('bg_location_hanover_park', 'assets/backgrounds/locations/hanover_park.png');
+    this.load.image('bg_location_capetown', 'assets/backgrounds/locations/hanover_park.png');
+    this.load.image('bg_location_campsbay', 'assets/backgrounds/locations/campsbay.png');
+    this.load.image('bg_location_khayelitsha', 'assets/backgrounds/locations/khayelitsha.png');
+    this.load.image('bg_location_mitchells_plain', 'assets/backgrounds/locations/mitchells_plain.png');
     this.load.image('bg_location_joburg', 'assets/backgrounds/locations/joburg.png');
     this.load.image('bg_clouds_sky', 'assets/backgrounds/clouds/clouds_sky.png');
     this.load.image('real_bg_houses', 'assets/backgrounds/houses/suburb_houses.png');
     this.load.image('real_bg_road', 'assets/roads/clean/pavement_road.png');
     this.load.image('real_bg_clouds', 'assets/backgrounds/clouds/clouds_sky.png');
-    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png');
+    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png?v=2');
+    this.load.image('app_icon', 'assets/icons/icon-192.png?v=2');
     this.load.image('prop_curb_banner_pa', 'assets/decorations/banner_pole_pa.png');
+
+    // Luxury Vehicles for Camps Bay (Yellow Lambo, Red Ferrari, Blue SUV)
+    this.load.image('vehicle_car_lambo', 'assets/vehicles/car_yellow_lambo.png');
+    this.load.image('vehicle_car_ferrari', 'assets/vehicles/car_red_ferrari.png');
+    this.load.image('vehicle_car_suv', 'assets/vehicles/car_blue_suv.png');
 
     // 2. Load Player Sprite Frames for DA, ANC, PA
     const parties = ['da', 'anc', 'pa'];
@@ -80,8 +91,8 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image(`player_${p}_talk`, `assets/players/${p}/${p}_talk.png`);
     });
 
-    // 3. Load Residents 1 through 12 (Idle, Happy, Doubtful, Frustrated)
-    for (let i = 1; i <= 12; i++) {
+    // 3. Load Residents 1 through 17 (Idle, Happy, Doubtful, Frustrated)
+    for (let i = 1; i <= 17; i++) {
       this.load.image(`resident_${i}`, `assets/residents/idle/resident_${i}.png`);
       this.load.image(`resident_${i}_happy`, `assets/residents/happy/resident_${i}_happy.png`);
       this.load.image(`resident_${i}_doubtful`, `assets/residents/doubtful/resident_${i}_doubtful.png`);

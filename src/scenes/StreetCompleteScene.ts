@@ -28,12 +28,27 @@ export class StreetCompleteScene extends Phaser.Scene {
 
     // Background
     this.add.image(0, 0, 'bg_sky').setOrigin(0, 0).setDisplaySize(width, height);
-    const bgKey = currentStreetData?.locationKey === 'joburg' && this.textures.exists('bg_location_joburg')
-      ? 'bg_location_joburg'
-      : (this.textures.exists('bg_location_capetown') ? 'bg_location_capetown' : 'bg_houses');
+    let bgKey = 'bg_location_capetown';
+    if (currentStreetData?.locationKey === 'campsbay' && this.textures.exists('bg_location_campsbay')) {
+      bgKey = 'bg_location_campsbay';
+    } else if (currentStreetData?.locationKey === 'khayelitsha' && this.textures.exists('bg_location_khayelitsha')) {
+      bgKey = 'bg_location_khayelitsha';
+    } else if (currentStreetData?.locationKey === 'mitchells_plain' && this.textures.exists('bg_location_mitchells_plain')) {
+      bgKey = 'bg_location_mitchells_plain';
+    } else if (currentStreetData?.locationKey === 'joburg' && this.textures.exists('bg_location_joburg')) {
+      bgKey = 'bg_location_joburg';
+    } else if (this.textures.exists('bg_location_capetown')) {
+      bgKey = 'bg_location_capetown';
+    }
+
     const cloudKey = this.textures.exists('bg_clouds_sky') ? 'bg_clouds_sky' : 'bg_clouds';
     const roadKey = this.textures.exists('real_bg_road') ? 'real_bg_road' : 'bg_road';
-    this.add.tileSprite(0, 0, width, 432, bgKey).setOrigin(0, 0);
+    
+    const bgScale = 444 / 670;
+    const bgTile = this.add.tileSprite(0, 0, width, 444, bgKey).setOrigin(0, 0);
+    bgTile.tileScaleX = bgScale;
+    bgTile.tileScaleY = bgScale;
+
     this.add.tileSprite(0, 15, width, 120, cloudKey).setOrigin(0, 0);
     this.add.tileSprite(0, 428, width, 292, roadKey).setOrigin(0, 0);
 

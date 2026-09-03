@@ -146,7 +146,12 @@ export const ASSET_CONFIG: AssetManifest = {
       '/assets/residents/idle/resident_9.png',
       '/assets/residents/idle/resident_10.png',
       '/assets/residents/idle/resident_11.png',
-      '/assets/residents/idle/resident_12.png'
+      '/assets/residents/idle/resident_12.png',
+      '/assets/residents/idle/resident_13.png',
+      '/assets/residents/idle/resident_14.png',
+      '/assets/residents/idle/resident_15.png',
+      '/assets/residents/idle/resident_16.png',
+      '/assets/residents/idle/resident_17.png'
     ],
     reactions: {
       happy: '/assets/residents/happy/happy_reaction.png',

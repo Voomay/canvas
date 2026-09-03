@@ -47,6 +47,8 @@ export class GameScene extends Phaser.Scene {
 
   private activeResidentInEncounter: Resident | null = null;
   private encounterChoiceBanner: Phaser.GameObjects.Container | null = null;
+  private residentAdvanceBeacon: Phaser.GameObjects.Container | null = null;
+  private advanceBeaconDistanceText: Phaser.GameObjects.Text | null = null;
   private isEncounterPaused: boolean = false;
   private hasStartedRunning: boolean = false;
   private startBanner: Phaser.GameObjects.Container | null = null;
@@ -88,6 +90,8 @@ export class GameScene extends Phaser.Scene {
     this.streetTimer = this.currentStreet.durationSeconds;
     this.isEncounterPaused = false;
     this.activeResidentInEncounter = null;
+    this.residentAdvanceBeacon = null;
+    this.advanceBeaconDistanceText = null;
     this.startBanner = null;
     this.obstacles = [];
     this.residents = [];
@@ -103,9 +107,9 @@ export class GameScene extends Phaser.Scene {
     const ground = this.add.rectangle(this.scale.width / 2, currentGroundY + 150, this.scale.width * 3, 300, 0x000000, 0);
     this.physics.add.existing(ground, true);
 
-    // 3. Create Player Character (starts standing in IDLE pose)
+    // 3. Create Player Character (starts standing in IDLE pose, positioned back on mobile for maximum runway)
     const isPortrait = this.scale.height > this.scale.width;
-    const playerX = isPortrait ? 130 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
+    const playerX = isPortrait ? 95 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
     this.player = new Player(this, playerX, currentGroundY, this.partyId);
     this.player.setPlayerState('IDLE');
     this.physics.add.collider(this.player, ground);
@@ -116,8 +120,9 @@ export class GameScene extends Phaser.Scene {
     // 5. Setup Spawners
     this.nextResidentTime = Phaser.Math.Between(this.currentStreet.residentSpawnRateMin, this.currentStreet.residentSpawnRateMax);
 
-    // Setup Curbside Minibus Taxi (standing in the road by the curbside in Hanover Park)
-    if (this.currentStreet.locationKey === 'capetown') {
+    // Setup Curbside Minibus Taxi / Luxury Sports Cars (Hanover Park, Mitchells Plain, Khayelitsha & Camps Bay)
+    const loc = this.currentStreet.locationKey;
+    if (loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha') {
       const isPortrait = this.scale.height > this.scale.width;
       const initialTaxiX = isPortrait ? this.scale.width * 0.70 : this.scale.width * 0.72;
       this.spawnCurbsideTaxi(initialTaxiX);
@@ -287,19 +292,19 @@ export class GameScene extends Phaser.Scene {
     if (canSpawnObstacles) {
       this.nextObstacleTime -= delta;
       if (this.nextObstacleTime <= 0) {
-        // Ensure no approaching resident is crowded at the spawn point
         const spawnX = this.scale.width + 120;
-        const residentNearby = this.residents.some(r => Math.abs(r.x - spawnX) < 380);
+        
+        // Prevent obstacle from spawning directly on top of a resident
+        const residentOnPoint = this.residents.some(r => Math.abs(r.x - spawnX) < 180);
 
-        if (!residentNearby) {
+        if (!residentOnPoint) {
           this.spawnObstacle();
           this.nextObstacleTime = Phaser.Math.Between(
             this.currentStreet.obstacleSpawnRateMin,
             this.currentStreet.obstacleSpawnRateMax
           );
         } else {
-          // Push back spawn slightly to avoid crowding
-          this.nextObstacleTime = 1400;
+          this.nextObstacleTime = 800;
         }
       }
     }
@@ -323,43 +328,82 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnCurbsideTaxi(initialX?: number) {
-    if (this.currentStreet.locationKey !== 'capetown' || !this.textures.exists('vehicle_taxi_minibus')) {
+    const loc = this.currentStreet.locationKey;
+    const isCampsBay = loc === 'campsbay';
+    const hasCurbsideVehicles = loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha';
+
+    if (!hasCurbsideVehicles) {
       return;
     }
 
     const spawnX = initialX !== undefined ? initialX : this.scale.width + 450;
     const curbsideY = this.getCurbsideY();
 
-    this.curbsideTaxi = this.add.sprite(spawnX, curbsideY, 'vehicle_taxi_minibus');
-    this.curbsideTaxi.setOrigin(0.5, 1);
-    this.curbsideTaxi.setDepth(4); // Behind residents (6) & player (7), above road (3)
-    this.curbsideTaxi.play('taxi_minibus_anim');
+    if (isCampsBay) {
+      // Luxury sports cars along Camps Bay beach road (Yellow Lambo, Red Ferrari, Blue SUV)
+      const luxuryCars = ['vehicle_car_lambo', 'vehicle_car_ferrari', 'vehicle_car_suv'];
+      const chosenCar = Phaser.Utils.Array.GetRandom(luxuryCars);
+      if (!this.textures.exists(chosenCar)) return;
 
-    // Make interactive: click/tap plays authentic taxi horn ("pip-pip!")
-    this.curbsideTaxi.setInteractive({ useHandCursor: true });
-    this.curbsideTaxi.on('pointerdown', () => {
-      SoundFX.getInstance().playTaxiHorn();
-      if (this.curbsideTaxi) {
+      const car = this.add.sprite(spawnX, curbsideY + 8, chosenCar);
+      car.setOrigin(0.5, 1);
+      car.setDepth(4); // Behind residents (6) & player (7), above road (3)
+      if (chosenCar === 'vehicle_car_suv') {
+        car.setScale(0.58);
+      } else {
+        car.setScale(0.62);
+      }
+
+      // Make interactive: click/tap plays authentic supercar rev sound & bounce
+      car.setInteractive({ useHandCursor: true });
+      car.on('pointerdown', () => {
+        SoundFX.getInstance().playSportsCarRev();
         this.tweens.add({
-          targets: this.curbsideTaxi,
-          scaleY: 1.05,
-          scaleX: 0.98,
+          targets: car,
+          scaleY: car.scaleY * 1.08,
+          scaleX: car.scaleX * 0.96,
           duration: 90,
           yoyo: true,
           ease: 'Quad.easeInOut'
         });
-      }
-    });
+      });
+
+      this.curbsideTaxi = car;
+    } else if (this.textures.exists('vehicle_taxi_minibus')) {
+      this.curbsideTaxi = this.add.sprite(spawnX, curbsideY, 'vehicle_taxi_minibus');
+      this.curbsideTaxi.setOrigin(0.5, 1);
+      this.curbsideTaxi.setDepth(4); // Behind residents (6) & player (7), above road (3)
+      this.curbsideTaxi.play('taxi_minibus_anim');
+
+      // Make interactive: click/tap plays authentic taxi horn ("pip-pip!")
+      this.curbsideTaxi.setInteractive({ useHandCursor: true });
+      this.curbsideTaxi.on('pointerdown', () => {
+        SoundFX.getInstance().playTaxiHorn();
+        if (this.curbsideTaxi) {
+          this.tweens.add({
+            targets: this.curbsideTaxi,
+            scaleY: 1.05,
+            scaleX: 0.98,
+            duration: 90,
+            yoyo: true,
+            ease: 'Quad.easeInOut'
+          });
+        }
+      });
+    }
   }
 
   private updateCurbsideTaxi(deltaSeconds: number) {
+    const loc = this.currentStreet.locationKey;
+    const hasCurbsideVehicles = loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha';
+
     if (this.curbsideTaxi && this.curbsideTaxi.active) {
       this.curbsideTaxi.x -= this.currentSpeed * deltaSeconds;
       if (this.curbsideTaxi.x < -400) {
         this.curbsideTaxi.destroy();
         this.curbsideTaxi = null;
       }
-    } else if (this.currentStreet.locationKey === 'capetown' && this.streetDistanceCovered >= this.nextTaxiSpawnDistance) {
+    } else if (hasCurbsideVehicles && this.streetDistanceCovered >= this.nextTaxiSpawnDistance) {
       this.spawnCurbsideTaxi();
       this.nextTaxiSpawnDistance += Phaser.Math.Between(2600, 3600);
     }
@@ -381,12 +425,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnResident() {
-    const spawnX = this.scale.width + 100;
-    const spawnY = this.getGroundY(); // Same ground level as runner on sidewalk
+    const isPortrait = this.scale.height > this.scale.width;
+    const spawnX = this.scale.width + (isPortrait ? 380 : 440);
+    const spawnY = this.getGroundY();
 
-    const resident = new Resident(this, spawnX, spawnY, this.currentStreet.allowedComplaintCategories, this.partyId);
+    const resident = new Resident(this, spawnX, spawnY, this.currentStreet.allowedComplaintCategories, this.partyId, this.currentStreet.locationKey);
     resident.setDepth(6);
     this.residents.push(resident);
+    this.clearObstaclesBetween(spawnX - 180, spawnX + 180);
+  }
+
+  private clearObstaclesBetween(minX: number, maxX: number) {
+    for (let i = this.obstacles.length - 1; i >= 0; i--) {
+      const obs = this.obstacles[i];
+      if (obs.x >= minX && obs.x <= maxX) {
+        obs.destroy();
+        this.obstacles.splice(i, 1);
+      }
+    }
   }
 
   private updateObstacles(delta: number) {
@@ -405,7 +461,7 @@ export class GameScene extends Phaser.Scene {
       if (!obs.isResolved && obs.active) {
         const dx = obs.x - playerX;
         
-        // When obstacle enters player's interaction window (-25 to +40)
+        // When obstacle enters player's interaction window (-25 to +45)
         if (dx >= -25 && dx <= 45) {
           const isAirborne = (this.player.playerState === 'JUMPING' && this.player.y < groundY - 20) || (this.player.y < groundY - 32);
           
@@ -446,22 +502,34 @@ export class GameScene extends Phaser.Scene {
       }
 
       resident.updateMovement(this.currentSpeed, delta);
-
-      // Approaching detection (between 120 and 420px ahead)
       const distance = resident.x - playerX;
 
-      if (!resident.hasEncountered && distance > 120 && distance < 420 && !this.activeResidentInEncounter) {
+      // 1. Advance warning when resident is approaching down the street (between 380px and 850px)
+      if (!resident.hasEncountered && distance > 380 && distance < 850 && !this.activeResidentInEncounter) {
+        this.showResidentAdvanceBeacon(resident, distance);
+      }
+
+      // 2. Interaction zone (between 120 and 380px ahead): Show Choice Banner
+      if (!resident.hasEncountered && distance > 120 && distance <= 380 && !this.activeResidentInEncounter) {
+        this.hideResidentAdvanceBeacon();
         resident.isApproaching = true;
         this.activeResidentInEncounter = resident;
         resident.triggerAlertSound();
         this.showEncounterChoiceBanner(resident);
       }
 
-      // Passed without stopping -> Ignored!
+      // 3. Passed without stopping -> Ignored!
       if (!resident.hasEncountered && distance < -40) {
+        this.hideResidentAdvanceBeacon();
         resident.hasEncountered = true;
         this.handleResidentPassed(resident);
       }
+    }
+
+    // If no resident is in advance range and no encounter is active, hide beacon
+    const hasUpcoming = this.residents.some(r => !r.hasEncountered && (r.x - playerX) > 380 && (r.x - playerX) < 850);
+    if (!hasUpcoming && this.residentAdvanceBeacon && !this.activeResidentInEncounter) {
+      this.hideResidentAdvanceBeacon();
     }
   }
 
@@ -662,7 +730,64 @@ export class GameScene extends Phaser.Scene {
       this.encounterChoiceBanner.destroy();
       this.encounterChoiceBanner = null;
     }
+    this.hideResidentAdvanceBeacon();
     this.hud.setResidentAlertVisible(false);
+  }
+
+  private showResidentAdvanceBeacon(_resident: Resident, distance: number) {
+    const isPortrait = this.scale.height > this.scale.width;
+    const meters = Math.max(5, Math.round(distance / 12));
+
+    if (this.residentAdvanceBeacon && this.advanceBeaconDistanceText) {
+      this.advanceBeaconDistanceText.setText(`👤 VOTER AHEAD! ➔ ${meters}m`);
+      return;
+    }
+
+    const beaconX = this.scale.width - (isPortrait ? 88 : 110);
+    const beaconY = isPortrait ? this.scale.height - 210 : 380;
+    const beacon = this.add.container(beaconX, beaconY);
+    beacon.setDepth(130);
+
+    const w = isPortrait ? 156 : 178;
+    const h = 32;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0c1524, 0.94);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+    bg.lineStyle(2, 0xfcb813, 1);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+
+    const txt = this.add.text(0, 0, `👤 VOTER AHEAD! ➔ ${meters}m`, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '11px' : '12px',
+      color: '#fcb813',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+
+    beacon.add([bg, txt]);
+
+    // Pulsing animation
+    this.tweens.add({
+      targets: beacon,
+      scaleX: 1.06,
+      scaleY: 1.06,
+      duration: 320,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    this.residentAdvanceBeacon = beacon;
+    this.advanceBeaconDistanceText = txt;
+    this.hud.setResidentAlertVisible(true);
+  }
+
+  private hideResidentAdvanceBeacon() {
+    if (this.residentAdvanceBeacon) {
+      this.residentAdvanceBeacon.destroy();
+      this.residentAdvanceBeacon = null;
+      this.advanceBeaconDistanceText = null;
+    }
   }
 
   private triggerStopAndListen(resident: Resident) {
@@ -670,6 +795,7 @@ export class GameScene extends Phaser.Scene {
 
     this.isEncounterPaused = true;
     this.hideEncounterChoiceBanner();
+    this.hideResidentAdvanceBeacon();
     resident.hideAlert();
     resident.hasEncountered = true;
 
@@ -689,14 +815,16 @@ export class GameScene extends Phaser.Scene {
       ease: 'Power2.easeOut'
     });
 
-    // Launch Dialogue Modal
-    const dialogueModal = new DialogueModal(this, {
-      complaint: resident.complaint,
-      partyId: this.partyId,
-      onChoiceSelected: (choice: ResponseType) => {
-        dialogueModal.destroyModal();
-        this.handleResponseChosen(resident, choice);
-      }
+    // Launch Dialogue Modal after brief transition delay to prevent touch gesture bleed
+    this.time.delayedCall(150, () => {
+      const dialogueModal = new DialogueModal(this, {
+        complaint: resident.complaint,
+        partyId: this.partyId,
+        onChoiceSelected: (choice: ResponseType) => {
+          dialogueModal.destroyModal();
+          this.handleResponseChosen(resident, choice);
+        }
+      });
     });
   }
 

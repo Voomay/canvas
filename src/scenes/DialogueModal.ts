@@ -15,11 +15,18 @@ export class DialogueModal extends Phaser.GameObjects.Container {
   private key2?: Phaser.Input.Keyboard.Key;
   private key3?: Phaser.Input.Keyboard.Key;
   private key4?: Phaser.Input.Keyboard.Key;
+  private isInputReady: boolean = false;
 
   constructor(scene: Phaser.Scene, config: DialogueModalConfig) {
     super(scene, 0, 0);
 
     this.setDepth(150);
+    this.isInputReady = false;
+
+    // Safety input lockout: prevents previous tap ("STOP & TALK") from bleeding into answer buttons
+    scene.time.delayedCall(380, () => {
+      this.isInputReady = true;
+    });
 
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
@@ -40,6 +47,12 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     this.buttonsContainer = this.createResponseButtons(scene, config, bubbleY);
     this.add(this.buttonsContainer);
 
+    // Safe response handler with input debounce check
+    const safeSelect = (choice: ResponseType) => {
+      if (!this.isInputReady) return;
+      config.onChoiceSelected(choice);
+    };
+
     // Keyboard shortcuts (1, 2, 3, 4)
     if (scene.input.keyboard) {
       this.key1 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
@@ -47,10 +60,10 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       this.key3 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
       this.key4 = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR);
 
-      this.key1.once('down', () => config.onChoiceSelected('promise'));
-      this.key2.once('down', () => config.onChoiceSelected('blame'));
-      this.key3.once('down', () => config.onChoiceSelected('lie'));
-      this.key4.once('down', () => config.onChoiceSelected('honesty'));
+      this.key1.once('down', () => safeSelect('promise'));
+      this.key2.once('down', () => safeSelect('blame'));
+      this.key3.once('down', () => safeSelect('lie'));
+      this.key4.once('down', () => safeSelect('honesty'));
     }
 
     scene.add.existing(this);
@@ -141,9 +154,14 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const lieChoice = getComplaintChoice(complaint, 'lie', partyId);
     const honestyChoice = getComplaintChoice(complaint, 'honesty', partyId);
 
+    const safeSelect = (choice: ResponseType) => {
+      if (!this.isInputReady) return;
+      onChoiceSelected(choice);
+    };
+
     // 1. Green: TRUTH / DIRECT PROMISE
     const btn1 = new Button(scene, cx - colSpacing, row1Y, promiseChoice.text, () => {
-      onChoiceSelected('promise');
+      safeSelect('promise');
     }, {
       width: btnWidth,
       height: btnHeight,
@@ -157,7 +175,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     // 2. Orange: EXCUSE / BLAME
     const btn2 = new Button(scene, cx + colSpacing, row1Y, blameChoice.text, () => {
-      onChoiceSelected('blame');
+      safeSelect('blame');
     }, {
       width: btnWidth,
       height: btnHeight,
@@ -171,7 +189,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     // 3. Purple: BOLD LIE (High risk / High reward!)
     const btn3 = new Button(scene, cx - colSpacing, row2Y, lieChoice.text, () => {
-      onChoiceSelected('lie');
+      safeSelect('lie');
     }, {
       width: btnWidth,
       height: btnHeight,
@@ -185,7 +203,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     // 4. Blue: SPIN / DEFLECTION (Talking about something else / humorous pivot)
     const btn4 = new Button(scene, cx + colSpacing, row2Y, honestyChoice.text, () => {
-      onChoiceSelected('honesty');
+      safeSelect('honesty');
     }, {
       width: btnWidth,
       height: btnHeight,
@@ -196,6 +214,15 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '11.5px' : '12.5px') : (honestyChoice.text.length > 30 ? '14px' : '16px')
     });
     container.add(btn4);
+
+    // Soft fade-in for response buttons to visually distinguish from speech bubble
+    container.setAlpha(0);
+    scene.tweens.add({
+      targets: container,
+      alpha: 1,
+      duration: 180,
+      delay: 100
+    });
 
     return container;
   }

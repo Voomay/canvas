@@ -1,3 +1,8 @@
+import { HANOVER_PARK_COMPLAINTS } from './complaints/hanoverPark';
+import { MITCHELLS_PLAIN_COMPLAINTS } from './complaints/mitchellsPlain';
+import { KHAYELITSHA_COMPLAINTS } from './complaints/khayelitsha';
+import { JOBURG_COMPLAINTS } from './complaints/joburg';
+
 export type ResponseType = 'promise' | 'blame' | 'honesty' | 'lie';
 
 export interface ResidentReactionTexts {
@@ -8,7 +13,43 @@ export interface ResidentReactionTexts {
 
 export interface ComplaintData {
   id: string;
-  category: 'roads' | 'streetlights' | 'water' | 'rubbish' | 'electricity' | 'housing' | 'safety' | 'health' | 'jobs' | 'promises' | 'socialmedia';
+  category: 
+    | 'roads' 
+    | 'streetlights' 
+    | 'water' 
+    | 'rubbish' 
+    | 'electricity' 
+    | 'housing' 
+    | 'safety' 
+    | 'health' 
+    | 'jobs' 
+    | 'promises' 
+    | 'socialmedia' 
+    | 'campsbay_noise' 
+    | 'campsbay_rates' 
+    | 'campsbay_zoning' 
+    | 'campsbay_shortages' 
+    | 'campsbay_solar' 
+    | 'campsbay_filming'
+    | 'hanover_court_sewage'
+    | 'hanover_flats_paint'
+    | 'hanover_meter_deductions'
+    | 'hanover_gang_ceasefire'
+    | 'hanover_clinic_queue'
+    | 'mitchells_plain_town_centre'
+    | 'mitchells_plain_train_line'
+    | 'mitchells_plain_streetlights'
+    | 'mitchells_plain_backyarders'
+    | 'mitchells_plain_potholes'
+    | 'khayelitsha_communal_taps'
+    | 'khayelitsha_illegal_connections'
+    | 'khayelitsha_sanitation'
+    | 'khayelitsha_emergency_escort'
+    | 'khayelitsha_shack_fires'
+    | 'joburg_city_power'
+    | 'joburg_joburg_water'
+    | 'joburg_potholes'
+    | 'joburg_billing_crisis';
   targetParty?: 'da' | 'anc' | 'pa' | 'all';
   complaintText: string;
   responses: {
@@ -69,7 +110,32 @@ export function getComplaintChoice(
       rubbish: '20 NEW COMPACTOR TRUCKS ARE PARKED JUST AROUND THE CORNER!',
       housing: 'YOUR TITLE DEEDS ARE PRINTED AND SITTING ON MY DESK RIGHT NOW!',
       safety: 'WE HAVE DEPLOYED 500 UNDERCOVER METRO OFFICERS ON THIS STREET!',
-      jobs: 'WE HAVE 10,000 GUARANTEED HIGH-PAYING METRO JOBS STARTING MONDAY!'
+      jobs: 'WE HAVE 10,000 GUARANTEED HIGH-PAYING METRO JOBS STARTING MONDAY!',
+      campsbay_noise: 'WE HAVE IMPOUNDED EVERY MODIFIED EXHAUST ON VICTORIA ROAD!',
+      campsbay_rates: 'WE ARE REFUNDING 50% OF ALL PROPERTY RATES EFFECTIVE TODAY!',
+      campsbay_zoning: 'WE HAVE ISSUED A PERMANENT STOP-ORDER ON THAT NEIGHBOUR’S THIRD FLOOR!',
+      campsbay_shortages: 'A CARGO FLIGHT OF ARTISANAL OAT MILK HAS JUST TOUCHED DOWN AT CAPE TOWN AIRPORT!',
+      campsbay_solar: 'THE CITY WILL ACTUALLY PAY YOU R5 PER KILOWATT FOR YOUR TESLA POWERWALLS!',
+      campsbay_filming: 'WE REVOKED THE FILM CREW’S PERMITS AND THEIR GENERATORS ARE LEAVING NOW!',
+      hanover_court_sewage: 'OUR SATELLITE SENSORS ALREADY CLEARED AND STERILIZED THE WHOLE COURT THIS MORNING!',
+      hanover_flats_paint: 'A FLEET OF 50 MASTER PAINTERS IS PARKED AT THE CIVIC CENTRE RIGHT NOW!',
+      hanover_meter_deductions: 'EVERY HOUSEHOLD IN THIS COURT HAS A R500 REBATE VOUCHER SMS’D TODAY!',
+      hanover_gang_ceasefire: 'HIGH-TECH SKY POLICE DRONES ARE MONITORING THIS EXACT ROOFTOP 24/7!',
+      hanover_clinic_queue: 'WE HIRED 40 SPECIALIST DOCTORS WHO ARE ARRIVING AT THIS CLINIC AT 1 PM!',
+      mitchells_plain_town_centre: 'EVERY HAWKER ON THIS PROMENADE IS BEING GRANTED A FREE PERMANENT KIOSK TODAY!',
+      mitchells_plain_train_line: 'FULL ELECTRIC SUBURBAN EXPRESS TRAINS ARE RESUMING NORMAL SCHEDULE AT 4 PM!',
+      mitchells_plain_streetlights: 'MILITARY-GRADE INFRARED NIGHTLIGHT SATELLITES ARE COVERING ROCKLANDS NOW!',
+      mitchells_plain_backyarders: 'A MASTER PLANNED MEGA-CITY WITH 50,000 FREE HOUSES OPENS NEXT WEEK IN SWARTKLIP!',
+      mitchells_plain_potholes: 'WE RE-TARRED 35 KILOMETRES OF SPINE ROAD WITH GERMAN RUBBER-ASPHALT YESTERDAY!',
+      khayelitsha_communal_taps: 'PRESSURIZED PURE MOUNTAIN SPRING WATER IS FLOWING TO EVERY STANDPIPE NOW!',
+      khayelitsha_illegal_connections: 'UNDERGROUND REINFORCED COPPER GRIDS WERE COMMISSIONED FOR THIS SECTION TODAY!',
+      khayelitsha_sanitation: 'EVERY HOME IN THIS SECTION IS BEING CONNECTED TO FLUSH WATERBORNE SEWERAGE TODAY!',
+      khayelitsha_emergency_escort: 'WE COMMISSIONED 5 ARMOURED MOBILE PARAMEDIC CLINICS PERMANENTLY STATIONED HERE!',
+      khayelitsha_shack_fires: 'A TRUCK LOADED WITH NEW CORRUGATED IRON SHEETS AND TIMBER POLES IS ARRIVING NOW!',
+      joburg_city_power: 'WE HAVE COMMISSIONED A BRAND NEW NUCLEAR-READY POWER SUBSTATION IN BRAAMFONTEIN!',
+      joburg_joburg_water: 'WE AIRLIFTED 50 INDUSTRIAL WATER PUMPS FROM SWITZERLAND ARRIVING AT O.R. TAMBO NOW!',
+      joburg_potholes: 'EVERY ARTERIAL ROAD IN GAUTENG WAS RE-CARPETED WITH INDESTRUCTIBLE POLYMER LAST NIGHT!',
+      joburg_billing_crisis: 'OUR AUDITORS HAVE REVERSED ALL INCORRECT MUNICIPAL ACCOUNTS TO ZERO BALANCE!'
     };
     return { text: defaultLies[complaint.category] || 'OUR AUDIT SHOWS THIS WAS ALREADY 100% FIXED YESTERDAY!' };
   }
@@ -748,5 +814,362 @@ export const COMPLAINTS: ComplaintData[] = [
         negative: 'Being relatable doesn’t fix my taxi’s wheel alignment!'
       }
     }
-  }
+  },
+
+  // ==========================================
+  // 5. CAMPS BAY & CLIFTON SPECIFIC COMPLAINTS & SHORTAGES
+  // ==========================================
+  {
+    id: 'campsbay_supercar_noise',
+    category: 'campsbay_noise',
+    targetParty: 'all',
+    complaintText: 'THE SUPERCAR EXHAUSTS AND MOTORCYCLES REVVING ON VICTORIA ROAD AT 2 AM ARE RATTLING MY PENTHOUSE WINDOWS!',
+    responses: {
+      promise: 'WE WILL DEPLOY GHOST SQUAD DECIBEL ENFORCEMENT ON VICTORIA ROAD!',
+      blame: 'BLAME OUT-OF-TOWN DRIVERS RENTING CONVERTIBLES FOR INSTAGRAM!',
+      lie: 'WE IMPOUNDED 40 NOISY EXHAUSTS AT THE CAMPS BAY ROUNDABOUT LAST NIGHT!',
+      honesty: 'HONESTLY... ONE OF OUR PARTY DONORS OWNS THAT EXACT MCLAREN!',
+      honestyEmoji: '🏎️'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL INSTALL HIGH-TECH ACOUSTIC DECIBEL SPEED CAMERAS!',
+        blame: 'BLAME SNOBBY OUT-OF-TOWN INFLUENCERS RENTING SUPERCARS FOR REELS!',
+        lie: 'METRO POLICE IMPOUNDED 40 REVVING VEHICLES BEFORE MIDNIGHT!',
+        honesty: 'HONESTLY... OUR BIGGEST WARD DONOR DRIVES THAT VERY MCLAREN!',
+        honestyEmoji: '🏎️'
+      },
+      anc: {
+        promise: 'WE WILL BRING STRICT PEACE AND REVOLUTIONARY QUIET TO THE SEABOARD!',
+        blame: 'BLAME THE UNCHECKED OSTENTATIOUS NOISE OF THE COASTAL ELITE!',
+        lie: 'WE ARE ENACTING A NATIONAL BAN ON LUXURY SPORT EXHAUST MODIFICATIONS!',
+        honesty: 'HONESTLY... OUR BLUE-LIGHT VIP MOTORCADE WAS PROBABLY PASSING THROUGH!',
+        honestyEmoji: '🚨'
+      },
+      pa: {
+        promise: 'WE WILL PERSONALLY TOW THOSE BOY RACERS OFF VICTORIA ROAD!',
+        blame: 'BLAME SOFT LAW ENFORCEMENT DRINKING ESPRESSOS ON THE STRIP!',
+        lie: 'I BANNED ALL NOISY SPORTS CARS FROM CAMPS BAY BY EXECUTIVE DECREE!',
+        honesty: 'HONESTLY... I LOVE A NICE ROARING V8, BUT 2 AM IS TOO MUCH!',
+        honestyEmoji: '🥊'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Splendid! Send the decibel squads before sunset cocktails begin!',
+        doubtful: 'You promised decibel traps last summer, and we heard nothing but revving.',
+        negative: 'My French bulldog hasn’t slept a full eight hours since December!'
+      },
+      blame: {
+        positive: 'Exactly! It’s all those TikTok influencers showing off hired Ferraris!',
+        doubtful: 'Passing the buck doesn’t stop the exhaust fumes from entering my patio.',
+        negative: 'I don’t care who rented the supercar, impound it right now!'
+      },
+      lie: {
+        positive: '40 Ferraris impounded?! Finally, someone taking property values seriously!',
+        doubtful: 'Impounded? I saw three Lamborghinis doing donuts five minutes ago.',
+        negative: 'YOH! You think we cannot smell a lie?! You wouldn’t dare touch a supercar!'
+      },
+      honesty: {
+        positive: 'Hahaha! At least you’re honest! Come inside for an espresso martini, darling!',
+        doubtful: 'Your donor?! Well at least tell him to switch to eco-mode after 10 PM!',
+        negative: 'So your own political party donors are keeping Clifton awake?! Shocking!'
+      }
+    }
+  },
+  {
+    id: 'campsbay_rates_and_services',
+    category: 'campsbay_rates',
+    targetParty: 'all',
+    complaintText: 'WE PAY R65,000 A MONTH IN RATES AND TAXES, YET THE BEACH BINS ARE OVERFLOWING WITH TOURIST SMOOTHIE CUPS!',
+    responses: {
+      promise: 'WE WILL ALLOCATE DEDICATED ATLANTIC SEABOARD TIDY TEAMS!',
+      blame: 'BLAME TOURISM SURGES OVERWHELMING OUR MUNICIPAL COMPACTORS!',
+      lie: 'WE HAVE ASSIGNED 5 CLEANING SPECIALISTS PER SQUARE METRE OF BEACH!',
+      honesty: 'YOUR RATES ACTUALLY SUBSIDISE THE ENTIRE METROPOLIS!',
+      honestyEmoji: '💸'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL STATION PERMANENT TIDY CREWS ON CLIFTON 4TH!',
+        blame: 'BLAME TOURISM SURGES OVERWHELMING MUNICIPAL REFUSE CAPACITY!',
+        lie: 'WE ARE INSTALLING COMPACTING SOLAR REFUSE PODS ALONG THE ENTIRE STRIP!',
+        honesty: 'YOUR RATES LITERALLY BALANCE OUR CITY BUDGET BALANCE SHEET!',
+        honestyEmoji: '📊'
+      },
+      anc: {
+        promise: 'WE WILL ENSURE EQUITABLE BEACH CLEANLINESS FOR ALL VISITORS!',
+        blame: 'BLAME PRIVATE CONTRACTORS CHEAPING OUT ON LITTER DISPOSAL!',
+        lie: 'WE HAVE DEPLOYED 200 TIDY WORKERS FROM THE EXPANDED PUBLIC WORKS PROGRAMME!',
+        honesty: 'COMRADE, R65,000 IN RATES IS HIGHER THAN OUR WHOLE SUB-BRANCH BUDGET!',
+        honestyEmoji: '😲'
+      },
+      pa: {
+        promise: 'WE WILL PUT PATRIOTIC VOLUNTEERS ON THE PROMENADE TOMORROW!',
+        blame: 'BLAME CITY COUNCIL OFFICIALS SIPPING WINE WHILE BINS ROT IN THE SUN!',
+        lie: 'WE PERSONALLY EMPTIED EVERY PROMENADE BIN AT 5 AM THIS MORNING!',
+        honesty: 'FOR R65K A MONTH, THE MAYOR HIMSELF SHOULD PICK UP YOUR COCONUT!',
+        honestyEmoji: '🥥'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Marvelous! Keep Clifton 4th pristine like St. Tropez!',
+        doubtful: 'Every election year you promise clean promenade bins...',
+        negative: 'My golden retriever ate an abandoned prawn tempura off the pavement!'
+      },
+      blame: {
+        positive: 'True, the summer crowds from upcountry completely overwhelm the strip.',
+        doubtful: 'Tourists or not, we pay first-class taxes and expect first-class service.',
+        negative: 'Don’t blame the tourists, empty the bins before sunset!'
+      },
+      lie: {
+        positive: 'Solar compactors?! Now that is the modern Atlantic Seaboard standard!',
+        doubtful: 'Five workers per square metre? I haven’t seen a single broom today.',
+        negative: 'Lies! The gulls are tearing through coconut shells right in front of us!'
+      },
+      honesty: {
+        positive: 'Hahahahaha! Amen! At least someone admits we fund the entire city!',
+        doubtful: 'Glad you know who pays the bills, now deliver the service we paid for.',
+        negative: 'We don’t care about the balance sheet, clean our beach walk!'
+      }
+    }
+  },
+  {
+    id: 'campsbay_zoning_views',
+    category: 'campsbay_zoning',
+    targetParty: 'all',
+    complaintText: 'THE DEVELOPER NEXT DOOR IS BUILDING A 4-STOREY MONSTROSITY BLOCKING MY SUNSET VIEW OF LION’S HEAD!',
+    responses: {
+      promise: 'WE WILL RE-EXAMINE THE MUNICIPAL PLANNING TRIBUNAL APPROVAL!',
+      blame: 'BLAME PROPERTY DEVELOPERS EXPLOITING HIGH-DENSITY SPATIAL BY-LAWS!',
+      lie: 'I SIGNED A DEMOLITION ORDER FOR THE TOP TWO FLOORS 20 MINUTES AGO!',
+      honesty: 'HONESTLY... OUR PLANNING COMMITTEE APPROVED IT OVER A WORKING LUNCH!',
+      honestyEmoji: '🥪'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL AUDIT THE PLANNING TRIBUNAL’S HEIGHT RESTRICTIONS!',
+        blame: 'BLAME HIGH COURT RULINGS STRIPPING MUNICIPALITIES OF ZONING POWER!',
+        lie: 'WE SERVED A PERMANENT STOP-CONSTRUCTION NOTICE ON THE DEVELOPER THIS MORNING!',
+        honesty: 'HONESTLY... THAT CONTRACTOR’S LEGAL TEAM OUT-MANEUVERED OUR SUB-COUNCIL!',
+        honestyEmoji: '⚖️'
+      },
+      anc: {
+        promise: 'WE WILL RESTORE PUBLIC CONSULTATION IN ALL COASTAL DEVELOPMENTS!',
+        blame: 'BLAME PROPERTY SPECULATORS PROFITEERING OFF PUBLIC SEASHORE LAND!',
+        lie: 'WE HAVE TRANSFERRED THAT STAND TO A COMMUNITY NATURE SANCTUARY!',
+        honesty: 'YOU’RE COMPLAINING ABOUT A SUNSET VIEW WHILE MILLIONS LACK ROOFS?!',
+        honestyEmoji: '🌅'
+      },
+      pa: {
+        promise: 'WE WILL HALT THAT CRANE UNTIL LOCAL RATEPAYERS ARE SATISFIED!',
+        blame: 'BLAME ESTABLISHED BIG-MONEY DEVELOPERS WHO RUN CIRCLES AROUND COUNCIL!',
+        lie: 'WE ARE TURNING THAT CONCRETE ROOFTOP INTO A COMMUNITY VIEWING DECK!',
+        honesty: 'THAT DEVELOPER HAS 10 LAWYERS ON RETAINER, CHIEF! IT’S A TOUGH FIGHT!',
+        honestyEmoji: '💼'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Thank you! Protect the architectural elegance of the Twelve Apostles!',
+        doubtful: 'By the time tribunal convenes, the rooftop infinity pool will already be tiled.',
+        negative: 'That monstrosity knocked R5 million off my property valuation!'
+      },
+      blame: {
+        positive: 'Spot on! These greedy offshore syndicates have zero respect for heritage!',
+        doubtful: 'Developers will do what you let them do. Enforce the height limit!',
+        negative: 'You gave them the permit! Stop pointing at the builders!'
+      },
+      lie: {
+        positive: 'A demolition order?! Good heavens, God bless your decisive leadership!',
+        doubtful: 'Demolition order? The cement truck just poured another slab right now.',
+        negative: 'Do not tell tall stories to an attorney! You haven’t signed a single paper!'
+      },
+      honesty: {
+        positive: 'Hahaha! The perspective check was harsh, but your honesty is charming!',
+        doubtful: 'Well, 10 lawyers or not, my private terrace is now in total shade.',
+        negative: 'Don’t lecture me on socio-economics when my sea view is completely ruined!'
+      }
+    }
+  },
+  {
+    id: 'campsbay_summer_shortages',
+    category: 'campsbay_shortages',
+    targetParty: 'all',
+    complaintText: 'THERE IS A COMPLETE SHORTAGE OF PARKING, ARTISANAL OAT MILK, AND BEACH CABANAS ON THE ATLANTIC STRIP!',
+    responses: {
+      promise: 'WE ARE COMMISSIONING AN UNDERGROUND PARKING & SUPPLY CHAIN PLAN!',
+      blame: 'BLAME SUMMER TOURIST SWARMS DEPLETING THE SEASIDE CAFES!',
+      lie: 'A CARGO CHARTER OF ARTISANAL OAT MILK HAS JUST LANDED AT THE AIRPORT!',
+      honesty: 'MY TEAM SURVIVES ON INSTANT COFFEE, WE DON’T EVEN KNOW WHAT OAT MILK IS!',
+      honestyEmoji: '☕'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL DEPLOY SMART PARKING TARIFFS TO ROTATE SPACES FAST!',
+        blame: 'BLAME NATIONAL LOGISTICS AND HARBOUR BACKLOGS FOR GOURMET SHORTAGES!',
+        lie: 'WE HAVE RESERVED 200 METRO-ONLY PARKING BAYS FOR CLIFTON RESIDENTS!',
+        honesty: 'OUR CAMPAIGN TEAM DRINKS BLACK FILTER COFFEE, OAT MILK CONFUSES US!',
+        honestyEmoji: '🥛'
+      },
+      anc: {
+        promise: 'WE WILL REGULATE COASTAL SUPPLY CHAINS TO PREVENT RUNAWAY SHORTAGES!',
+        blame: 'BLAME LUXURY MONOPOLY CAFES CHARGING R85 FOR A FLAT WHITE!',
+        lie: 'WE PROCURED 500 EMERGENCY BEACH UMBRELLAS TO DISTRIBUTE FREELY TODAY!',
+        honesty: 'COMRADE... WITH RESPECT, OAT MILK SHORTAGES ARE NOT A BASIC HUMAN RIGHT!',
+        honestyEmoji: '🌾'
+      },
+      pa: {
+        promise: 'WE WILL ORGANISE LOCAL VALET AND TUCK SHOP CARTS ON THE STRIP!',
+        blame: 'BLAME SNOBBY BOULEVARD RESTAURANTS OVERCHARGING LOCAL RESIDENTS!',
+        lie: 'I PERSONALLY SHIPPED 10,000 PREMIUM BEACH CHAIRS STRAIGHT FROM DURBAN!',
+        honesty: 'BROTHER, DRINK ROOIBOS TEA AND PARK YOUR PORSCHE AROUND THE CORNER!',
+        honestyEmoji: '🍵'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Fabulous! Camps Bay without artisanal barista coffee is utterly uncivilized!',
+        doubtful: 'A parking audit won’t help me park my Range Rover before lunch at Bilboa.',
+        negative: 'I had to drink full cream dairy milk this morning! Absolutely barbaric!'
+      },
+      blame: {
+        positive: 'Yes! The summer tourists from Gauteng drink all the iced lattes!',
+        doubtful: 'Blaming the upcountry visitors won’t find me a parking bay on Victoria Road.',
+        negative: 'Fix the street parking management instead of giving excuses!'
+      },
+      lie: {
+        positive: 'A cargo flight of oat milk?! Now that is what I call crisis management!',
+        doubtful: 'Cargo flight? Darling, you sound more delusional than an off-grid influencer.',
+        negative: 'Haibo! You lie about basic municipal infrastructure, and now about milk?!'
+      },
+      honesty: {
+        positive: 'Hahahahaha! Oh you are delightfully refreshing! Have our whole family’s vote!',
+        doubtful: 'Rooibos? Well, the antioxidants are lovely, but matcha latte is essential.',
+        negative: 'You came to canvas Clifton and you don’t even know what oat milk is?!'
+      }
+    }
+  },
+  {
+    id: 'campsbay_solar_tariffs',
+    category: 'campsbay_solar',
+    targetParty: 'all',
+    complaintText: 'I SPENT R450,000 ON OFF-GRID SOLAR AND TESLA POWERWALLS, BUT THE CITY IS BILLING ME A FIXED GRID CONNECTION LEVY!',
+    responses: {
+      promise: 'WE WILL RESTRUCTURE EMBEDDED GENERATION FEED-IN TARIFFS!',
+      blame: 'BLAME NATIONAL ENERGY REGULATORS MANDATING INFRASTRUCTURE LEVIES!',
+      lie: 'THE CITY WILL ACTUALLY PAY YOU R5 PER KILOWATT FOR YOUR EXCESS SUNSHINE!',
+      honesty: 'HONESTLY... IF EVERY WEALTHY HOME DEFECTS OFF-GRID, THE CITY GOES BROKE!',
+      honestyEmoji: '🔌'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL EXPAND THE CASH FOR POWER INCENTIVE IN THIS WARD!',
+        blame: 'BLAME NERSA REGULATIONS RESTRICTING MUNICIPAL TARIFF AUTONOMY!',
+        lie: 'YOUR ACCOUNT WAS ACCREDITED AS A PRESTIGE GREEN GENERATOR THIS MORNING!',
+        honesty: 'MAINTAINING WIRES COSTS MONEY EVEN WHEN YOUR INVERTER HUMS HAPPILY!',
+        honestyEmoji: '⚡'
+      },
+      anc: {
+        promise: 'WE WILL BRING UNIVERSAL RENEWABLE ACCESS FOR EVERY CITIZEN!',
+        blame: 'BLAME CRIPPLING LOADSHEDDING THAT FORCED CITIZENS TO BUY BATTERIES!',
+        lie: 'WE EXEMPTED ALL CLIFTON RESIDENTS FROM ENERGY LEVIES PERMANENTLY!',
+        honesty: 'R450,000 ON BATTERIES?! OUR ENTIRE LOCAL BRANCH RUNS ON ONE PARAFFIN HEATER!',
+        honestyEmoji: '🕯️'
+      },
+      pa: {
+        promise: 'WE WILL SCRAP UNFAIR SOLAR PENALTIES FOR PROACTIVE CITIZENS!',
+        blame: 'BLAME MUNICIPAL BEAN COUNTERS SQUEEZING EVERY CENT FROM RATEPAYERS!',
+        lie: 'I SIGNED A TOTAL SOLAR LEVY CANCELLATION BILL AT BREAKFAST!',
+        honesty: 'HONESTLY... WE’RE JUST GLAD YOUR HEATED POOL DOESN’T GO COLD IN WINTER!',
+        honestyEmoji: '🏊'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Brilliant! Pay me for my excess solar power and you have my ballot!',
+        doubtful: 'We’ve heard about "Cash for Power" for two years and my bill still went up.',
+        negative: 'I will disconnect from the municipal grid entirely and buy three more batteries!'
+      },
+      blame: {
+        positive: 'True, NERSA’s bureaucratic red tape has strangled green energy for years.',
+        doubtful: 'Passing the buck to national regulators doesn’t credit my municipal account.',
+        negative: 'You levy my solar panels while the streetlights across the bay stay off!'
+      },
+      lie: {
+        positive: 'R5 per kilowatt?! My accountant is going to be positively thrilled!',
+        doubtful: 'R5 per kilowatt? That sounds completely fictitious, canvasser.',
+        negative: 'You are fabricating figures! Even the municipal website contradicts that!'
+      },
+      honesty: {
+        positive: 'Hahaha! The brutal truth! Rare to hear a politician speak honestly about money!',
+        doubtful: 'We understand grid maintenance, but don’t penalise green energy pioneers.',
+        negative: 'You want to charge me a fee just because I spent my own money to keep the lights on?!'
+      }
+    }
+  },
+  {
+    id: 'campsbay_film_shoots',
+    category: 'campsbay_filming',
+    targetParty: 'all',
+    complaintText: 'COMMERCIAL FILM CREWS HAVE BLOCKED 4TH BEACH ACCESS WITH CATERING TRUCKS AND DRONE LIGHTS FOR THREE DAYS!',
+    responses: {
+      promise: 'WE WILL ENFORCE STRICT BY-LAW CURFEWS ON ALL COMMERCIAL FILM PERMITS!',
+      blame: 'BLAME GLOBAL STREAMING NETWORKS SPENDING MILLIONS IN OUR CITY!',
+      lie: 'WE REVOKED THEIR PERMIT AND THE PRODUCTION TRUCKS ARE PACKING UP NOW!',
+      honesty: 'THAT FILM SHOOT INJECTED R30 MILLION INTO THE LOCAL METRO ECONOMY!',
+      honestyEmoji: '🎬'
+    },
+    partyResponses: {
+      da: {
+        promise: 'WE WILL TIGHTEN THE FILM CAPE TOWN BY-LAW AND RESIDENT COMPENSATION!',
+        blame: 'BLAME GLOBAL FILM PRODUCTION COMPANIES IGNORING RESIDENTIAL NOISE LIMITS!',
+        lie: 'WE JUST CONFISCATED THE DIRECTOR’S LOUDSPEAKER AND ORDERED LIGHTS OUT!',
+        honesty: 'THAT HOLLYWOOD PRODUCTION IS PAYING FOR HALF OUR ROAD REPAIRS!',
+        honestyEmoji: '💰'
+      },
+      anc: {
+        promise: 'WE WILL ENSURE PUBLIC BEACH ACCESS CANNOT BE MONOPOLISED BY STUDIOS!',
+        blame: 'BLAME PRIVATE FILM AGENCIES PRIVATISING PUBLIC NATURAL BEAUTY!',
+        lie: 'WE ENACTED A BY-LAW GIVING CLIFTON RESIDENTS VETO POWER OVER CAMERAS!',
+        honesty: 'CAN YOU INTRODUCE US TO THE CASTING AGENT? OUR YOUTH NEED EXTRAS WORK!',
+        honestyEmoji: '⭐'
+      },
+      pa: {
+        promise: 'WE WILL MAKE THEM PACK UP THEIR EQUIPMENT BEFORE SUNSET DRINKS!',
+        blame: 'BLAME CITY CRONIES WHO ROLL OUT RED CARPETS FOR HOLLYWOOD ELITES!',
+        lie: 'I PERSONALLY CONFRONTED THE PRODUCER AND HALTED THE SHOOT!',
+        honesty: 'HONESTLY... HAVE YOU SEEN THE CATERING TRUCK? THEY HAVE GRILLED TIGER PRAWNS!',
+        honestyEmoji: '🍤'
+      }
+    },
+    reactions: {
+      promise: {
+        positive: 'Splendid! We just want to walk our cockapoo without blinding 10,000-watt klieg lights!',
+        doubtful: 'Film permits bring heavy revenue, council will never enforce a curfew.',
+        negative: 'Three nights of rumbling diesel generators right under my bedroom window!'
+      },
+      blame: {
+        positive: 'Hollywood has gotten far too entitled with our coastline, absolutely right!',
+        doubtful: 'Streaming networks or not, the beach steps were completely barricaded.',
+        negative: 'Don’t shift blame to directors, the city signed the permit!'
+      },
+      lie: {
+        positive: 'Confiscated their loudspeaker?! Magnificent! Finally someone has teeth!',
+        doubtful: 'Packing up? The drone just took off above my swimming pool as you spoke.',
+        negative: 'You’re lying to my face! That catering tent is serving lunch right now!'
+      },
+      honesty: {
+        positive: 'Hahahahaha! The catering is divine, isn’t it? Grab a prawn before you run!',
+        doubtful: 'R30 million is fine for the treasury, but ghastly for my peace of mind.',
+        negative: 'Revenue is no excuse for turning our private residential enclave into a movie set!'
+      }
+    }
+  },
+  ...HANOVER_PARK_COMPLAINTS,
+  ...MITCHELLS_PLAIN_COMPLAINTS,
+  ...KHAYELITSHA_COMPLAINTS,
+  ...JOBURG_COMPLAINTS
 ];
+

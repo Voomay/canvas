@@ -16,10 +16,25 @@ export class Resident extends Phaser.GameObjects.Container {
   private alertTween: Phaser.Tweens.Tween | null = null;
   private soundFX: SoundFX;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, allowedCategories?: string[], partyId?: 'da' | 'anc' | 'pa') {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    allowedCategories?: string[],
+    partyId?: 'da' | 'anc' | 'pa',
+    locationKey?: string
+  ) {
     super(scene, x, y);
 
-    const residentSpriteId = Phaser.Math.Between(2, 12).toString();
+    let residentSpriteId: string;
+    const isCampsBay = locationKey === 'campsbay' || (allowedCategories && allowedCategories.some(cat => cat.startsWith('campsbay')));
+    if (isCampsBay) {
+      // In Camps Bay & Clifton: spawn the stylish Atlantic Seaboard residents (13 to 17)
+      residentSpriteId = Phaser.Math.Between(13, 17).toString();
+    } else {
+      // In other areas: spawn from general diverse pool (residents 1 to 12)
+      residentSpriteId = Phaser.Math.Between(1, 12).toString();
+    }
     this.residentId = residentSpriteId;
     this.soundFX = SoundFX.getInstance();
 
@@ -31,11 +46,12 @@ export class Resident extends Phaser.GameObjects.Container {
     // Strictly party-eligible: targetParty matches partyId OR targetParty === 'all' (never a rival party's complaint)
     let partyEligible = COMPLAINTS.filter(c => !c.targetParty || c.targetParty === 'all' || (partyId && c.targetParty === partyId));
 
-    // If allowedCategories specified, apply category filter, while keeping party-tailored complaints
+    // If allowedCategories specified, strictly filter by allowedCategories for the location
     if (allowedCategories && allowedCategories.length > 0) {
-      partyEligible = partyEligible.filter(c => 
-        allowedCategories.includes(c.category) || (partyId && c.targetParty === partyId)
-      );
+      const categoryMatches = partyEligible.filter(c => allowedCategories.includes(c.category));
+      if (categoryMatches.length > 0) {
+        partyEligible = categoryMatches;
+      }
     }
 
     // Give 75% priority to party-specific complaints for deep party personalization

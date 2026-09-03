@@ -321,7 +321,7 @@ export class ShareModal {
       }
       .csa-preview-party.da { background: #005ba6; color: #ffffff; }
       .csa-preview-party.anc { background: #fcb813; color: #0c1524; }
-      .csa-preview-party.pa { background: #1e6b38; color: #ffffff; }
+      .csa-preview-party.pa { background: #4ea81e; color: #ffffff; }
       .csa-preview-stats {
         display: flex;
         gap: 8px;

@@ -333,7 +333,7 @@ export class PlaceholderGenerator {
     const parties = [
       { id: 'da', color: '#005ba6', text: 'DA', skin: '#8d5524', shoe: '#005ba6' },
       { id: 'anc', color: '#007a3d', text: 'ANC', skin: '#633917', shoe: '#ffcc00' },
-      { id: 'pa', color: '#1e6b38', text: 'PA', skin: '#7a4b22', shoe: '#f5a623' }
+      { id: 'pa', color: '#4ea81e', text: 'PA', skin: '#7a4b22', shoe: '#f5a623' }
     ];
 
     parties.forEach(p => {

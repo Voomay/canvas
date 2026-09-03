@@ -9,8 +9,13 @@ export class ParallaxBackground {
   private sandyVerge?: Phaser.GameObjects.Graphics;
   private streetlights: Phaser.GameObjects.Sprite[] = [];
   private curbBanners: Phaser.GameObjects.Sprite[] = [];
+  private totalBannersSpawned: number = 0;
+  private readonly maxBanners: number = 2;
 
-  constructor(scene: Phaser.Scene, locationKey: 'capetown' | 'joburg' = 'capetown') {
+  private isPanorama700: boolean = false;
+  private panoramaScale: number = 1;
+
+  constructor(scene: Phaser.Scene, locationKey: string = 'capetown') {
     this.scene = scene;
 
     const width = this.scene.scale.width;
@@ -22,10 +27,18 @@ export class ParallaxBackground {
     this.skyImage.setDisplaySize(width, height);
     this.skyImage.setDepth(0);
 
-    // 2. Select Location Artwork (Cape Town / Hanover Park vs Johannesburg)
+    // 2. Select Location Artwork (Cape Town / Hanover Park vs Camps Bay vs Khayelitsha vs Mitchells Plain vs Joburg)
     let selectedLocationTexture = 'bg_location_capetown';
-    if (locationKey === 'joburg' && scene.textures.exists('bg_location_joburg')) {
+    if ((locationKey === 'campsbay' || locationKey === 'camps_bay') && scene.textures.exists('bg_location_campsbay')) {
+      selectedLocationTexture = 'bg_location_campsbay';
+    } else if (locationKey === 'khayelitsha' && scene.textures.exists('bg_location_khayelitsha')) {
+      selectedLocationTexture = 'bg_location_khayelitsha';
+    } else if (locationKey === 'mitchells_plain' && scene.textures.exists('bg_location_mitchells_plain')) {
+      selectedLocationTexture = 'bg_location_mitchells_plain';
+    } else if (locationKey === 'joburg' && scene.textures.exists('bg_location_joburg')) {
       selectedLocationTexture = 'bg_location_joburg';
+    } else if (scene.textures.exists('bg_location_hanover_park')) {
+      selectedLocationTexture = 'bg_location_hanover_park';
     } else if (scene.textures.exists('bg_location_capetown')) {
       selectedLocationTexture = 'bg_location_capetown';
     } else if (scene.textures.exists('real_bg_houses')) {
@@ -34,16 +47,29 @@ export class ParallaxBackground {
       selectedLocationTexture = 'bg_houses';
     }
 
-    // 3. Road & Panorama positioning (calibrated for zoomed-in mobile portrait)
+    // 3. Road & Panorama positioning
     const roadHeight = 292;
     const roadY = isPortrait ? height - 275 : 428;
 
-    const isCustomLocation = selectedLocationTexture.startsWith('bg_location_');
-    const locHeight = isCustomLocation ? 432 : 260;
-    // In portrait, position location so Table Mountain / city panorama sits right behind road curb
-    const locY = isPortrait ? roadY - locHeight + 28 : (isCustomLocation ? 0 : 170);
+    // Detect if high-res panoramic image (740-750px tall)
+    const tex = scene.textures.get(selectedLocationTexture);
+    const srcImg = tex && tex.getSourceImage() ? tex.getSourceImage() : null;
+    const texHeight = (srcImg && (srcImg as any).height) ? (srcImg as any).height : 743;
+    this.isPanorama700 = texHeight >= 600;
 
-    this.housesTile = scene.add.tileSprite(0, locY, width, locHeight, selectedLocationTexture).setOrigin(0, 0);
+    const isCustomLocation = selectedLocationTexture.startsWith('bg_location_');
+
+    if (this.isPanorama700) {
+      // Scale so panorama curb line (y ≈ 670) aligns seamlessly with roadY
+      this.panoramaScale = (roadY + 16) / 670;
+      this.housesTile = scene.add.tileSprite(0, 0, width, roadY + 24, selectedLocationTexture).setOrigin(0, 0);
+      this.housesTile.tileScaleX = this.panoramaScale;
+      this.housesTile.tileScaleY = this.panoramaScale;
+    } else {
+      const locHeight = isCustomLocation ? 432 : 260;
+      const locY = isPortrait ? roadY - locHeight + 28 : (isCustomLocation ? 0 : 170);
+      this.housesTile = scene.add.tileSprite(0, locY, width, locHeight, selectedLocationTexture).setOrigin(0, 0);
+    }
     this.housesTile.setDepth(1);
 
     // 4. Clouds Layer in the Sky (TileSprite)
@@ -80,31 +106,29 @@ export class ParallaxBackground {
     this.drawSandyVerge(width, height, isPortrait);
   }
 
-  private getCurbY(): number {
+  private getPavementY(): number {
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
     const roadY = isPortrait ? this.scene.scale.height - 275 : 428;
-    return isPortrait ? roadY + 52 : roadY + 50;
+    // Base placed on top of the pavement surface (well above curb lip and asphalt road)
+    return roadY + 16;
   }
 
   private spawnInitialCurbBanners(width: number, _locationKey: string) {
     if (!this.scene.textures.exists('prop_curb_banner_pa')) return;
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
     
-    // Spawn initial PA banner right on the curb in view
-    const initialX = isPortrait ? width * 0.38 : 340;
-    this.createCurbBanner(initialX);
-
-    // Spawn additional banner further down the road
-    this.createCurbBanner(initialX + (isPortrait ? 620 : 750));
+    // Spawn only 1 initial PA banner standing on the pavement in the distance
+    const firstX = isPortrait ? width * 0.78 : 480;
+    this.createCurbBanner(firstX);
   }
 
   private createCurbBanner(x: number, key: string = 'prop_curb_banner_pa'): Phaser.GameObjects.Sprite | null {
-    if (!this.scene.textures.exists(key)) return null;
-    const curbY = this.getCurbY();
-    const banner = this.scene.add.sprite(x, curbY, key);
+    if (!this.scene.textures.exists(key) || this.totalBannersSpawned >= this.maxBanners) return null;
+    const pavementY = this.getPavementY();
+    const banner = this.scene.add.sprite(x, pavementY, key);
     banner.setOrigin(0.5, 1);
-    banner.setDisplaySize(68, 210);
-    banner.setDepth(4); // Behind residents (6) & player (7), standing on road curb (3)
+    banner.setDisplaySize(65, 200);
+    banner.setDepth(4); // Behind residents (6) & player (7), on top of pavement (3)
 
     // Gentle breeze sway
     this.scene.tweens.add({
@@ -116,6 +140,7 @@ export class ParallaxBackground {
       ease: 'Sine.easeInOut'
     });
 
+    this.totalBannersSpawned++;
     this.curbBanners.push(banner);
     return banner;
   }
@@ -175,14 +200,22 @@ export class ParallaxBackground {
 
     this.skyImage.setDisplaySize(width, h);
     this.cloudsTile.setSize(width, this.cloudsTile.height);
-    this.housesTile.setSize(width, this.housesTile.height);
-    this.housesTile.y = isPortrait ? roadY - this.housesTile.height + 28 : 0;
+    if (this.isPanorama700) {
+      this.panoramaScale = (roadY + 16) / 670;
+      this.housesTile.setSize(width, roadY + 24);
+      this.housesTile.y = 0;
+      this.housesTile.tileScaleX = this.panoramaScale;
+      this.housesTile.tileScaleY = this.panoramaScale;
+    } else {
+      this.housesTile.setSize(width, this.housesTile.height);
+      this.housesTile.y = isPortrait ? roadY - this.housesTile.height + 28 : 0;
+    }
     this.roadTile.setSize(width, roadHeight);
     this.roadTile.y = roadY;
 
-    const newCurbY = this.getCurbY();
+    const newPavementY = this.getPavementY();
     this.curbBanners.forEach(b => {
-      b.y = newCurbY;
+      b.y = newPavementY;
     });
 
     this.drawSandyVerge(width, h, isPortrait);
@@ -194,8 +227,9 @@ export class ParallaxBackground {
     // Natural cloud drift in the blue sky + gentle runner movement parallax
     this.cloudsTile.tilePositionX += (18 + speed * 0.08) * dt;
 
-    // Location artwork moves at ~0.35x runner speed
-    this.housesTile.tilePositionX += (speed * 0.35) * dt;
+    // Location artwork moves at ~0.35x runner speed (calibrated with texture scale)
+    const panoramaSpeedFactor = this.isPanorama700 ? (speed * 0.35) / Math.max(0.1, this.panoramaScale) : speed * 0.35;
+    this.housesTile.tilePositionX += panoramaSpeedFactor * dt;
 
     // Streetlights (if spawned) move with houses/pavement
     if (this.streetlights.length > 0) {
@@ -228,10 +262,12 @@ export class ParallaxBackground {
         }
       }
 
-      // Spawn new curb banners as player runs down the street
-      const rightmostX = Math.max(...this.curbBanners.map(b => b.x));
-      if (rightmostX < this.scene.scale.width + 100) {
-        this.createCurbBanner(rightmostX + Phaser.Math.Between(680, 980));
+      // Spawn 2nd banner only if total spawned < 2 (exactly 2 poles max per run)
+      if (this.totalBannersSpawned < this.maxBanners) {
+        const rightmostX = this.curbBanners.length > 0 ? Math.max(...this.curbBanners.map(b => b.x)) : -999;
+        if (rightmostX < this.scene.scale.width - 200) {
+          this.createCurbBanner(this.scene.scale.width + Phaser.Math.Between(1800, 2400));
+        }
       }
     }
 

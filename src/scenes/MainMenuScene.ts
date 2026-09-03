@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { Button } from '../ui/Button';
 import { ScoreManager } from '../systems/ScoreManager';
-import { AdvertiseModal } from '../ui/AdvertiseModal';
 import { SoundFX } from '../systems/SoundFX';
 
 interface PartyCardContainer {
@@ -34,9 +33,13 @@ export class MainMenuScene extends Phaser.Scene {
     
     const roadHeight = 292;
     const roadY = isPortrait ? height - roadHeight : 428;
-    const locY = isPortrait ? roadY - 432 + 4 : 0;
+    
+    // Scale high-res Hanover Park panorama so Table Mountain, flats, and sign align with the road
+    const bgScale = (roadY + 16) / 670;
+    const bgTile = this.add.tileSprite(0, 0, width, roadY + 24, locationKey).setOrigin(0, 0);
+    bgTile.tileScaleX = bgScale;
+    bgTile.tileScaleY = bgScale;
 
-    this.add.tileSprite(0, locY, width, 432, locationKey).setOrigin(0, 0);
     this.add.tileSprite(0, 15, width, 120, cloudKey).setOrigin(0, 0);
     this.add.tileSprite(0, roadY, width, roadHeight, roadKey).setOrigin(0, 0);
 
@@ -47,12 +50,12 @@ export class MainMenuScene extends Phaser.Scene {
       menuTaxi.play('taxi_minibus_anim');
     }
 
-    // Curbside Patriotic Alliance (PA) Banner standing on Hanover Park sidewalk curb
+    // Patriotic Alliance (PA) Banner standing on top of Hanover Park sidewalk pavement
     if (this.textures.exists('prop_curb_banner_pa')) {
-      const curbY = isPortrait ? roadY + 52 : roadY + 50;
-      const menuBanner = this.add.sprite(isPortrait ? width * 0.28 : width * 0.26, curbY, 'prop_curb_banner_pa');
+      const pavementY = roadY + 16;
+      const menuBanner = this.add.sprite(isPortrait ? width * 0.28 : width * 0.26, pavementY, 'prop_curb_banner_pa');
       menuBanner.setOrigin(0.5, 1);
-      menuBanner.setDisplaySize(68, 210);
+      menuBanner.setDisplaySize(65, 200);
 
       this.tweens.add({
         targets: menuBanner,
@@ -72,34 +75,39 @@ export class MainMenuScene extends Phaser.Scene {
     const partyList: { id: 'da' | 'anc' | 'pa'; name: string; full: string; slogan: string; color: number; textColor: string }[] = [
       { id: 'da', name: 'DA', full: 'Democratic Alliance', slogan: 'Spreadsheets & clean takkies', color: 0x005ba6, textColor: '#ffffff' },
       { id: 'anc', name: 'ANC', full: 'African National Congress', slogan: 'Historic rallies & warm greetings', color: 0xfcb813, textColor: '#0c1524' },
-      { id: 'pa', name: 'PA', full: 'Patriotic Alliance', slogan: 'Bold swagger & rapid canvassing', color: 0x1e6b38, textColor: '#ffffff' }
+      { id: 'pa', name: 'PA', full: 'Patriotic Alliance', slogan: 'Bold swagger & rapid canvassing', color: 0x4ea81e, textColor: '#ffffff' }
     ];
 
     if (isPortrait) {
       // ----------------------------------------------------
       // MOBILE PORTRAIT VIEW (Clean, stacked, thumb-friendly)
       // ----------------------------------------------------
-      // Prominent centered official logo (Crisp, High Quality & Big)
-      const logoW = Math.min(width * 0.54, 215);
-      const logoH = Math.round(logoW * (556 / 831));
-      const logoCenterY = 12 + logoH / 2;
+      // Prominent centered official logo (Strictly preserving 100% natural aspect ratio at all times)
+      let logoH = 140;
+      let logoCenterY = 8 + logoH / 2;
       if (this.textures.exists('logo_canvassing_sa')) {
-        const logo = this.add.image(width / 2, logoCenterY, 'logo_canvassing_sa');
-        logo.setDisplaySize(logoW, logoH);
+        const logo = this.add.image(width / 2, 0, 'logo_canvassing_sa');
+        const targetW = Math.min(width * 0.52, 215);
+        const scale = targetW / logo.width;
+        logo.setScale(scale);
+        logoH = logo.height * scale;
+        logoCenterY = 8 + logoH / 2;
+        logo.setY(logoCenterY);
       }
 
-      const headerY = logoCenterY + logoH / 2 + 12;
+      // Spacing before and after 'SELECT YOUR PARTY TO CANVASS'
+      const headerY = logoCenterY + logoH / 2 + 13;
       this.add.text(width / 2, headerY, '🗳️ SELECT YOUR PARTY TO CANVASS', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '13.5px',
+        fontSize: '13px',
         color: '#fcb813',
         fontStyle: '900'
       }).setOrigin(0.5, 0.5);
 
       // 3 Vertically Stacked Party Cards with generous spacing and centering
       const cardW = Math.min(width - 24, 420);
-      const cardH = 80;
-      const cardGap = 88;
+      const cardH = 74;
+      const cardGap = 84;
       const startY = headerY + 14 + cardH / 2;
 
       partyList.forEach((p, index) => {
@@ -110,8 +118,8 @@ export class MainMenuScene extends Phaser.Scene {
 
       // How to Play brief
       const infoW = cardW;
-      const infoH = 82;
-      const infoY = startY + 2 * cardGap + cardH / 2 + 10;
+      const infoH = 74;
+      const infoY = startY + 2 * cardGap + cardH / 2 + 8;
 
       const infoBg = this.add.graphics();
       infoBg.fillStyle(0x0c1524, 0.92);
@@ -119,9 +127,9 @@ export class MainMenuScene extends Phaser.Scene {
       infoBg.lineStyle(2, 0x223552, 1);
       infoBg.strokeRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 12);
 
-      this.add.text(width / 2, infoY + 12, '🎮 HOW TO PLAY', {
+      this.add.text(width / 2, infoY + 11, '🎮 HOW TO PLAY', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '11.5px',
+        fontSize: '11px',
         color: '#fcb813',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
@@ -134,38 +142,28 @@ export class MainMenuScene extends Phaser.Scene {
       ];
 
       instructions.forEach((inst, i) => {
-        this.add.text(width / 2, infoY + 28 + i * 13.5, inst, {
+        this.add.text(width / 2, infoY + 25 + i * 12, inst, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '10.5px',
+          fontSize: '10px',
           color: '#f1f5f9',
           fontStyle: '600'
         }).setOrigin(0.5, 0.5);
       });
 
-      // START CANVASSING button (Prominent Primary Mobile Action)
-      const btnY = infoY + infoH + 28;
+      // START CANVASSING button (Prominent Primary Mobile Action with clear space above)
+      const btnH = 46;
+      const btnGap = 16;
+      const btnY = infoY + infoH + btnGap + btnH / 2;
       new Button(this, width / 2, btnY, 'START CANVASSING ➔', () => {
         ScoreManager.getInstance().resetGame();
         this.scene.start('GameScene', { partyId: this.selectedPartyId });
       }, {
         width: Math.min(width - 32, 390),
-        height: 48,
+        height: btnH,
         bgColor: 0x1f9137,
         hoverColor: 0x27ab42,
         fontSize: '19px'
       });
-
-      // Advertise with Us link for mobile
-      const adMobileText = this.add.text(width / 2, btnY + 34, '📢 Want to feature your brand in-game? Advertise With Us ➔', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '10.5px',
-        color: '#fcb813',
-        fontStyle: 'bold'
-      }).setOrigin(0.5, 0.5);
-      adMobileText.setInteractive({ useHandCursor: true });
-      adMobileText.on('pointerover', () => adMobileText.setColor('#ffffff'));
-      adMobileText.on('pointerout', () => adMobileText.setColor('#fcb813'));
-      adMobileText.on('pointerdown', () => AdvertiseModal.open());
 
       // Floating PWA Install Prompt for mobile (disappears once installed)
       this.showPwaInstallPrompt(width, height);
@@ -201,16 +199,17 @@ export class MainMenuScene extends Phaser.Scene {
           fontStyle: '600'
         });
 
-        const logoSize = 92;
-        const logoGap = 22;
+        const logoW = 126;
+        const logoH = Math.round(logoW * (445 / 831)); // ~67px
+        const logoGap = 20;
         const textBlockWidth = Math.max(titleText.width, subText.width);
-        const totalContentWidth = logoSize + logoGap + textBlockWidth;
+        const totalContentWidth = logoW + logoGap + textBlockWidth;
 
         const contentStartX = width / 2 - totalContentWidth / 2;
-        const logo = this.add.image(contentStartX + logoSize / 2, 20 + titleBoxH / 2, 'logo_canvassing_sa');
-        logo.setDisplaySize(logoSize, logoSize);
+        const logo = this.add.image(contentStartX + logoW / 2, 20 + titleBoxH / 2, 'logo_canvassing_sa');
+        logo.setDisplaySize(logoW, logoH);
 
-        const textX = contentStartX + logoSize + logoGap;
+        const textX = contentStartX + logoW + logoGap;
         titleText.setPosition(textX, 52).setOrigin(0, 0.5);
         subText.setPosition(textX, 92).setOrigin(0, 0.5);
       } else {
@@ -290,48 +289,7 @@ export class MainMenuScene extends Phaser.Scene {
         fontSize: '24px'
       });
 
-      // Advertise with Us Link & Top Sponsor Badge
-      const adDesktopText = this.add.text(width / 2, 676, '📢 Want your brand on in-game minibus taxis & billboards? Advertise With Us ➔', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '13px',
-        color: '#fcb813',
-        fontStyle: 'bold'
-      }).setOrigin(0.5, 0.5);
-      adDesktopText.setInteractive({ useHandCursor: true });
-      adDesktopText.on('pointerover', () => adDesktopText.setColor('#ffffff'));
-      adDesktopText.on('pointerout', () => adDesktopText.setColor('#fcb813'));
-      adDesktopText.on('pointerdown', () => AdvertiseModal.open());
-
-      // Top corner sponsor button
-      const sponsorBadge = this.add.container(width - 110, 32);
-      const sbBg = this.add.graphics();
-      sbBg.fillStyle(0x0c1524, 0.94);
-      sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
-      sbBg.lineStyle(1.5, 0xfcb813, 0.9);
-      sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
-      const sbTxt = this.add.text(0, 0, '📢 ADVERTISE WITH US', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
-        color: '#fcb813',
-        fontStyle: '800'
-      }).setOrigin(0.5, 0.5);
-      const sbZone = this.add.zone(0, 0, 172, 30).setInteractive({ useHandCursor: true });
-      sbZone.on('pointerover', () => {
-        sbBg.clear();
-        sbBg.fillStyle(0x1f3c6e, 1);
-        sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
-        sbBg.lineStyle(1.5, 0xfcb813, 1);
-        sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
-      });
-      sbZone.on('pointerout', () => {
-        sbBg.clear();
-        sbBg.fillStyle(0x0c1524, 0.94);
-        sbBg.fillRoundedRect(-86, -15, 172, 30, 15);
-        sbBg.lineStyle(1.5, 0xfcb813, 0.9);
-        sbBg.strokeRoundedRect(-86, -15, 172, 30, 15);
-      });
-      sbZone.on('pointerdown', () => AdvertiseModal.open());
-      sponsorBadge.add([sbBg, sbTxt, sbZone]);
+      // Advertise links removed for now as requested
 
       // Top corner music button for desktop landscape
       this.createMusicButton(width - 240, 32);
@@ -376,7 +334,7 @@ export class MainMenuScene extends Phaser.Scene {
     return musicBtn;
   }
 
-  // Portrait Mobile Card: Horizontal layout with clear party badge, candidate illustration, and locked/selected status
+  // Portrait Mobile Card: Horizontal layout with clear party badge, candidate illustration, and selected status
   private createPortraitCard(
     partyId: 'da' | 'anc' | 'pa',
     name: string,
@@ -389,7 +347,6 @@ export class MainMenuScene extends Phaser.Scene {
     w: number,
     h: number
   ): PartyCardContainer {
-    const isAvailable = partyId === 'da' || partyId === 'anc';
     const container = this.add.container(x, y);
 
     // Card background
@@ -429,62 +386,44 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5);
     container.add(fullText);
 
-    // Authentic candidate sprite (cleanly scaled)
+    // Authentic candidate sprite (cleanly scaled inside card borders with padding)
     const spriteKey = `player_${partyId}_idle`;
-    const sprite = this.add.sprite(-w / 2 + badgeW + 36, 0, spriteKey);
-    sprite.setScale(0.42);
+    const sprite = this.add.sprite(-w / 2 + badgeW + 30, 0, spriteKey);
+    sprite.setScale(0.30);
     container.add(sprite);
 
     // Slogan in middle
-    const sloganText = this.add.text(-w / 2 + badgeW + 74, 0, slogan, {
+    const sloganText = this.add.text(-w / 2 + badgeW + 64, 0, slogan, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '12.5px',
+      fontSize: '12px',
       color: '#e2e8f0',
       fontStyle: '600',
-      wordWrap: { width: Math.max(80, w - badgeW - 170) }
+      wordWrap: { width: Math.max(80, w - badgeW - 154) }
     }).setOrigin(0, 0.5);
     container.add(sloganText);
 
-    // Status Tag (Selected / Locked)
-    const tagW = isAvailable ? 78 : 100;
+    // Status Tag (Selected)
+    const tagW = 78;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 8, 0);
     const tagBg = this.add.graphics();
-
-    if (isAvailable) {
-      tagBg.fillStyle(0xfcb813, 1);
-      tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
-      const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
-        color: '#111111',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-    } else {
-      tagBg.fillStyle(0xd93838, 1);
-      tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
-      const tagTxt = this.add.text(0, 0, 'COMING SOON 🔒', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '10px',
-        color: '#ffffff',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-      container.setAlpha(0.75);
-    }
+    tagBg.fillStyle(0xfcb813, 1);
+    tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
+    const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '11px',
+      color: '#111111',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    selectedTag.add([tagBg, tagTxt]);
     container.add(selectedTag);
 
-    // Interactivity
+    // Full Card Interactive Zone
     container.setSize(w, h);
-    container.setInteractive({ useHandCursor: isAvailable });
+    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
 
     container.on('pointerdown', () => {
-      if (isAvailable) {
-        this.selectedPartyId = partyId;
-        this.updateSelection();
-      } else {
-        this.showUnavailableToast("PA is not available yet! We're still building Gayton's character. Play as DA or ANC to start canvassing now.");
-      }
+      this.selectedPartyId = partyId;
+      this.updateSelection();
     });
 
     return { partyId, container, borderGraphics: border, selectedTag, w, h };
@@ -502,7 +441,6 @@ export class MainMenuScene extends Phaser.Scene {
     w: number,
     h: number
   ): PartyCardContainer {
-    const isAvailable = partyId === 'da' || partyId === 'anc';
     const container = this.add.container(x, y);
 
     const bg = this.add.graphics();
@@ -539,101 +477,42 @@ export class MainMenuScene extends Phaser.Scene {
     sprite.setScale(0.72);
     container.add(sprite);
 
-    const tagW = isAvailable ? 82 : 110;
+    const tagW = 82;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 8, -h / 2 + 16);
     const tagBg = this.add.graphics();
-
-    if (isAvailable) {
-      tagBg.fillStyle(0xfcb813, 1);
-      tagBg.fillRoundedRect(-tagW / 2, -12, tagW, 24, 6);
-      const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
-        color: '#111111',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-      selectedTag.setVisible(true);
-    } else {
-      tagBg.fillStyle(0xd93838, 1);
-      tagBg.fillRoundedRect(-tagW / 2, -12, tagW, 24, 6);
-      const tagTxt = this.add.text(0, 0, 'COMING SOON 🔒', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '10.5px',
-        color: '#ffffff',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-      selectedTag.setVisible(true);
-      container.setAlpha(0.75);
-    }
+    tagBg.fillStyle(0xfcb813, 1);
+    tagBg.fillRoundedRect(-tagW / 2, -12, tagW, 24, 6);
+    const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '11px',
+      color: '#111111',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    selectedTag.add([tagBg, tagTxt]);
+    selectedTag.setVisible(true);
     container.add(selectedTag);
 
     container.setSize(w, h);
-    container.setInteractive({ useHandCursor: isAvailable });
+    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
 
     container.on('pointerdown', () => {
-      if (isAvailable) {
-        this.selectedPartyId = partyId;
-        this.updateSelection();
-      } else {
-        this.showUnavailableToast("PA is not available yet! We're still building Gayton's character. Play as DA or ANC to start canvassing now.");
-      }
+      this.selectedPartyId = partyId;
+      this.updateSelection();
     });
 
     container.on('pointerover', () => {
-      if (isAvailable && this.selectedPartyId !== partyId) {
+      if (this.selectedPartyId !== partyId) {
         container.setScale(1.02);
       }
     });
 
     container.on('pointerout', () => {
-      if (isAvailable && this.selectedPartyId !== partyId) {
+      if (this.selectedPartyId !== partyId) {
         container.setScale(1.0);
       }
     });
 
     return { partyId, container, borderGraphics: border, selectedTag, w, h };
-  }
-
-  private showUnavailableToast(msg: string) {
-    const { width, height } = this.scale;
-    const isPortrait = height > width;
-    const existing = this.children.getByName('unavailableToast');
-    if (existing) existing.destroy();
-
-    const toastY = isPortrait ? height / 2 : 420;
-    const toastW = Math.min(width - 40, 620);
-    const toast = this.add.container(width / 2, toastY);
-    toast.setName('unavailableToast');
-    toast.setDepth(30);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(0x2d1212, 0.95);
-    bg.lineStyle(2, 0xe53e3e, 1);
-    bg.fillRoundedRect(-toastW / 2, -22, toastW, 44, 10);
-    bg.strokeRoundedRect(-toastW / 2, -22, toastW, 44, 10);
-
-    const txt = this.add.text(0, 0, msg, {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '12px' : '14px',
-      color: '#ffaaaa',
-      fontStyle: 'bold',
-      align: 'center',
-      wordWrap: { width: toastW - 20 }
-    }).setOrigin(0.5, 0.5);
-
-    toast.add([bg, txt]);
-
-    this.tweens.add({
-      targets: toast,
-      alpha: { from: 0, to: 1 },
-      y: { from: toastY + 10, to: toastY },
-      duration: 200,
-      hold: 2400,
-      yoyo: true,
-      onComplete: () => toast.destroy()
-    });
   }
 
   private updateSelection() {
@@ -650,13 +529,8 @@ export class MainMenuScene extends Phaser.Scene {
       } else {
         item.borderGraphics.lineStyle(2, 0x223552, 0.8);
         item.borderGraphics.strokeRoundedRect(-item.w / 2, -item.h / 2, item.w, item.h, 16);
-        if (item.partyId === 'da' || item.partyId === 'anc') {
-          item.selectedTag.setVisible(false);
-          item.container.setAlpha(0.85);
-        } else {
-          item.selectedTag.setVisible(true);
-          item.container.setAlpha(0.72);
-        }
+        item.selectedTag.setVisible(false);
+        item.container.setAlpha(0.85);
         item.container.setScale(1.0);
       }
     });
@@ -688,23 +562,24 @@ export class MainMenuScene extends Phaser.Scene {
     bg.lineStyle(2, 0xfcb813, 0.95);
     bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 14);
 
-    // Mini App Icon Box
+    // Mini App Icon
     const iconBoxX = -bannerW / 2 + 28;
-    const iconBg = this.add.graphics();
-    iconBg.fillStyle(0x132644, 1);
-    iconBg.fillRoundedRect(iconBoxX - 18, -18, 36, 36, 9);
-    iconBg.lineStyle(1.5, 0x4fc3f7, 0.8);
-    iconBg.strokeRoundedRect(iconBoxX - 18, -18, 36, 36, 9);
+    let iconObj: Phaser.GameObjects.GameObject;
+    if (this.textures.exists('app_icon')) {
+      const iconImg = this.add.image(iconBoxX, 0, 'app_icon');
+      iconImg.setDisplaySize(38, 38);
+      iconObj = iconImg;
+    } else {
+      iconObj = this.add.text(iconBoxX, 0, '🗳️', {
+        fontSize: '20px'
+      }).setOrigin(0.5, 0.5);
+    }
 
-    const iconTxt = this.add.text(iconBoxX, 0, '🗳️', {
-      fontSize: '20px'
-    }).setOrigin(0.5, 0.5);
-
-    // Catchy Title & Subtitle
-    const textStartX = iconBoxX + 28;
-    const titleTxt = this.add.text(textStartX, -10, 'Install Canvassing SA App', {
+    // Catchy Title & Subtitle (Updated as requested)
+    const textStartX = iconBoxX + 24;
+    const titleTxt = this.add.text(textStartX, -10, 'Install Canvassing SA game on your phone', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '13px',
+      fontSize: '11.5px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0, 0.5);
@@ -717,9 +592,9 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
 
     // Install Action Button
-    const instBtnW = 76;
+    const instBtnW = 82;
     const instBtnH = 32;
-    const instBtnX = bannerW / 2 - 58;
+    const instBtnX = bannerW / 2 - 62;
     const instBg = this.add.graphics();
     instBg.fillStyle(0x1f9137, 1);
     instBg.fillRoundedRect(instBtnX - instBtnW / 2, -instBtnH / 2, instBtnW, instBtnH, 8);
@@ -759,7 +634,7 @@ export class MainMenuScene extends Phaser.Scene {
       banner.destroy();
     });
 
-    banner.add([bg, iconBg, iconTxt, titleTxt, subTxt, instBg, instTxt, instZone, closeTxt, closeZone]);
+    banner.add([bg, iconObj, titleTxt, subTxt, instBg, instTxt, instZone, closeTxt, closeZone]);
 
     // Animate banner entry
     banner.setAlpha(0);

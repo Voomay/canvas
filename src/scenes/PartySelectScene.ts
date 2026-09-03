@@ -19,7 +19,12 @@ export class PartySelectScene extends Phaser.Scene {
     const cloudKey = this.textures.exists('bg_clouds_sky') ? 'bg_clouds_sky' : (this.textures.exists('real_bg_clouds') ? 'real_bg_clouds' : 'bg_clouds');
     const locationKey = this.textures.exists('bg_location_capetown') ? 'bg_location_capetown' : (this.textures.exists('real_bg_houses') ? 'real_bg_houses' : 'bg_houses');
     const roadKey = this.textures.exists('real_bg_road') ? 'real_bg_road' : 'bg_road';
-    this.add.tileSprite(0, 0, width, 432, locationKey).setOrigin(0, 0);
+    
+    const bgScale = 444 / 670;
+    const bgTile = this.add.tileSprite(0, 0, width, 444, locationKey).setOrigin(0, 0);
+    bgTile.tileScaleX = bgScale;
+    bgTile.tileScaleY = bgScale;
+
     this.add.tileSprite(0, 15, width, 120, cloudKey).setOrigin(0, 0);
     this.add.tileSprite(0, 428, width, 292, roadKey).setOrigin(0, 0);
 
@@ -156,85 +161,32 @@ export class PartySelectScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5);
     container.add(traitText);
 
-    // Selected or Locked Tag container (Top right corner of card)
-    const isAvailable = party.id === 'da' || party.id === 'anc';
-    const tagW = isAvailable ? 90 : 130;
+    // Selected Tag container (Top right corner of card)
+    const tagW = 90;
     const selectedTag = this.add.container(w / 2 - tagW / 2 - 10, -h / 2 + 20);
     const tagBg = this.add.graphics();
     
-    if (isAvailable) {
-      tagBg.fillStyle(0xfcb813, 1);
-      tagBg.fillRoundedRect(-45, -14, 90, 28, 8);
-      const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '12px',
-        color: '#111111',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-    } else {
-      tagBg.fillStyle(0xd93838, 1);
-      tagBg.fillRoundedRect(-65, -14, 130, 28, 8);
-      const tagTxt = this.add.text(0, 0, 'COMING SOON 🔒', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
-        color: '#ffffff',
-        fontStyle: '900'
-      }).setOrigin(0.5, 0.5);
-      selectedTag.add([tagBg, tagTxt]);
-      container.setAlpha(0.78);
-    }
+    tagBg.fillStyle(0xfcb813, 1);
+    tagBg.fillRoundedRect(-45, -14, 90, 28, 8);
+    const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '12px',
+      color: '#111111',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    selectedTag.add([tagBg, tagTxt]);
     container.add(selectedTag);
 
     // Interactivity
     container.setSize(w, h);
-    container.setInteractive({ useHandCursor: isAvailable });
+    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
 
     container.on('pointerdown', () => {
-      if (isAvailable) {
-        this.selectedPartyId = party.id;
-        this.updateSelection();
-      } else {
-        this.showUnavailableToast("PA is not available yet! Play as DA or ANC to start canvassing now.");
-      }
+      this.selectedPartyId = party.id;
+      this.updateSelection();
     });
 
     return { partyId: party.id, container, borderGraphics: border, selectedTag };
-  }
-
-  private showUnavailableToast(msg: string) {
-    const { width } = this.scale;
-    const existing = this.children.getByName('unavailableToast');
-    if (existing) existing.destroy();
-
-    const toast = this.add.container(width / 2, 570);
-    toast.setName('unavailableToast');
-    toast.setDepth(20);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(0x2d1212, 0.95);
-    bg.lineStyle(2, 0xe53e3e, 1);
-    bg.fillRoundedRect(-280, -22, 560, 44, 10);
-    bg.strokeRoundedRect(-280, -22, 560, 44, 10);
-
-    const txt = this.add.text(0, 0, msg, {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '16px',
-      color: '#ffaaaa',
-      fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
-
-    toast.add([bg, txt]);
-
-    this.tweens.add({
-      targets: toast,
-      alpha: { from: 0, to: 1 },
-      y: { from: 580, to: 570 },
-      duration: 200,
-      hold: 2200,
-      yoyo: true,
-      onComplete: () => toast.destroy()
-    });
   }
 
   private updateSelection() {
@@ -257,13 +209,8 @@ export class PartySelectScene extends Phaser.Scene {
         // Standard party colored border
         item.borderGraphics.lineStyle(2, party.colorNum, 0.6);
         item.borderGraphics.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
-        if (item.partyId === 'da' || item.partyId === 'anc') {
-          item.selectedTag.setVisible(false);
-          item.container.setAlpha(0.90);
-        } else {
-          item.selectedTag.setVisible(true); // Locked badge remains visible
-          item.container.setAlpha(0.72);
-        }
+        item.selectedTag.setVisible(false);
+        item.container.setAlpha(0.90);
         item.container.setScale(1.0);
       }
     });

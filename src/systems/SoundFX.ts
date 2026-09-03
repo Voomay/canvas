@@ -437,6 +437,68 @@ export class SoundFX {
     }
   }
 
+  public playSportsCarRev() {
+    if (this.isMuted) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    try {
+      // Powerful throaty supercar V8/V12 engine rev
+      const osc = ctx.createOscillator();
+      const oscSub = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(360, ctx.currentTime + 0.16);
+      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.42);
+
+      oscSub.type = 'triangle';
+      oscSub.frequency.setValueAtTime(60, ctx.currentTime);
+      oscSub.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.16);
+      oscSub.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.42);
+
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.16);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.42);
+
+      osc.connect(gain);
+      oscSub.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      oscSub.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.43);
+      oscSub.stop(ctx.currentTime + 0.43);
+    } catch {
+      // Audio
+    }
+  }
+
+  public playSportsCarHorn() {
+    if (this.isMuted) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    try {
+      // Crisp Italian dual-tone horn (500Hz + 620Hz)
+      [500, 620].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.14, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.22);
+      });
+    } catch {
+      // Audio
+    }
+  }
+
   public playStreetVictory() {
     if (this.isMuted) return;
     const ctx = this.ensureContext();
