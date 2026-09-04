@@ -37,9 +37,7 @@ export const STREETS: StreetLevel[] = [
       'hanover_flats_paint',
       'hanover_meter_deductions',
       'hanover_gang_ceasefire',
-      'hanover_clinic_queue',
-      'socialmedia',
-      'promises'
+      'hanover_clinic_queue'
     ]
   },
   {
@@ -62,9 +60,7 @@ export const STREETS: StreetLevel[] = [
       'mitchells_plain_train_line',
       'mitchells_plain_streetlights',
       'mitchells_plain_backyarders',
-      'mitchells_plain_potholes',
-      'socialmedia',
-      'promises'
+      'mitchells_plain_potholes'
     ]
   },
   {
@@ -87,9 +83,7 @@ export const STREETS: StreetLevel[] = [
       'khayelitsha_illegal_connections',
       'khayelitsha_sanitation',
       'khayelitsha_emergency_escort',
-      'khayelitsha_shack_fires',
-      'socialmedia',
-      'promises'
+      'khayelitsha_shack_fires'
     ]
   },
   {
@@ -113,9 +107,7 @@ export const STREETS: StreetLevel[] = [
       'campsbay_zoning',
       'campsbay_shortages',
       'campsbay_solar',
-      'campsbay_filming',
-      'socialmedia',
-      'promises'
+      'campsbay_filming'
     ]
   },
   {
@@ -137,9 +129,7 @@ export const STREETS: StreetLevel[] = [
       'joburg_city_power',
       'joburg_joburg_water',
       'joburg_potholes',
-      'joburg_billing_crisis',
-      'socialmedia',
-      'promises'
+      'joburg_billing_crisis'
     ]
   }
 ];

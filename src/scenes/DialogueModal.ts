@@ -110,14 +110,14 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.fillStyle(0xffffff, 1);
     bg.fillRect(tailX + 2, bubbleH / 2 - 4, tailW - 4, 4);
 
-    // Complaint text
+    // Complaint text (Bold, crisp contrast, larger font)
     const label = scene.add.text(0, 0, text, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: text.length > 70 ? '14px' : (text.length > 45 ? '15.5px' : (isPortrait ? '16.5px' : '19px')),
+      fontSize: text.length > 70 ? '14.5px' : (text.length > 45 ? '16px' : (isPortrait ? '17.5px' : '20px')),
       color: '#0f172a',
       fontStyle: '900',
       align: 'center',
-      wordWrap: { width: bubbleW - 32 }
+      wordWrap: { width: bubbleW - 28 }
     }).setOrigin(0.5, 0.5);
 
     container.add([bg, label]);
@@ -143,11 +143,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const isPortrait = scene.scale.height > scene.scale.width;
     const colSpacing = isPortrait ? 104 : Math.min(270, scene.scale.width * 0.23);
     const btnWidth = isPortrait ? Math.min(198, (scene.scale.width - 24) / 2) : Math.min(480, colSpacing * 2 - 20);
-    const btnHeight = isPortrait ? 76 : 72;
+    const btnHeight = isPortrait ? 80 : 74;
 
     // Position rows directly underneath question bubble
-    const row1Y = isPortrait ? bubbleY + 92 : 270;
-    const row2Y = isPortrait ? row1Y + 84 : 355;
+    const row1Y = isPortrait ? bubbleY + 94 : 270;
+    const row2Y = isPortrait ? row1Y + 88 : 355;
 
     const promiseChoice = getComplaintChoice(complaint, 'promise', partyId);
     const blameChoice = getComplaintChoice(complaint, 'blame', partyId);
@@ -169,7 +169,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0x27ab42,
       categoryTag: '[1] ✅ TRUTH / ACTION',
       tagBgColor: 0x0f421a,
-      fontSize: isPortrait ? (promiseChoice.text.length > 25 ? '12px' : '13px') : (promiseChoice.text.length > 30 ? '15px' : '17px')
+      fontSize: isPortrait ? (promiseChoice.text.length > 25 ? '13px' : '14px') : (promiseChoice.text.length > 30 ? '15px' : '17px')
     });
     container.add(btn1);
 
@@ -183,7 +183,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0xf06a1a,
       categoryTag: '[2] 👉 EXCUSE / BLAME',
       tagBgColor: 0x5e2303,
-      fontSize: isPortrait ? (blameChoice.text.length > 25 ? '11.5px' : '12.5px') : (blameChoice.text.length > 30 ? '14px' : '16px')
+      fontSize: isPortrait ? (blameChoice.text.length > 25 ? '12.5px' : '13.5px') : (blameChoice.text.length > 30 ? '14.5px' : '16px')
     });
     container.add(btn2);
 
@@ -197,7 +197,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0xab47bc,
       categoryTag: '[3] 🤥 BOLD LIE',
       tagBgColor: 0x3d0b4d,
-      fontSize: isPortrait ? (lieChoice.text.length > 25 ? '11.5px' : '12.5px') : (lieChoice.text.length > 30 ? '14px' : '16px')
+      fontSize: isPortrait ? (lieChoice.text.length > 25 ? '12.5px' : '13.5px') : (lieChoice.text.length > 30 ? '14.5px' : '16px')
     });
     container.add(btn3);
 
@@ -211,7 +211,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       hoverColor: 0x2480e6,
       categoryTag: '[4] 🔄 SPIN / DEFLECTION',
       tagBgColor: 0x0b2f56,
-      fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '11.5px' : '12.5px') : (honestyChoice.text.length > 30 ? '14px' : '16px')
+      fontSize: isPortrait ? (honestyChoice.text.length > 25 ? '12.5px' : '13.5px') : (honestyChoice.text.length > 30 ? '14.5px' : '16px')
     });
     container.add(btn4);
 

@@ -15,6 +15,7 @@ export class Resident extends Phaser.GameObjects.Container {
   private alertBadge: Phaser.GameObjects.Sprite;
   private alertTween: Phaser.Tweens.Tween | null = null;
   private soundFX: SoundFX;
+  private static recentComplaintIds: string[] = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -43,27 +44,26 @@ export class Resident extends Phaser.GameObjects.Container {
     this.personality = ALL_PERSONALITIES[pIdx];
 
     // Filter complaints:
-    // Strictly party-eligible: targetParty matches partyId OR targetParty === 'all' (never a rival party's complaint)
-    let partyEligible = COMPLAINTS.filter(c => !c.targetParty || c.targetParty === 'all' || (partyId && c.targetParty === partyId));
-
-    // If allowedCategories specified, strictly filter by allowedCategories for the location
+    // When allowedCategories is specified for the location, strictly select from those categories!
+    let eligiblePool: ComplaintData[] = [];
     if (allowedCategories && allowedCategories.length > 0) {
-      const categoryMatches = partyEligible.filter(c => allowedCategories.includes(c.category));
-      if (categoryMatches.length > 0) {
-        partyEligible = categoryMatches;
-      }
+      eligiblePool = COMPLAINTS.filter(c => allowedCategories.includes(c.category));
     }
 
-    // Give 75% priority to party-specific complaints for deep party personalization
-    const specificToParty = partyId ? partyEligible.filter(c => c.targetParty === partyId) : [];
-    let chosenComplaint: ComplaintData;
-    if (specificToParty.length > 0 && Math.random() < 0.75) {
-      const idx = Phaser.Math.Between(0, specificToParty.length - 1);
-      chosenComplaint = specificToParty[idx];
-    } else {
-      const idx = Phaser.Math.Between(0, partyEligible.length - 1);
-      chosenComplaint = partyEligible[idx] || COMPLAINTS[0];
+    if (eligiblePool.length === 0) {
+      eligiblePool = COMPLAINTS.filter(c => !c.targetParty || c.targetParty === 'all' || (partyId && c.targetParty === partyId));
     }
+
+    // Select complaint, preferring unused ones in the current run for variety
+    const available = eligiblePool.filter(c => !Resident.recentComplaintIds.includes(c.id));
+    const poolToUse = available.length > 0 ? available : eligiblePool;
+    const chosenComplaint = poolToUse[Phaser.Math.Between(0, poolToUse.length - 1)];
+
+    Resident.recentComplaintIds.push(chosenComplaint.id);
+    if (Resident.recentComplaintIds.length > 8) {
+      Resident.recentComplaintIds.shift();
+    }
+
     this.complaint = chosenComplaint;
 
     // Resident starts in DOUBTFUL pose (skeptical of approaching politician!)

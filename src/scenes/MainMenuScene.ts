@@ -80,34 +80,36 @@ export class MainMenuScene extends Phaser.Scene {
 
     if (isPortrait) {
       // ----------------------------------------------------
-      // MOBILE PORTRAIT VIEW (Clean, stacked, thumb-friendly)
+      // MOBILE PORTRAIT VIEW (Bold, perfectly balanced, thumb-friendly)
       // ----------------------------------------------------
       // Prominent centered official logo (Strictly preserving 100% natural aspect ratio at all times)
-      let logoH = 140;
-      let logoCenterY = 8 + logoH / 2;
+      let logoH = 182;
+      let logoCenterY = 10 + logoH / 2;
       if (this.textures.exists('logo_canvassing_sa')) {
         const logo = this.add.image(width / 2, 0, 'logo_canvassing_sa');
-        const targetW = Math.min(width * 0.52, 215);
+        const targetW = Math.min(width * 0.65, 275);
         const scale = targetW / logo.width;
         logo.setScale(scale);
         logoH = logo.height * scale;
-        logoCenterY = 8 + logoH / 2;
+        logoCenterY = 10 + logoH / 2;
         logo.setY(logoCenterY);
       }
 
       // Spacing before and after 'SELECT YOUR PARTY TO CANVASS'
-      const headerY = logoCenterY + logoH / 2 + 13;
+      const headerY = logoCenterY + logoH / 2 + 14;
       this.add.text(width / 2, headerY, '🗳️ SELECT YOUR PARTY TO CANVASS', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '13px',
+        fontSize: '15px',
         color: '#fcb813',
-        fontStyle: '900'
+        fontStyle: '900',
+        stroke: '#080d14',
+        strokeThickness: 3
       }).setOrigin(0.5, 0.5);
 
-      // 3 Vertically Stacked Party Cards with generous spacing and centering
-      const cardW = Math.min(width - 24, 420);
-      const cardH = 74;
-      const cardGap = 84;
+      // 3 Vertically Stacked Party Cards with generous spacing, boldness, and full-card touch
+      const cardW = Math.min(width - 24, 460);
+      const cardH = 82;
+      const cardGap = 92;
       const startY = headerY + 14 + cardH / 2;
 
       partyList.forEach((p, index) => {
@@ -116,22 +118,24 @@ export class MainMenuScene extends Phaser.Scene {
         this.cardContainers.push(card);
       });
 
-      // How to Play brief
+      // How to Play brief (Clean, bold, highly legible)
       const infoW = cardW;
-      const infoH = 74;
-      const infoY = startY + 2 * cardGap + cardH / 2 + 8;
+      const infoH = 94;
+      const infoY = startY + 2 * cardGap + cardH / 2 + 10;
 
       const infoBg = this.add.graphics();
-      infoBg.fillStyle(0x0c1524, 0.92);
-      infoBg.fillRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 12);
+      infoBg.fillStyle(0x0c1524, 0.94);
+      infoBg.fillRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 14);
       infoBg.lineStyle(2, 0x223552, 1);
-      infoBg.strokeRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 12);
+      infoBg.strokeRoundedRect(width / 2 - infoW / 2, infoY, infoW, infoH, 14);
 
-      this.add.text(width / 2, infoY + 11, '🎮 HOW TO PLAY', {
+      this.add.text(width / 2, infoY + 14, '🎮 HOW TO PLAY', {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
+        fontSize: '13.5px',
         color: '#fcb813',
-        fontStyle: 'bold'
+        fontStyle: '900',
+        stroke: '#080d14',
+        strokeThickness: 2
       }).setOrigin(0.5, 0.5);
 
       const instructions = [
@@ -142,27 +146,27 @@ export class MainMenuScene extends Phaser.Scene {
       ];
 
       instructions.forEach((inst, i) => {
-        this.add.text(width / 2, infoY + 25 + i * 12, inst, {
+        this.add.text(width / 2, infoY + 31 + i * 16, inst, {
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '10px',
-          color: '#f1f5f9',
+          fontSize: '12px',
+          color: '#ffffff',
           fontStyle: '600'
         }).setOrigin(0.5, 0.5);
       });
 
       // START CANVASSING button (Prominent Primary Mobile Action with clear space above)
-      const btnH = 46;
-      const btnGap = 16;
+      const btnH = 52;
+      const btnGap = 14;
       const btnY = infoY + infoH + btnGap + btnH / 2;
       new Button(this, width / 2, btnY, 'START CANVASSING ➔', () => {
         ScoreManager.getInstance().resetGame();
         this.scene.start('GameScene', { partyId: this.selectedPartyId });
       }, {
-        width: Math.min(width - 32, 390),
+        width: cardW,
         height: btnH,
         bgColor: 0x1f9137,
         hoverColor: 0x27ab42,
-        fontSize: '19px'
+        fontSize: '22px'
       });
 
       // Floating PWA Install Prompt for mobile (disappears once installed)
@@ -199,17 +203,19 @@ export class MainMenuScene extends Phaser.Scene {
           fontStyle: '600'
         });
 
-        const logoW = 126;
-        const logoH = Math.round(logoW * (445 / 831)); // ~67px
+        const targetLogoW = 120;
+        const logo = this.add.image(0, 0, 'logo_canvassing_sa');
+        const scale = targetLogoW / logo.width;
+        logo.setScale(scale);
+        const actualLogoW = logo.displayWidth;
         const logoGap = 20;
         const textBlockWidth = Math.max(titleText.width, subText.width);
-        const totalContentWidth = logoW + logoGap + textBlockWidth;
+        const totalContentWidth = actualLogoW + logoGap + textBlockWidth;
 
         const contentStartX = width / 2 - totalContentWidth / 2;
-        const logo = this.add.image(contentStartX + logoW / 2, 20 + titleBoxH / 2, 'logo_canvassing_sa');
-        logo.setDisplaySize(logoW, logoH);
+        logo.setPosition(contentStartX + actualLogoW / 2, 20 + titleBoxH / 2);
 
-        const textX = contentStartX + logoW + logoGap;
+        const textX = contentStartX + actualLogoW + logoGap;
         titleText.setPosition(textX, 52).setOrigin(0, 0.5);
         subText.setPosition(textX, 92).setOrigin(0, 0.5);
       } else {
@@ -360,70 +366,79 @@ export class MainMenuScene extends Phaser.Scene {
     container.add(border);
 
     // Left party badge block
-    const badgeW = 90;
+    const badgeW = 108;
     const banner = this.add.graphics();
     banner.fillStyle(colorNum, 1);
     banner.fillRoundedRect(-w / 2 + 5, -h / 2 + 5, badgeW, h - 10, { tl: 10, bl: 10, tr: 4, br: 4 });
     container.add(banner);
 
     // Party Name in banner
-    const nameText = this.add.text(-w / 2 + 5 + badgeW / 2, -10, name, {
+    const nameText = this.add.text(-w / 2 + 5 + badgeW / 2, -14, name, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '22px',
+      fontSize: '28px',
       color: textColor,
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
     container.add(nameText);
 
     // Full name in banner
-    const fullText = this.add.text(-w / 2 + 5 + badgeW / 2, 16, fullName, {
+    const fullText = this.add.text(-w / 2 + 5 + badgeW / 2, 18, fullName, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '10.5px',
+      fontSize: '12px',
       color: textColor === '#ffffff' ? '#f8fafc' : '#0f172a',
       fontStyle: '800',
       align: 'center',
-      wordWrap: { width: badgeW - 6 }
+      wordWrap: { width: badgeW - 8 }
     }).setOrigin(0.5, 0.5);
     container.add(fullText);
 
     // Authentic candidate sprite (cleanly scaled inside card borders with padding)
     const spriteKey = `player_${partyId}_idle`;
-    const sprite = this.add.sprite(-w / 2 + badgeW + 30, 0, spriteKey);
-    sprite.setScale(0.30);
+    const sprite = this.add.sprite(-w / 2 + badgeW + 38, 0, spriteKey);
+    sprite.setScale(0.42);
     container.add(sprite);
 
-    // Slogan in middle
-    const sloganText = this.add.text(-w / 2 + badgeW + 64, 0, slogan, {
+    // Slogan in middle (Bolder, clearer font)
+    const sloganText = this.add.text(-w / 2 + badgeW + 82, 0, slogan, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '12px',
-      color: '#e2e8f0',
-      fontStyle: '600',
-      wordWrap: { width: Math.max(80, w - badgeW - 154) }
+      fontSize: '14.5px',
+      color: '#ffffff',
+      fontStyle: '700',
+      wordWrap: { width: Math.max(80, w - badgeW - 190) }
     }).setOrigin(0, 0.5);
     container.add(sloganText);
 
     // Status Tag (Selected)
-    const tagW = 78;
-    const selectedTag = this.add.container(w / 2 - tagW / 2 - 8, 0);
+    const tagW = 92;
+    const selectedTag = this.add.container(w / 2 - tagW / 2 - 10, 0);
     const tagBg = this.add.graphics();
     tagBg.fillStyle(0xfcb813, 1);
-    tagBg.fillRoundedRect(-tagW / 2, -13, tagW, 26, 7);
+    tagBg.fillRoundedRect(-tagW / 2, -16, tagW, 32, 8);
     const tagTxt = this.add.text(0, 0, 'SELECTED ✓', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '11px',
+      fontSize: '12.5px',
       color: '#111111',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
     selectedTag.add([tagBg, tagTxt]);
     container.add(selectedTag);
 
-    // Full Card Interactive Zone
-    container.setSize(w, h);
-    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+    // Full Card Interactive Hit Zone - Tapping ANYWHERE on the card selects it instantly and smoothly!
+    const hitZone = this.add.zone(0, 0, w, h).setInteractive({ useHandCursor: true });
+    container.add(hitZone);
 
-    container.on('pointerdown', () => {
+    hitZone.on('pointerdown', () => {
       this.selectedPartyId = partyId;
       this.updateSelection();
+      SoundFX.getInstance().playButtonClick();
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.03,
+        scaleY: 1.03,
+        duration: 70,
+        yoyo: true,
+        ease: 'Quad.easeInOut'
+      });
     });
 
     return { partyId, container, borderGraphics: border, selectedTag, w, h };
@@ -492,21 +507,31 @@ export class MainMenuScene extends Phaser.Scene {
     selectedTag.setVisible(true);
     container.add(selectedTag);
 
-    container.setSize(w, h);
-    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+    // Full Card Interactive Hit Zone - Clicking ANYWHERE on the card selects it immediately!
+    const hitZone = this.add.zone(0, 0, w, h).setInteractive({ useHandCursor: true });
+    container.add(hitZone);
 
-    container.on('pointerdown', () => {
+    hitZone.on('pointerdown', () => {
       this.selectedPartyId = partyId;
       this.updateSelection();
+      SoundFX.getInstance().playButtonClick();
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.03,
+        scaleY: 1.03,
+        duration: 70,
+        yoyo: true,
+        ease: 'Quad.easeInOut'
+      });
     });
 
-    container.on('pointerover', () => {
+    hitZone.on('pointerover', () => {
       if (this.selectedPartyId !== partyId) {
         container.setScale(1.02);
       }
     });
 
-    container.on('pointerout', () => {
+    hitZone.on('pointerout', () => {
       if (this.selectedPartyId !== partyId) {
         container.setScale(1.0);
       }
@@ -549,7 +574,7 @@ export class MainMenuScene extends Phaser.Scene {
 
     const bannerW = Math.min(width - 20, 420);
     const bannerH = 58;
-    const bannerY = Math.min(height - bannerH / 2 - 12, 780);
+    const bannerY = height - bannerH / 2 - 12;
 
     const banner = this.add.container(width / 2, bannerY);
     banner.setName('pwaInstallBanner');
