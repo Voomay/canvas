@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PlaceholderGenerator } from '../systems/PlaceholderGenerator';
-import { RUN_FRAME_COUNT } from '../config/constants';
+import { RUN_FRAME_COUNT, PARTY_RUN_FRAME_COUNTS } from '../config/constants';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -71,10 +71,13 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('bg_clouds_sky', 'assets/backgrounds/clouds/clouds_sky.png');
     this.load.image('real_bg_houses', 'assets/backgrounds/houses/suburb_houses.png');
     this.load.image('real_bg_road', 'assets/roads/clean/pavement_road.png');
-    this.load.image('real_bg_clouds', 'assets/backgrounds/clouds/clouds_sky.png');
-    this.load.image('logo_canvassing_sa', 'assets/ui/logo_canvassing_sa.png?v=2');
-    this.load.image('app_icon', 'assets/icons/icon-192.png?v=2');
-    this.load.image('prop_curb_banner_pa', 'assets/decorations/banner_pole_pa.png');
+    this.load.image('prop_curb_banner_parties', 'assets/decorations/lamp_pole_party_banners.png');
+    this.load.image('prop_curb_banner_pa', 'assets/decorations/lamp_pole_party_banners.png');
+
+    // Party Selection Transparent Card Artworks (DA, ANC, PA)
+    this.load.image('card_anc', 'assets/ui/card_anc.png');
+    this.load.image('card_da', 'assets/ui/card_da.png');
+    this.load.image('card_pa', 'assets/ui/card_pa.png');
 
     // Luxury Vehicles for Camps Bay (Yellow Lambo, Red Ferrari, Blue SUV)
     this.load.image('vehicle_car_lambo', 'assets/vehicles/car_yellow_lambo.png');
@@ -82,10 +85,11 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('vehicle_car_suv', 'assets/vehicles/car_blue_suv.png');
 
     // 2. Load Player Sprite Frames for DA, ANC, PA
-    const parties = ['da', 'anc', 'pa'];
+    const parties: Array<'da' | 'anc' | 'pa'> = ['da', 'anc', 'pa'];
     parties.forEach(p => {
       this.load.image(`player_${p}_idle`, `assets/players/${p}/${p}_idle.png`);
-      for (let i = 0; i < RUN_FRAME_COUNT; i++) {
+      const count = PARTY_RUN_FRAME_COUNTS[p] || RUN_FRAME_COUNT;
+      for (let i = 0; i < count; i++) {
         this.load.image(`player_${p}_run_${i}`, `assets/players/${p}/${p}_run_${i}.png`);
       }
       this.load.image(`player_${p}_jump`, `assets/players/${p}/${p}_jump.png`);
@@ -113,24 +117,61 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('obs_potholeLarge', 'assets/obstacles/pothole_water.png');
     this.load.image('obs_potholeSmall', 'assets/obstacles/pothole_small.png');
     this.load.image('obs_openManhole', 'assets/obstacles/open_manhole.png');
+
+    // Anti-Freeze Watchdog Timer: Guarantees transition to MainMenuScene within 2.5s
+    const watchdogTimer = setTimeout(() => {
+      if (!this.hasAdvanced) {
+        console.warn('[PreloadScene] Watchdog timer triggered - advancing to MainMenuScene');
+        this.advanceToMainMenu();
+      }
+    }, 2500);
+
+    this.load.once('complete', () => {
+      clearTimeout(watchdogTimer);
+    });
+
+    // Tap or Click to skip loading screen immediately
+    this.input.once('pointerdown', () => {
+      clearTimeout(watchdogTimer);
+      this.advanceToMainMenu();
+    });
   }
 
-  public create() {
-    // Generate fallback textures only for items without PNGs (obstacles, UI icons, etc.)
-    PlaceholderGenerator.generateAll(this);
+  private hasAdvanced: boolean = false;
 
-    // Register Minibus Taxi Animation (51 frames, authentic Cape Town "BELLVILLE! BELLVILLE!" shout)
-    if (this.textures.exists('vehicle_taxi_minibus')) {
-      this.anims.create({
-        key: 'taxi_minibus_anim',
-        frames: this.anims.generateFrameNumbers('vehicle_taxi_minibus', { start: 0, end: 50 }),
-        frameRate: 16,
-        repeat: -1
-      });
+  public create() {
+    this.advanceToMainMenu();
+  }
+
+  private advanceToMainMenu() {
+    if (this.hasAdvanced) return;
+    this.hasAdvanced = true;
+
+    // Generate fallback textures only for items without PNGs (obstacles, UI icons, etc.)
+    try {
+      PlaceholderGenerator.generateAll(this);
+    } catch (e) {
+      console.warn('[PreloadScene] PlaceholderGenerator warning:', e);
     }
 
-    this.time.delayedCall(150, () => {
+    // Register Minibus Taxi Animation safely
+    if (this.textures.exists('vehicle_taxi_minibus') && !this.anims.exists('taxi_minibus_anim')) {
+      try {
+        this.anims.create({
+          key: 'taxi_minibus_anim',
+          frames: this.anims.generateFrameNumbers('vehicle_taxi_minibus', { start: 0, end: 50 }),
+          frameRate: 16,
+          repeat: -1
+        });
+      } catch (err) {
+        console.warn('[PreloadScene] taxi_minibus_anim warning:', err);
+      }
+    }
+
+    try {
       this.scene.start('MainMenuScene');
-    });
+    } catch (err) {
+      console.error('[PreloadScene] Error starting MainMenuScene:', err);
+    }
   }
 }

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getDynamicRoadY } from '../config/constants';
 
 export class ParallaxBackground {
   private scene: Phaser.Scene;
@@ -10,7 +11,6 @@ export class ParallaxBackground {
   private streetlights: Phaser.GameObjects.Sprite[] = [];
   private curbBanners: Phaser.GameObjects.Sprite[] = [];
   private totalBannersSpawned: number = 0;
-  private readonly maxBanners: number = 2;
 
   private isPanorama700: boolean = false;
   private panoramaScale: number = 1;
@@ -48,8 +48,9 @@ export class ParallaxBackground {
     }
 
     // 3. Road & Panorama positioning
-    const roadHeight = 292;
-    const roadY = isPortrait ? height - 275 : 428;
+    const roadY = getDynamicRoadY(height, width);
+    const roadScale = isPortrait ? (height - roadY) / 292 : 1;
+    const roadHeight = isPortrait ? (height - roadY + 8) : 292;
 
     // Detect if high-res panoramic image (740-750px tall)
     const tex = scene.textures.get(selectedLocationTexture);
@@ -83,7 +84,7 @@ export class ParallaxBackground {
     }
 
     // Bring clouds lower down so they are beautifully visible across the blue sky below the top HUD badges
-    const cloudY = isPortrait ? 98 : (isCustomLocation ? 15 : 30);
+    const cloudY = isPortrait ? 90 : (isCustomLocation ? 15 : 30);
     const cloudHeight = isPortrait ? 130 : (isCustomLocation ? 120 : 200);
 
     this.cloudsTile = scene.add.tileSprite(0, cloudY, width, cloudHeight, cloudKey).setOrigin(0, 0);
@@ -97,6 +98,8 @@ export class ParallaxBackground {
     // 6. Road & Pavement Layer (TileSprite in foreground where candidate runs)
     const roadKey = scene.textures.exists('real_bg_road') ? 'real_bg_road' : 'bg_road';
     this.roadTile = scene.add.tileSprite(0, roadY, width, roadHeight, roadKey).setOrigin(0, 0);
+    this.roadTile.tileScaleX = roadScale;
+    this.roadTile.tileScaleY = roadScale;
     this.roadTile.setDepth(3);
 
     // 7. Curbside Election Banners on the sidewalk curb
@@ -108,33 +111,40 @@ export class ParallaxBackground {
 
   private getPavementY(): number {
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
-    const roadY = isPortrait ? this.scene.scale.height - 275 : 428;
+    const roadY = getDynamicRoadY(this.scene.scale.height, this.scene.scale.width);
+    const roadScale = isPortrait ? (this.scene.scale.height - roadY) / 292 : 1;
     // Base placed on top of the pavement surface (well above curb lip and asphalt road)
-    return roadY + 16;
+    return roadY + 16 * roadScale;
   }
 
   private spawnInitialCurbBanners(width: number, _locationKey: string) {
-    if (!this.scene.textures.exists('prop_curb_banner_pa')) return;
+    const bannerKey = this.scene.textures.exists('prop_curb_banner_parties') ? 'prop_curb_banner_parties' : (this.scene.textures.exists('prop_curb_banner_pa') ? 'prop_curb_banner_pa' : null);
+    if (!bannerKey) return;
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
     
-    // Spawn only 1 initial PA banner standing on the pavement in the distance
-    const firstX = isPortrait ? width * 0.78 : 480;
-    this.createCurbBanner(firstX);
+    // Spawn initial multi-party lampposts on the sidewalk curb
+    if (isPortrait) {
+      this.createCurbBanner(width * 0.75, bannerKey);
+    } else {
+      this.createCurbBanner(width * 0.42, bannerKey);
+      this.createCurbBanner(width * 0.88, bannerKey);
+    }
   }
 
-  private createCurbBanner(x: number, key: string = 'prop_curb_banner_pa'): Phaser.GameObjects.Sprite | null {
-    if (!this.scene.textures.exists(key) || this.totalBannersSpawned >= this.maxBanners) return null;
+  private createCurbBanner(x: number, key: string = 'prop_curb_banner_parties'): Phaser.GameObjects.Sprite | null {
+    const bannerKey = this.scene.textures.exists(key) ? key : (this.scene.textures.exists('prop_curb_banner_pa') ? 'prop_curb_banner_pa' : null);
+    if (!bannerKey) return null;
     const pavementY = this.getPavementY();
-    const banner = this.scene.add.sprite(x, pavementY, key);
+    const banner = this.scene.add.sprite(x, pavementY, bannerKey);
     banner.setOrigin(0.5, 1);
-    banner.setDisplaySize(65, 200);
+    banner.setDisplaySize(72, 288);
     banner.setDepth(4); // Behind residents (6) & player (7), on top of pavement (3)
 
     // Gentle breeze sway
     this.scene.tweens.add({
       targets: banner,
-      angle: { from: -1.2, to: 1.2 },
-      duration: Phaser.Math.Between(1800, 2400),
+      angle: { from: -0.8, to: 0.8 },
+      duration: Phaser.Math.Between(2000, 2600),
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
@@ -195,8 +205,9 @@ export class ParallaxBackground {
   public resize(width: number, height?: number) {
     const h = height ?? this.scene.scale.height;
     const isPortrait = h > width;
-    const roadHeight = 292;
-    const roadY = isPortrait ? h - 275 : 428;
+    const roadY = getDynamicRoadY(h, width);
+    const roadScale = isPortrait ? (h - roadY) / 292 : 1;
+    const roadHeight = isPortrait ? (h - roadY + 8) : 292;
 
     this.skyImage.setDisplaySize(width, h);
     this.cloudsTile.setSize(width, this.cloudsTile.height);
@@ -212,6 +223,8 @@ export class ParallaxBackground {
     }
     this.roadTile.setSize(width, roadHeight);
     this.roadTile.y = roadY;
+    this.roadTile.tileScaleX = roadScale;
+    this.roadTile.tileScaleY = roadScale;
 
     const newPavementY = this.getPavementY();
     this.curbBanners.forEach(b => {
@@ -262,12 +275,10 @@ export class ParallaxBackground {
         }
       }
 
-      // Spawn 2nd banner only if total spawned < 2 (exactly 2 poles max per run)
-      if (this.totalBannersSpawned < this.maxBanners) {
-        const rightmostX = this.curbBanners.length > 0 ? Math.max(...this.curbBanners.map(b => b.x)) : -999;
-        if (rightmostX < this.scene.scale.width - 200) {
-          this.createCurbBanner(this.scene.scale.width + Phaser.Math.Between(1800, 2400));
-        }
+      // Spawn subsequent curb lampposts periodically along the route
+      const rightmostX = this.curbBanners.length > 0 ? Math.max(...this.curbBanners.map(b => b.x)) : -999;
+      if (rightmostX < this.scene.scale.width + 400) {
+        this.createCurbBanner(Math.max(this.scene.scale.width + 100, rightmostX + Phaser.Math.Between(850, 1300)));
       }
     }
 

@@ -5,7 +5,6 @@ import { PARTIES } from '../data/parties';
 import { Button } from '../ui/Button';
 import { SoundFX } from '../systems/SoundFX';
 import { ShareModal } from '../ui/ShareModal';
-import { AdvertiseModal } from '../ui/AdvertiseModal';
 
 export class StreetCompleteScene extends Phaser.Scene {
   private partyId: 'da' | 'anc' | 'pa' = 'da';
@@ -291,21 +290,5 @@ export class StreetCompleteScene extends Phaser.Scene {
         fontSize: isPortrait ? '13px' : '17px'
       });
     }
-
-    // "Advertise with Us" Link / Button at bottom of card
-    const adY = topOffset + ch - (isPortrait ? 22 : 26);
-    const adText = this.add.text(width / 2, adY, '📢 Want your brand on in-game minibus taxis & billboards? Advertise With Us ➔', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '11px' : '13px',
-      color: '#fcb813',
-      fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
-
-    adText.setInteractive({ useHandCursor: true });
-    adText.on('pointerover', () => adText.setColor('#ffffff'));
-    adText.on('pointerout', () => adText.setColor('#fcb813'));
-    adText.on('pointerdown', () => {
-      AdvertiseModal.open();
-    });
   }
 }

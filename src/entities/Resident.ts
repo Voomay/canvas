@@ -70,12 +70,17 @@ export class Resident extends Phaser.GameObjects.Container {
     const initialKey = scene.textures.exists(`resident_${residentSpriteId}_doubtful`) 
       ? `resident_${residentSpriteId}_doubtful` 
       : `resident_${residentSpriteId}`;
+    // Scale resident slightly taller/bigger to match candidate on mobile
+    const isPortrait = scene.scale.height > scene.scale.width;
+    const residentScale = isPortrait ? 1.15 : 1.05;
     this.sprite = scene.add.sprite(0, 0, initialKey);
     this.sprite.setOrigin(0.5, 1);
+    this.sprite.setScale(residentScale);
     this.add(this.sprite);
 
-    // Exclamation Alert Badge above head
-    this.alertBadge = scene.add.sprite(0, -120, 'ui_alert_badge');
+    // Exclamation Alert Badge cleanly floating ABOVE head (clearing high hair buns/caps)
+    const alertY = isPortrait ? -245 : -220;
+    this.alertBadge = scene.add.sprite(0, alertY, 'ui_alert_badge');
     this.alertBadge.setOrigin(0.5, 0.5);
     this.alertBadge.setScale(0.85);
     this.add(this.alertBadge);
@@ -83,7 +88,7 @@ export class Resident extends Phaser.GameObjects.Container {
     // Floating bounce tween for alert badge
     this.alertTween = scene.tweens.add({
       targets: this.alertBadge,
-      y: -130,
+      y: alertY - 10,
       duration: 500,
       yoyo: true,
       repeat: -1,

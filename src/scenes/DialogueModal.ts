@@ -32,9 +32,9 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const isPortrait = scene.scale.height > scene.scale.width;
     const height = scene.scale.height;
 
-    // Center dialogue block in the clear sky area between top HUD (y~110) and characters (y~height-200)
+    // Center dialogue block in the clear sky area between top HUD (y~100) and characters (y~height-380)
     const skyCenterY = isPortrait 
-      ? Math.round(110 + (height - 210 - 110) / 2) 
+      ? Math.round(100 + (height - 380 - 100) / 2) 
       : Math.round(height * 0.42);
 
     // 1. Comic Speech Bubble (On top of the 4 answers)

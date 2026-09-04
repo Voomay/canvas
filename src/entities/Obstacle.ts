@@ -24,7 +24,8 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setDepth(5);
+    // brokenDrain sits on the sidewalk curb layer (behind curbside vehicles at depth 4)
+    this.setDepth(type === 'brokenDrain' ? 3.8 : 5);
     this.setOrigin(0.5, 1);
     this.setImmovable(true);
 

@@ -13,10 +13,12 @@ import { ResponseType } from '../data/complaints';
 import { SoundFX } from '../systems/SoundFX';
 import { 
   PLAYER_X_RATIO, 
-  GROUND_Y, 
   RUN_SPEED_BASE, 
   RUN_SPEED_SPRINT,
-  RUN_SPEED_SLOW 
+  RUN_SPEED_SLOW,
+  getDynamicRoadY,
+  getDynamicGroundY,
+  getCurbsideTaxiY
 } from '../config/constants';
 
 export class GameScene extends Phaser.Scene {
@@ -76,9 +78,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private getGroundY(): number {
-    const isPortrait = this.scale.height > this.scale.width;
-    // Characters brought DOWN to the lower side of the dashed white line
-    return isPortrait ? this.scale.height - 65 : GROUND_Y;
+    return getDynamicGroundY(this.scale.height, this.scale.width);
   }
 
   public create() {
@@ -296,8 +296,10 @@ export class GameScene extends Phaser.Scene {
         
         // Prevent obstacle from spawning directly on top of a resident
         const residentOnPoint = this.residents.some(r => Math.abs(r.x - spawnX) < 180);
+        // Prevent obstacle from spawning on top of or right next to curbside taxi/vehicle (buffer 550px)
+        const taxiOnPoint = this.curbsideTaxi && this.curbsideTaxi.active && Math.abs(this.curbsideTaxi.x - spawnX) < 550;
 
-        if (!residentOnPoint) {
+        if (!residentOnPoint && !taxiOnPoint) {
           this.spawnObstacle();
           this.nextObstacleTime = Phaser.Math.Between(
             this.currentStreet.obstacleSpawnRateMin,
@@ -312,19 +314,23 @@ export class GameScene extends Phaser.Scene {
     // 2. Resident Spawning
     this.nextResidentTime -= delta;
     if (this.nextResidentTime <= 0 && !this.activeResidentInEncounter) {
-      this.spawnResident();
-      this.nextResidentTime = Phaser.Math.Between(
-        this.currentStreet.residentSpawnRateMin,
-        this.currentStreet.residentSpawnRateMax
-      );
+      const isPortrait = this.scale.height > this.scale.width;
+      const spawnX = this.scale.width + (isPortrait ? 380 : 440);
+      const taxiOnPoint = this.curbsideTaxi && this.curbsideTaxi.active && Math.abs(this.curbsideTaxi.x - spawnX) < 320;
+      if (!taxiOnPoint) {
+        this.spawnResident();
+        this.nextResidentTime = Phaser.Math.Between(
+          this.currentStreet.residentSpawnRateMin,
+          this.currentStreet.residentSpawnRateMax
+        );
+      } else {
+        this.nextResidentTime = 600;
+      }
     }
   }
 
   private getCurbsideY(): number {
-    const isPortrait = this.scale.height > this.scale.width;
-    const roadY = isPortrait ? this.scale.height - 275 : 428;
-    // Taxi positioned on curbside upper lane along the curb, clearing ample space before the white line
-    return roadY + 70;
+    return getCurbsideTaxiY(this.scale.height, this.scale.width);
   }
 
   private spawnCurbsideTaxi(initialX?: number) {
@@ -338,6 +344,9 @@ export class GameScene extends Phaser.Scene {
 
     const spawnX = initialX !== undefined ? initialX : this.scale.width + 450;
     const curbsideY = this.getCurbsideY();
+
+    // Clear any obstacles around the vehicle's spawn point with generous clearance (550px buffer)
+    this.clearObstaclesBetween(spawnX - 550, spawnX + 550);
 
     if (isCampsBay) {
       // Luxury sports cars along Camps Bay beach road (Yellow Lambo, Red Ferrari, Blue SUV)
@@ -411,14 +420,21 @@ export class GameScene extends Phaser.Scene {
 
   private spawnObstacle() {
     const pool = this.currentStreet.obstaclePool;
-    const type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
+    let type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
     const spawnX = this.scale.width + 100;
+
+    // If curbside taxi is nearby (within 650px), do NOT spawn brokenDrain which sits on the same curb layer!
+    if (type === 'brokenDrain' && this.curbsideTaxi && this.curbsideTaxi.active) {
+      const distToTaxi = Math.abs(this.curbsideTaxi.x - spawnX);
+      if (distToTaxi < 650) {
+        type = 'potholeWater';
+      }
+    }
 
     // brokenDrain is a curb storm inlet that sits seamlessly embedded IN the sidewalk curb,
     // while road potholes sit in the runner's lane on the asphalt.
-    const isPortrait = this.scale.height > this.scale.width;
-    const roadY = isPortrait ? this.scale.height - 275 : 428;
-    const spawnY = (type === 'brokenDrain') ? roadY + 50 : this.getGroundY();
+    const roadY = getDynamicRoadY(this.scale.height, this.scale.width);
+    const spawnY = (type === 'brokenDrain') ? roadY + 46 : this.getGroundY();
 
     const obstacle = new Obstacle(this, spawnX, spawnY, type);
     this.obstacles.push(obstacle);
@@ -448,6 +464,18 @@ export class GameScene extends Phaser.Scene {
   private updateObstacles(delta: number) {
     const playerX = this.player.x;
     const groundY = this.getGroundY();
+
+    // Safety: Ensure brokenDrain never overlaps or sits directly beside the curbside taxi
+    if (this.curbsideTaxi && this.curbsideTaxi.active) {
+      const taxiX = this.curbsideTaxi.x;
+      for (let i = this.obstacles.length - 1; i >= 0; i--) {
+        const obs = this.obstacles[i];
+        if (obs.type === 'brokenDrain' && Math.abs(obs.x - taxiX) < 450) {
+          obs.destroy();
+          this.obstacles.splice(i, 1);
+        }
+      }
+    }
 
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
@@ -493,6 +521,13 @@ export class GameScene extends Phaser.Scene {
 
   private updateResidents(delta: number) {
     const playerX = this.player.x;
+    const isPortrait = this.scale.height > this.scale.width;
+    // Dynamic beacon distance:
+    // On desktop, the screen right edge from player is (scale.width - playerX), e.g. ~900px.
+    // The beacon MUST appear BEFORE the voter enters the visible screen (while still off-screen)!
+    const screenRightEdgeDist = this.scale.width - playerX;
+    const beaconMaxDist = screenRightEdgeDist + (isPortrait ? 400 : 700);
+    const beaconMinDist = isPortrait ? 380 : 440;
 
     for (let i = this.residents.length - 1; i >= 0; i--) {
       const resident = this.residents[i];
@@ -504,13 +539,13 @@ export class GameScene extends Phaser.Scene {
       resident.updateMovement(this.currentSpeed, delta);
       const distance = resident.x - playerX;
 
-      // 1. Advance warning when resident is approaching down the street (between 380px and 850px)
-      if (!resident.hasEncountered && distance > 380 && distance < 850 && !this.activeResidentInEncounter) {
+      // 1. Advance warning when resident is approaching down the street (before & while entering screen)
+      if (!resident.hasEncountered && distance > beaconMinDist && distance < beaconMaxDist && !this.activeResidentInEncounter) {
         this.showResidentAdvanceBeacon(resident, distance);
       }
 
-      // 2. Interaction zone (between 120 and 380px ahead): Show Choice Banner
-      if (!resident.hasEncountered && distance > 120 && distance <= 380 && !this.activeResidentInEncounter) {
+      // 2. Interaction zone (between 120 and beaconMinDist): Show Choice Banner
+      if (!resident.hasEncountered && distance > 120 && distance <= beaconMinDist && !this.activeResidentInEncounter) {
         this.hideResidentAdvanceBeacon();
         resident.isApproaching = true;
         this.activeResidentInEncounter = resident;
@@ -527,7 +562,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // If no resident is in advance range and no encounter is active, hide beacon
-    const hasUpcoming = this.residents.some(r => !r.hasEncountered && (r.x - playerX) > 380 && (r.x - playerX) < 850);
+    const hasUpcoming = this.residents.some(r => !r.hasEncountered && (r.x - playerX) > beaconMinDist && (r.x - playerX) < beaconMaxDist);
     if (!hasUpcoming && this.residentAdvanceBeacon && !this.activeResidentInEncounter) {
       this.hideResidentAdvanceBeacon();
     }
@@ -536,7 +571,7 @@ export class GameScene extends Phaser.Scene {
   private createStartBanner() {
     const { width, height } = this.scale;
     const isPortrait = height > width;
-    const bannerY = isPortrait ? height / 2 - 40 : 260;
+    const bannerY = isPortrait ? Math.round(height * 0.38) : 260;
     const banner = this.add.container(width / 2, bannerY);
     banner.setDepth(150);
 
@@ -650,8 +685,8 @@ export class GameScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const isPortrait = height > width;
-    // Positioned cleanly in the middle of mobile portrait view for thumb accessibility
-    const bannerY = isPortrait ? Math.round(height * 0.44) : 140;
+    // Positioned cleanly in clear upper area of mobile portrait view for thumb accessibility & breathing room
+    const bannerY = isPortrait ? Math.round(height * 0.28) : 140;
     const banner = this.add.container(width / 2, bannerY);
     banner.setDepth(140);
 
@@ -744,7 +779,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const beaconX = this.scale.width - (isPortrait ? 88 : 110);
-    const beaconY = isPortrait ? this.scale.height - 210 : 380;
+    const beaconY = isPortrait ? this.scale.height - 290 : 380;
     const beacon = this.add.container(beaconX, beaconY);
     beacon.setDepth(130);
 
@@ -807,7 +842,7 @@ export class GameScene extends Phaser.Scene {
 
     // Smoothly position resident facing representative
     const isPortrait = this.scale.height > this.scale.width;
-    const residentTargetX = isPortrait ? this.player.x + 130 : this.player.x + 150;
+    const residentTargetX = isPortrait ? this.player.x + 140 : this.player.x + 150;
     this.tweens.add({
       targets: resident,
       x: residentTargetX,

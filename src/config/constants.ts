@@ -32,19 +32,20 @@ export function calculateGameWidth(): number {
 
 export function getDynamicRoadY(height: number, width: number): number {
   const isPortrait = height > width;
-  return isPortrait ? height - 275 : 428;
+  return isPortrait ? height - 390 : 428;
 }
 
 export function getDynamicGroundY(height: number, width: number): number {
   const isPortrait = height > width;
-  // Characters brought DOWN to lower lane (below dashed white line at y=122 in road image)
-  return isPortrait ? height - 65 : 560;
+  // Characters positioned comfortably in the lower lane (elevated nicely from bottom edge for mobile comfort)
+  return isPortrait ? height - 150 : 560;
 }
 
 export function getCurbsideTaxiY(height: number, width: number): number {
+  const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
   // Taxi positioned on curbside upper lane right along the curb, clearing ample space on the road
-  return roadY + 70;
+  return roadY + (isPortrait ? 92 : 70);
 }
 
 export const RUN_SPEED_BASE = 420;
@@ -55,8 +56,13 @@ export const GRAVITY_Y = 1300;
 
 export const PLAYER_X_RATIO = 0.30; // 30% from left
 export const GROUND_Y = 560; // Landscape default contact line
-export const RUN_FRAME_COUNT = 31; // 31 seamless run frames from GIF
-export const RUN_FRAME_DURATION = 30; // ~33 FPS animation cycle
+export const RUN_FRAME_COUNT = 31; // Default fallback frame count
+export const PARTY_RUN_FRAME_COUNTS: Record<'da' | 'anc' | 'pa', number> = {
+  da: 31,
+  anc: 31,
+  pa: 28 // Exact 28-frame seamless loop from GIF
+};
+export const RUN_FRAME_DURATION = 32; // ~31 FPS smooth animation cycle
 
 export const COLORS = {
   sky: 0x5da8f0,

@@ -4,7 +4,6 @@ import { PARTIES } from '../data/parties';
 import { Button } from '../ui/Button';
 import { SoundFX } from '../systems/SoundFX';
 import { ShareModal } from '../ui/ShareModal';
-import { AdvertiseModal } from '../ui/AdvertiseModal';
 
 export class ResultsScene extends Phaser.Scene {
   private partyId: 'da' | 'anc' | 'pa' = 'da';
@@ -202,20 +201,6 @@ export class ResultsScene extends Phaser.Scene {
         hoverColor: 0x2b5294,
         fontSize: '14px'
       });
-
-      // Advertise Link
-      const adText = this.add.text(width / 2, topOffset + ch - 18, '📢 Want to advertise your brand in-game? Click here ➔', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '11px',
-        color: '#fcb813',
-        fontStyle: 'bold'
-      }).setOrigin(0.5, 0.5);
-
-      adText.setInteractive({ useHandCursor: true });
-      adText.on('pointerover', () => adText.setColor('#ffffff'));
-      adText.on('pointerout', () => adText.setColor('#fcb813'));
-      adText.on('pointerdown', () => AdvertiseModal.open());
-
     } else {
       statsList.forEach((st, idx) => {
         const col = idx % 4;
@@ -276,19 +261,6 @@ export class ResultsScene extends Phaser.Scene {
         hoverColor: 0x2480e6,
         fontSize: '18px'
       });
-
-      // Advertise with Us Link
-      const adText = this.add.text(width / 2, topOffset + ch - 22, '📢 Want your brand featured on in-game minibus taxis & billboards? Advertise With Us ➔', {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '13px',
-        color: '#fcb813',
-        fontStyle: 'bold'
-      }).setOrigin(0.5, 0.5);
-
-      adText.setInteractive({ useHandCursor: true });
-      adText.on('pointerover', () => adText.setColor('#ffffff'));
-      adText.on('pointerout', () => adText.setColor('#fcb813'));
-      adText.on('pointerdown', () => AdvertiseModal.open());
     }
   }
 }

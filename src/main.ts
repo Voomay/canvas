@@ -35,13 +35,25 @@ window.addEventListener('appinstalled', () => {
   return choice.outcome === 'accepted';
 };
 
-// Register Service Worker for PWA offline support
-if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[PWA] ServiceWorker registered with scope:', reg.scope))
-      .catch(err => console.warn('[PWA] ServiceWorker registration failed:', err));
-  });
+// Service Worker handling:
+// On localhost, aggressively unregister any service worker to prevent stale cache lockups and freezes
+if ('serviceWorker' in navigator) {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for (const reg of registrations) {
+        reg.unregister().then(() => console.log('[PWA] Cleared dev service worker:', reg.scope));
+      }
+    });
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
+    }
+  } else if (window.location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('[PWA] ServiceWorker registered with scope:', reg.scope))
+        .catch(err => console.warn('[PWA] ServiceWorker registration failed:', err));
+    });
+  }
 }
 
 // Global High-Resolution Text Pipeline:

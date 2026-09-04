@@ -28,7 +28,7 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     const height = scene.scale.height;
 
     const skyCenterY = isPortrait 
-      ? Math.round(110 + (height - 210 - 110) / 2) 
+      ? Math.round(100 + (height - 380 - 100) / 2) 
       : Math.round(height * 0.42);
 
     const bubbleX = isPortrait ? cx : cx + 70;

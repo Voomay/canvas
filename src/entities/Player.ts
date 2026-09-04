@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SoundFX } from '../systems/SoundFX';
-import { JUMP_VELOCITY, RUN_FRAME_COUNT, RUN_FRAME_DURATION } from '../config/constants';
+import { JUMP_VELOCITY, RUN_FRAME_COUNT, PARTY_RUN_FRAME_COUNTS, RUN_FRAME_DURATION } from '../config/constants';
 
 export type PlayerState = 
   | 'IDLE' 
@@ -33,7 +33,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     
-    // Physics body adjustments (for 140x200 sprite frame, origin 0.5, 1)
+    // Scale candidate player slightly taller/bigger for mobile readability
+    const isPortrait = scene.scale.height > scene.scale.width;
+    const playerScale = isPortrait ? 1.15 : 1.05;
+    this.setScale(playerScale);
+
+    // Physics body adjustments (for 144x200 sprite frame, origin 0.5, 1)
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (body) {
       body.setSize(44, 160);
@@ -127,16 +132,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Run animation frames (38-frame smooth cycle at ~30 FPS)
+    // Run animation frames (exact party cycle count at 30-33 FPS)
     if (this.playerState === 'RUNNING') {
       this.runAnimTimer += delta;
       if (this.runAnimTimer >= RUN_FRAME_DURATION) {
         this.runAnimTimer = 0;
-        this.currentFrameIdx = (this.currentFrameIdx + 1) % RUN_FRAME_COUNT;
+        const frameCount = PARTY_RUN_FRAME_COUNTS[this.partyId] || RUN_FRAME_COUNT;
+        this.currentFrameIdx = (this.currentFrameIdx + 1) % frameCount;
         this.setTexture(`player_${this.partyId}_run_${this.currentFrameIdx}`);
         
-        // Soft footstep sound synchronized with left foot (0) and right foot (19) strikes
-        if (this.currentFrameIdx === 0 || this.currentFrameIdx === Math.floor(RUN_FRAME_COUNT / 2)) {
+        // Soft footstep sound synchronized with left foot (0) and right foot (midpoint) strikes
+        if (this.currentFrameIdx === 0 || this.currentFrameIdx === Math.floor(frameCount / 2)) {
           this.soundFX.playFootstep();
         }
       }
