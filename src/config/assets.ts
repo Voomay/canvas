@@ -52,13 +52,9 @@ export interface AssetManifest {
   };
   obstacles: {
     potholeSmall: string;
-    potholeLarge: string;
     potholeWater: string;
-    rubbishBag: string;
     brokenDrain: string;
     openManhole: string;
-    leakingPipe: string;
-    fallenPoster: string;
   };
   ui: {
     buttons: {
@@ -160,14 +156,10 @@ export const ASSET_CONFIG: AssetManifest = {
     }
   },
   obstacles: {
-    potholeSmall: '/assets/obstacles/potholes/pothole_small.png',
-    potholeLarge: '/assets/obstacles/potholes/pothole_large.png',
-    potholeWater: '/assets/obstacles/potholes/pothole_water.png',
-    rubbishBag: '/assets/obstacles/rubbish/rubbish_bag.png',
-    brokenDrain: '/assets/obstacles/potholes/broken_drain.png',
-    openManhole: '/assets/obstacles/potholes/open_manhole.png',
-    leakingPipe: '/assets/obstacles/pipes/leaking_pipe.png',
-    fallenPoster: '/assets/obstacles/rubbish/fallen_poster.png'
+    potholeSmall: '/assets/obstacles/pothole_small.png',
+    potholeWater: '/assets/obstacles/pothole_water.png',
+    brokenDrain: '/assets/obstacles/broken_drain.png',
+    openManhole: '/assets/obstacles/open_manhole.png'
   },
   ui: {
     buttons: {

@@ -23,6 +23,216 @@ export class ReactionModal extends Phaser.GameObjects.Container {
       this.soundFX.playVoteNegative();
     }
 
+    const isPortrait = scene.scale.height > scene.scale.width;
+
+    if (isPortrait) {
+      // ═══════ MOBILE: Bottom slide-up result card ═══════
+      this.createMobileResultCard(scene, outcome, onComplete);
+    } else {
+      // ═══════ DESKTOP: Existing layout (unchanged) ═══════
+      this.createDesktopLayout(scene, outcome, onComplete);
+    }
+
+    scene.add.existing(this);
+  }
+
+  // ═══════ MOBILE RESULT CARD ═══════
+  private createMobileResultCard(
+    scene: Phaser.Scene,
+    outcome: DialogueOutcome,
+    onComplete: () => void
+  ) {
+    const { width, height } = scene.scale;
+
+    // Determine outcome visuals
+    let headerText = '';
+    let headerEmoji = '';
+    let headerBgColor = 0x16a34a;
+    let borderColor = 0x4ade80;
+
+    if (outcome.outcome === 'positive') {
+      headerText = 'GOOD CHOICE!';
+      headerEmoji = '✓';
+      headerBgColor = 0x16a34a;
+      borderColor = 0x4ade80;
+    } else if (outcome.outcome === 'doubtful') {
+      headerText = 'DOUBTFUL...';
+      headerEmoji = '🤔';
+      headerBgColor = 0x92400e;
+      borderColor = 0xf59e0b;
+    } else {
+      headerText = 'BAD MOVE!';
+      headerEmoji = '✗';
+      headerBgColor = 0x7f1d1d;
+      borderColor = 0xef4444;
+    }
+
+    // Bottom-anchored result card: slides up from bottom where answers were, thumb-friendly
+    const cardW = Math.min(width - 20, 480);
+    const cardH = 286;
+    const cardFinalY = height - cardH / 2 - 14;
+    const cardStartY = height + cardH;
+
+    const card = scene.add.container(width / 2, cardStartY);
+    card.setDepth(165);
+
+    // Card background with shadow
+    const bg = scene.add.graphics();
+    bg.fillStyle(0x000000, 0.45);
+    bg.fillRoundedRect(-cardW / 2 + 3, -cardH / 2 + 5, cardW, cardH, 20);
+    bg.fillStyle(0x0c1524, 0.98);
+    bg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 20);
+    bg.lineStyle(2.5, borderColor, 1);
+    bg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 20);
+    card.add(bg);
+
+    // Outcome header badge
+    const badgeW = 210;
+    const badgeH = 38;
+    const badgeY = -cardH / 2 + 32;
+    const badgeBg = scene.add.graphics();
+    badgeBg.fillStyle(headerBgColor, 1);
+    badgeBg.fillRoundedRect(-badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 12);
+    card.add(badgeBg);
+
+    const badgeTxt = scene.add.text(0, badgeY, `${headerEmoji}  ${headerText}`, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '17px',
+      color: '#ffffff',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    card.add(badgeTxt);
+
+    // Reaction text from resident
+    const reactionY = badgeY + 54;
+    const reactionTxt = scene.add.text(0, reactionY, outcome.reactionText, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: outcome.reactionText.length > 60 ? '13px' : '15px',
+      color: '#e2e8f0',
+      fontStyle: '600',
+      align: 'center',
+      wordWrap: { width: cardW - 40 },
+      lineSpacing: 3
+    }).setOrigin(0.5, 0.5);
+    card.add(reactionTxt);
+
+    // Stats section
+    const statsY = reactionY + 58;
+
+    // Vote result
+    const voteText = outcome.voteGained > 0
+      ? (outcome.voteGained > 1 ? `+${outcome.voteGained} VOTES 🗳️` : `+${outcome.voteGained} VOTE 🗳️`)
+      : (outcome.responseType === 'lie' ? 'CAUGHT LYING! 🤥' : 'NO VOTE ❌');
+    const voteColor = outcome.voteGained > 0 ? '#44dd66' : '#ff7777';
+
+    const voteLbl = scene.add.text(-60, statsY, voteText, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '16px',
+      color: voteColor,
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    card.add(voteLbl);
+
+    // Trust change
+    const trustPrefix = outcome.trustChange >= 0 ? '+' : '';
+    const trustColor = outcome.trustChange >= 0 ? '#55dd88' : '#ff5555';
+
+    const trustLbl = scene.add.text(70, statsY, `${trustPrefix}${outcome.trustChange}% TRUST`, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '14px',
+      color: trustColor,
+      fontStyle: '800'
+    }).setOrigin(0.5, 0.5);
+    card.add(trustLbl);
+
+    // Mental health change
+    if (outcome.mentalHealthChange !== 0) {
+      const mhY = statsY + 24;
+      const mhText = outcome.mentalHealthReason || `Morale: ${outcome.mentalHealthChange > 0 ? '+' : ''}${outcome.mentalHealthChange}%`;
+      const mhColor = outcome.mentalHealthChange > 0 ? '#44dd66' : '#ff5555';
+
+      const mhLbl = scene.add.text(0, mhY, mhText, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '12px',
+        color: mhColor,
+        fontStyle: '700'
+      }).setOrigin(0.5, 0.5);
+      card.add(mhLbl);
+    }
+
+    // CONTINUE button (Thumb-friendly bottom position)
+    const continueBtnW = cardW - 36;
+    const continueBtnH = 56;
+    const continueBtnY = cardH / 2 - continueBtnH / 2 - 16;
+
+    const continueBg = scene.add.graphics();
+    continueBg.fillStyle(headerBgColor, 1);
+    continueBg.fillRoundedRect(-continueBtnW / 2, continueBtnY - continueBtnH / 2, continueBtnW, continueBtnH, 16);
+    continueBg.lineStyle(2, borderColor, 0.9);
+    continueBg.strokeRoundedRect(-continueBtnW / 2, continueBtnY - continueBtnH / 2, continueBtnW, continueBtnH, 16);
+    card.add(continueBg);
+
+    const continueTxt = scene.add.text(0, continueBtnY, 'CONTINUE', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '19px',
+      color: '#ffffff',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+    card.add(continueTxt);
+
+    const continueZone = scene.add.zone(0, continueBtnY, continueBtnW, continueBtnH).setInteractive({ useHandCursor: true });
+    card.add(continueZone);
+
+    // Background tap zone for easy dismissing anywhere on card
+    const cardHitZone = scene.add.zone(0, 0, cardW, cardH).setInteractive({ useHandCursor: true });
+    card.add(cardHitZone);
+    card.sendToBack(cardHitZone);
+    card.sendToBack(bg);
+
+    let hasCompleted = false;
+    const doComplete = () => {
+      if (hasCompleted) return;
+      hasCompleted = true;
+
+      // Slide card down off-screen to dismiss
+      scene.tweens.add({
+        targets: card,
+        y: height + cardH,
+        duration: 200,
+        ease: 'Cubic.easeIn',
+        onComplete: () => {
+          card.destroy();
+          this.destroy();
+          onComplete();
+        }
+      });
+    };
+
+    continueZone.on('pointerdown', doComplete);
+    cardHitZone.on('pointerdown', doComplete);
+
+    // Auto complete after 4.5 seconds
+    scene.time.delayedCall(4500, () => {
+      doComplete();
+    });
+
+    // Slide-up entrance animation from bottom
+    scene.tweens.add({
+      targets: card,
+      y: cardFinalY,
+      duration: 280,
+      ease: 'Cubic.easeOut'
+    });
+
+    this.add(card);
+  }
+
+  // ═══════ DESKTOP LAYOUT (unchanged) ═══════
+  private createDesktopLayout(
+    scene: Phaser.Scene,
+    outcome: DialogueOutcome,
+    onComplete: () => void
+  ) {
     const cx = scene.scale.width / 2;
     const isPortrait = scene.scale.height > scene.scale.width;
     const height = scene.scale.height;
@@ -43,8 +253,6 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     // 2. Floating stats notification
     const statsPopup = this.createStatsPopup(scene, statsX, statsY, outcome);
     this.add(statsPopup);
-
-    scene.add.existing(this);
 
     // Click anywhere to fast forward
     const clickZone = scene.add.zone(cx, scene.scale.height / 2, scene.scale.width, scene.scale.height).setInteractive();
@@ -77,13 +285,13 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     const bubbleH = 95;
 
     let strokeColor = 0x27ae60;
-    let emoji = '👍';
+    let emoji = '\ud83d\udc4d';
     if (outcome === 'doubtful') {
       strokeColor = 0xe67e22;
-      emoji = '🤔';
+      emoji = '\ud83e\udd14';
     } else if (outcome === 'negative') {
       strokeColor = 0xe74c3c;
-      emoji = '🤦';
+      emoji = '\ud83e\udd26';
     }
 
     const bg = scene.add.graphics();
@@ -151,34 +359,49 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     const container = scene.add.container(x, y);
 
     const bg = scene.add.graphics();
-    bg.fillStyle(0x0c1524, 0.95);
-    bg.fillRoundedRect(-125, -35, 250, 70, 14);
+    bg.fillStyle(0x0c1524, 0.96);
+    bg.fillRoundedRect(-135, -46, 270, 92, 14);
     bg.lineStyle(3, 0xfcb813, 1);
-    bg.strokeRoundedRect(-125, -35, 250, 70, 14);
+    bg.strokeRoundedRect(-135, -46, 270, 92, 14);
 
     const voteText = outcome.voteGained > 0
-      ? (outcome.voteGained > 1 ? `+${outcome.voteGained} VOTES! 🗳️🎉` : `+${outcome.voteGained} VOTE! 🗳️`)
-      : (outcome.responseType === 'lie' ? 'CAUGHT LYING! 🤥 0 VOTES' : 'NO VOTE ❌');
+      ? (outcome.voteGained > 1 ? `+${outcome.voteGained} VOTES! \ud83d\uddf3\ufe0f\ud83c\udf89` : `+${outcome.voteGained} VOTE! \ud83d\uddf3\ufe0f`)
+      : (outcome.responseType === 'lie' ? 'CAUGHT LYING! \ud83e\udd25 0 VOTES' : 'NO VOTE \u274c');
     const voteColor = outcome.voteGained > 0 ? '#44dd66' : '#ff7777';
 
-    const vLabel = scene.add.text(0, -12, voteText, {
+    const vLabel = scene.add.text(0, -23, voteText, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: outcome.voteGained > 1 ? '17px' : '18px',
+      fontSize: outcome.voteGained > 1 ? '16px' : '17px',
       color: voteColor,
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
     const trustPrefix = outcome.trustChange >= 0 ? '+' : '';
     const trustColor = outcome.trustChange >= 0 ? '#55dd88' : '#ff5555';
-    const timeBonusText = outcome.voteGained > 0 ? ' • +5s ⏱️' : '';
-    const tLabel = scene.add.text(0, 14, `Trust: ${trustPrefix}${outcome.trustChange}%${timeBonusText}`, {
+    const timeBonusText = outcome.voteGained > 0 ? ' \u2022 +5s \u23f1\ufe0f' : '';
+    const tLabel = scene.add.text(0, 0, `Trust: ${trustPrefix}${outcome.trustChange}%${timeBonusText}`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '15px',
+      fontSize: '14px',
       color: trustColor,
       fontStyle: 'bold'
     }).setOrigin(0.5, 0.5);
 
-    container.add([bg, vLabel, tLabel]);
+    const mhChange = outcome.mentalHealthChange;
+    const mhPrefix = mhChange > 0 ? '+' : '';
+    const mhColor = mhChange > 0 ? '#44dd66' : (mhChange < 0 ? '#ff5555' : '#cbd5e1');
+    const mhEmoji = mhChange > 0 ? '\u2764\ufe0f' : (mhChange < 0 ? '\ud83d\udc94' : '\ud83e\udde0');
+    const mhText = outcome.mentalHealthReason 
+      ? outcome.mentalHealthReason 
+      : `${mhEmoji} Morale: ${mhPrefix}${mhChange}%`;
+
+    const mhLabel = scene.add.text(0, 24, mhText, {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '12.5px',
+      color: mhColor,
+      fontStyle: '800'
+    }).setOrigin(0.5, 0.5);
+
+    container.add([bg, vLabel, tLabel, mhLabel]);
 
     // Floating upward tween
     scene.tweens.add({

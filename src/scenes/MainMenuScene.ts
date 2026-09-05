@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Button } from '../ui/Button';
 import { ScoreManager } from '../systems/ScoreManager';
 import { SoundFX } from '../systems/SoundFX';
+import { getCurbsideTaxiY } from '../config/constants';
 
 interface PartyCardItem {
   partyId: 'da' | 'anc' | 'pa';
@@ -90,8 +91,6 @@ export class MainMenuScene extends Phaser.Scene {
   private activeVehicleContainer!: Phaser.GameObjects.Container;
 
   private slideshowTimer?: Phaser.Time.TimerEvent;
-  private locationPillText?: Phaser.GameObjects.Text;
-  private locationDots?: Phaser.GameObjects.Text;
   private isSliding: boolean = false;
 
   // Mobile Carousel State
@@ -121,8 +120,8 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.tileSprite(0, 10, width, 120, cloudKey).setOrigin(0, 0).setDepth(2);
 
     // Road positioning
-    const roadHeight = 292;
-    const roadY = isPortrait ? height - roadHeight : 428;
+    const roadHeight = 352;
+    const roadY = isPortrait ? height - roadHeight : 368;
 
     // 2. LOCATION SLIDESHOW CONTAINERS
     // Background scenery container (Houses, Table Mountain, flats) at depth 1 (behind road)
@@ -143,8 +142,8 @@ export class MainMenuScene extends Phaser.Scene {
     const roadSprite = this.add.tileSprite(0, roadY, width, roadHeight, roadKey).setOrigin(0, 0);
     roadSprite.setDepth(5);
 
-    // 4. ELEGANT LOCATION PILL BADGE (Shows current sliding area)
-    this.createLocationBadge(width, roadY, isPortrait);
+    // 4. Location pill badge removed per user request
+    // (createLocationBadge disabled)
 
     // Start automated 3.5s showcase slider
     this.slideshowTimer = this.time.addEvent({
@@ -217,7 +216,7 @@ export class MainMenuScene extends Phaser.Scene {
     const bannerKey = this.textures.exists('prop_curb_banner_parties') ? 'prop_curb_banner_parties' : (this.textures.exists('prop_curb_banner_pa') ? 'prop_curb_banner_pa' : null);
     if (loc.hasBanner && bannerKey) {
       const bannerX = isPortrait ? width * 0.22 : width * 0.20;
-      const bannerY = roadY + 16;
+      const bannerY = roadY + 20;
       const banner = this.add.sprite(bannerX, bannerY, bannerKey);
       banner.setOrigin(0.5, 1);
       banner.setDisplaySize(72, 288);
@@ -238,20 +237,21 @@ export class MainMenuScene extends Phaser.Scene {
       const vehicleX = isPortrait ? width * 0.70 : width * 0.76;
 
       if (loc.isTaxi) {
-        // Minibus Taxi resting firmly in the road lane along the sidewalk curb
-        const vehicleY = roadY + 82;
+        // Minibus Taxi resting firmly in the upper road lane near the curb
+        const vehicleY = isPortrait ? getCurbsideTaxiY(this.scale.height, width) : roadY + 140;
         const taxi = this.add.sprite(vehicleX, vehicleY, loc.vehicleTexture);
         taxi.setOrigin(0.5, 1);
+        taxi.setScale(isPortrait ? 0.92 : 1.15);
         if (this.anims.exists('taxi_minibus_anim')) {
           taxi.play('taxi_minibus_anim');
         }
         vehicleContainer.add(taxi);
       } else {
-        // Luxury Supercar (Yellow Lambo, Red Ferrari) resting in the road near the curb
-        const vehicleY = roadY + 80 + (loc.vehicleYOffset || 0);
+        // Luxury Supercar (Yellow Lambo, Red Ferrari) resting near the curb
+        const vehicleY = isPortrait ? getCurbsideTaxiY(this.scale.height, width) : roadY + 138 + (loc.vehicleYOffset || 0);
         const car = this.add.image(vehicleX, vehicleY, loc.vehicleTexture);
         car.setOrigin(0.5, 1);
-        const scale = loc.vehicleScale || 0.85;
+        const scale = isPortrait ? 0.62 : (loc.vehicleScale || 0.85);
         car.setScale(scale);
         vehicleContainer.add(car);
       }
@@ -301,78 +301,8 @@ export class MainMenuScene extends Phaser.Scene {
         this.activeBgContainer = incomingBg;
         this.activeVehicleContainer = incomingVeh;
         this.isSliding = false;
-        this.updateLocationBadge();
       }
     });
-
-    // Animate location badge crossfade
-    if (this.locationPillText) {
-      this.tweens.add({
-        targets: this.locationPillText,
-        alpha: 0,
-        y: this.locationPillText.y - 6,
-        duration: 250,
-        ease: 'Quad.easeIn',
-        onComplete: () => {
-          const nextLoc = SHOWCASE_LOCATIONS[nextIndex];
-          this.locationPillText?.setText(`📍 ${nextLoc.name} • ${nextLoc.subtitle}`);
-          this.updateLocationDots(nextIndex);
-          if (this.locationPillText) {
-            this.locationPillText.y += 12;
-            this.tweens.add({
-              targets: this.locationPillText,
-              alpha: 1,
-              y: this.locationPillText.y - 6,
-              duration: 350,
-              ease: 'Quad.easeOut'
-            });
-          }
-        }
-      });
-    }
-  }
-
-  private createLocationBadge(width: number, roadY: number, isPortrait: boolean) {
-    const badgeW = isPortrait ? 260 : 310;
-    const badgeH = 30;
-    const badgeX = isPortrait ? width / 2 : width - badgeW / 2 - 20;
-    const badgeY = isPortrait ? roadY - 24 : roadY - 18;
-
-    const badgeContainer = this.add.container(badgeX, badgeY);
-    badgeContainer.setDepth(12);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0c1524, 0.88);
-    bg.fillRoundedRect(-badgeW / 2, -badgeH / 2, badgeW, badgeH, 15);
-    bg.lineStyle(1.5, 0xfcb813, 0.7);
-    bg.strokeRoundedRect(-badgeW / 2, -badgeH / 2, badgeW, badgeH, 15);
-    badgeContainer.add(bg);
-
-    const initialLoc = SHOWCASE_LOCATIONS[0];
-    this.locationPillText = this.add.text(0, -3, `📍 ${initialLoc.name} • ${initialLoc.subtitle}`, {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '11px' : '12px',
-      color: '#fcb813',
-      fontStyle: '800'
-    }).setOrigin(0.5, 0.5);
-    badgeContainer.add(this.locationPillText);
-
-    this.locationDots = this.add.text(0, 9, '●  ○  ○  ○  ○', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '8px',
-      color: '#94a3b8'
-    }).setOrigin(0.5, 0.5);
-    badgeContainer.add(this.locationDots);
-  }
-
-  private updateLocationBadge() {
-    this.updateLocationDots(this.currentLocationIndex);
-  }
-
-  private updateLocationDots(index: number) {
-    if (!this.locationDots) return;
-    const dots = SHOWCASE_LOCATIONS.map((_, i) => (i === index ? '●' : '○')).join('  ');
-    this.locationDots.setText(dots);
   }
 
   // ----------------------------------------------------
@@ -427,12 +357,13 @@ export class MainMenuScene extends Phaser.Scene {
       this.cardItems.push(cardItem);
     });
 
-    // 3. How to Play Brief (Lowered slightly for generous visual hierarchy)
+    // 3. How to Play Brief (Compact width fitting snugly around text)
+    const infoW = 540;
     const infoBg = this.add.graphics();
     infoBg.fillStyle(0x0c1524, 0.94);
-    infoBg.fillRoundedRect(width / 2 - 380, 428, 760, 114, 14);
+    infoBg.fillRoundedRect(width / 2 - infoW / 2, 428, infoW, 114, 14);
     infoBg.lineStyle(2, 0x223552, 1);
-    infoBg.strokeRoundedRect(width / 2 - 380, 428, 760, 114, 14);
+    infoBg.strokeRoundedRect(width / 2 - infoW / 2, 428, infoW, 114, 14);
     infoBg.setDepth(15);
 
     const howToTitle = this.add.text(width / 2, 446, '🎮 HOW TO PLAY', {
@@ -471,10 +402,10 @@ export class MainMenuScene extends Phaser.Scene {
       hoverColor: 0x27ab42,
       fontSize: '23px'
     });
-    startBtn.setDepth(25);
+    startBtn.setDepth(100);
 
     // Music button
-    this.createMusicButton(width - 120, 28).setDepth(30);
+    this.createMusicButton(width - 120, 28).setDepth(110);
   }
 
   // ----------------------------------------------------
@@ -504,8 +435,8 @@ export class MainMenuScene extends Phaser.Scene {
       logo.setDepth(16);
     }
 
-    // 2. Subtitle Header: Clean spacing below logo, bold gold (no icon)
-    const headerY = logoCenterY + logoH / 2 + Math.round(18 * vScale);
+    // 2. Subtitle Header: Clean spacing below logo, bold gold (more spacing as requested)
+    const headerY = logoCenterY + logoH / 2 + Math.round(36 * vScale);
     const headerFontSize = Math.round(17 * vScale);
     this.add.text(width / 2, headerY, 'SELECT YOUR PARTY TO CANVASS', {
       fontFamily: 'Outfit, sans-serif',
@@ -516,19 +447,18 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5, 0.5).setDepth(16);
 
-    // 3. Mobile Hero Card Carousel: MUCH BIGGER, dropped down with generous breathing room
-    // Card height 365px, width ~222px (natural 564x925 aspect ratio)
-    const cardDisplayH = Math.round(365 * vScale);
-    const cardDisplayW = Math.round(cardDisplayH * (564 / 925)); // ~222px
-    // Generous clearance between SELECT YOUR PARTY TO CANVASS and the card/tag
-    const carouselY = headerY + Math.round(32 * vScale) + cardDisplayH / 2;
+    // 3. Mobile Hero Card Carousel: A little bit bigger per user request
+    // Card height 395px, width ~240px (natural 564x925 aspect ratio)
+    const cardDisplayH = Math.round(395 * vScale);
+    const cardDisplayW = Math.round(cardDisplayH * (564 / 925)); // ~240px
+    const carouselY = headerY + Math.round(26 * vScale) + cardDisplayH / 2;
 
     this.createMobileCardCarousel(width, carouselY, cardDisplayW, cardDisplayH, partyList, vScale);
 
     // 4. How to Play Brief: CLEAR, BIGGER, highly legible text
-    const infoW = Math.min(width - 32, Math.round(460 * vScale));
-    const infoH = Math.round(116 * vScale);
-    const infoY = carouselY + cardDisplayH / 2 + Math.round(38 * vScale);
+    const infoW = Math.min(width - 32, Math.round(440 * vScale));
+    const infoH = Math.round(112 * vScale);
+    const infoY = carouselY + cardDisplayH / 2 + Math.round(20 * vScale);
 
     const infoBg = this.add.graphics();
     infoBg.fillStyle(0x0c1524, 0.95);
@@ -566,10 +496,14 @@ export class MainMenuScene extends Phaser.Scene {
       line.setDepth(16);
     });
 
-    // 5. Primary START CANVASSING button: Prominent, wide, juicy green
+    // 5. Primary START CANVASSING button: Prominent, wide, juicy green with high interactive depth
     const btnH = Math.round(56 * vScale);
-    const btnY = infoY + infoH + Math.round(14 * vScale) + btnH / 2;
+    const minBottomPad = 24;
+    const computedBtnY = infoY + infoH + Math.round(16 * vScale) + btnH / 2;
+    const maxBtnY = height - minBottomPad - btnH / 2;
+    const btnY = Math.min(computedBtnY, maxBtnY);
     const btnFontSize = Math.round(22 * vScale);
+
     const startBtn = new Button(this, width / 2, btnY, 'START CANVASSING ➔', () => {
       ScoreManager.getInstance().resetGame();
       this.scene.start('GameScene', { partyId: this.selectedPartyId });
@@ -580,13 +514,13 @@ export class MainMenuScene extends Phaser.Scene {
       hoverColor: 0x27ab42,
       fontSize: `${btnFontSize}px`
     });
-    startBtn.setDepth(25);
+    startBtn.setDepth(100);
 
-    // 6. PWA Install Prompt
-    this.showPwaInstallPrompt(width, height);
+    // 6. PWA Install Prompt (only when sufficient vertical headroom exists below start button)
+    this.showPwaInstallPrompt(width, height, btnY, btnH);
 
     // 7. Top music button
-    this.createMusicButton(width - 48, 26).setDepth(30);
+    this.createMusicButton(width - 48, 26).setDepth(110);
   }
 
   // ----------------------------------------------------
@@ -815,12 +749,12 @@ export class MainMenuScene extends Phaser.Scene {
     const currentParty = partyList[this.mobilePartyIndex];
     this.selectedPartyId = currentParty.id;
 
-    // Gold outer glow halo & white inner shine
+    // Gold outer glow halo & white inner shine - zero gap against card edge
     this.mobileGlowGraphics.clear();
-    this.mobileGlowGraphics.lineStyle(5, 0xfcb813, 1);
-    this.mobileGlowGraphics.strokeRoundedRect(-cardW / 2 - 3, -cardH / 2 - 3, cardW + 6, cardH + 6, 16);
-    this.mobileGlowGraphics.lineStyle(2, 0xffffff, 0.85);
-    this.mobileGlowGraphics.strokeRoundedRect(-cardW / 2 - 0.5, -cardH / 2 - 0.5, cardW + 1, cardH + 1, 14);
+    this.mobileGlowGraphics.lineStyle(4.5, 0xfcb813, 1);
+    this.mobileGlowGraphics.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 18);
+    this.mobileGlowGraphics.lineStyle(1.5, 0xffffff, 0.9);
+    this.mobileGlowGraphics.strokeRoundedRect(-cardW / 2 + 1, -cardH / 2 + 1, cardW - 2, cardH - 2, 17);
 
     // Pagination Dots
     const dotsY = this.mobileCardContainer ? this.mobileCardContainer.y + cardH / 2 + 16 : 420;
@@ -960,24 +894,24 @@ export class MainMenuScene extends Phaser.Scene {
       item.glowGraphics.clear();
 
       if (isSelected) {
-        // Bright outer gold halo
-        item.glowGraphics.lineStyle(5, 0xfcb813, 1);
+        // Bright outer gold halo - zero gap, perfectly flush with card
+        item.glowGraphics.lineStyle(4.5, 0xfcb813, 1);
         item.glowGraphics.strokeRoundedRect(
-          -item.w / 2 - 3,
-          -item.h / 2 - 3,
-          item.w + 6,
-          item.h + 6,
-          16
+          -item.w / 2,
+          -item.h / 2,
+          item.w,
+          item.h,
+          18
         );
 
         // Subtle white inner shine
-        item.glowGraphics.lineStyle(2, 0xffffff, 0.8);
+        item.glowGraphics.lineStyle(1.5, 0xffffff, 0.85);
         item.glowGraphics.strokeRoundedRect(
-          -item.w / 2 - 0.5,
-          -item.h / 2 - 0.5,
-          item.w + 1,
-          item.h + 1,
-          14
+          -item.w / 2 + 1,
+          -item.h / 2 + 1,
+          item.w - 2,
+          item.h - 2,
+          17
         );
 
         item.selectedTag.setVisible(true);
@@ -1049,7 +983,7 @@ export class MainMenuScene extends Phaser.Scene {
   // ----------------------------------------------------
   // PWA INSTALL PROMPT
   // ----------------------------------------------------
-  private showPwaInstallPrompt(width: number, height: number) {
+  private showPwaInstallPrompt(width: number, height: number, startBtnY?: number, startBtnH?: number) {
     const isStandalone =
       typeof window !== 'undefined' &&
       (window.matchMedia('(display-mode: standalone)').matches ||
@@ -1057,16 +991,26 @@ export class MainMenuScene extends Phaser.Scene {
         sessionStorage.getItem('pwa_prompt_dismissed') === 'true');
     if (isStandalone) return;
 
+    // Check if there is enough space below the start button
+    const bannerH = 50;
+    if (startBtnY !== undefined && startBtnH !== undefined) {
+      const btnBottom = startBtnY + startBtnH / 2;
+      const spaceBelow = height - btnBottom;
+      if (spaceBelow < bannerH + 16) {
+        // Not enough vertical room without overlapping start canvassing button
+        return;
+      }
+    }
+
     const existing = this.children.getByName('pwaInstallBanner');
     if (existing) existing.destroy();
 
     const bannerW = Math.min(width - 20, 420);
-    const bannerH = 58;
-    const bannerY = height - bannerH / 2 - 12;
+    const bannerY = height - bannerH / 2 - 8;
 
     const banner = this.add.container(width / 2, bannerY);
     banner.setName('pwaInstallBanner');
-    banner.setDepth(120);
+    banner.setDepth(35);
 
     const bg = this.add.graphics();
     bg.fillStyle(0x0a1322, 0.98);

@@ -2,13 +2,9 @@ import Phaser from 'phaser';
 
 export type ObstacleType = 
   | 'potholeSmall' 
-  | 'potholeLarge' 
   | 'potholeWater' 
-  | 'rubbishBag' 
   | 'brokenDrain' 
-  | 'openManhole' 
-  | 'leakingPipe' 
-  | 'fallenPoster';
+  | 'openManhole';
 
 export class Obstacle extends Phaser.Physics.Arcade.Sprite {
   public obstacleType: ObstacleType;

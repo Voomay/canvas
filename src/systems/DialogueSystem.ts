@@ -7,6 +7,8 @@ export interface DialogueOutcome {
   reactionText: string;
   voteGained: number;
   trustChange: number;
+  mentalHealthChange: number;
+  mentalHealthReason?: string;
   personality: PersonalityType;
   consecutivePromisesCount: number;
 }
@@ -31,7 +33,7 @@ export class DialogueSystem {
       this.recentPromiseCount++;
       // Consecutive promise fatigue: -7% per recent promise after the 1st
       const fatiguePenalty = Math.max(0, (this.recentPromiseCount - 1) * 0.07);
-      positiveRate = Math.max(0.2, personality.promiseMod.positiveRate - fatiguePenalty);
+      positiveRate = Math.max(0.1, personality.promiseMod.positiveRate - fatiguePenalty);
       doubtfulRate = personality.promiseMod.doubtfulRate + (fatiguePenalty * 0.5);
       baseTrustChange = personality.promiseMod.trustChange;
 
@@ -44,11 +46,15 @@ export class DialogueSystem {
       this.recentPromiseCount = Math.max(0, this.recentPromiseCount - 1);
 
       if (responseType === 'blame') {
-        // Partisans love blaming opposition; sceptical/frustrated citizens hate buck-passing
+        // Partisans love blaming opposition; sceptical/frustrated/rude citizens hate buck-passing
         if (personalityType === 'Loyal') {
           positiveRate = 0.75;
           doubtfulRate = 0.15;
           baseTrustChange = 3;
+        } else if (personalityType === 'Rude') {
+          positiveRate = 0.08;
+          doubtfulRate = 0.22;
+          baseTrustChange = -8;
         } else if (personalityType === 'Sceptical' || personalityType === 'Frustrated') {
           positiveRate = 0.20;
           doubtfulRate = 0.30;
@@ -75,13 +81,16 @@ export class DialogueSystem {
         }
       } else if (responseType === 'lie') {
         // High Risk / High Reward!
-        // Hopeful/Undecided personalities fall for it (+2 votes!)
-        // Sceptical/Frustrated personalities smell the lie and call you out!
         maxVoteReward = 2;
-        if (personalityType === 'Hopeful' || personalityType === 'Undecided') {
+        if (personalityType === 'Hopeful' || personalityType === 'Undecided' || personalityType === 'Cheerful') {
           positiveRate = 0.72;
           doubtfulRate = 0.18;
           baseTrustChange = 5;
+        } else if (personalityType === 'Rude') {
+          // Rude residents violently reject lies!
+          positiveRate = 0.05;
+          doubtfulRate = 0.15;
+          baseTrustChange = -12;
         } else if (personalityType === 'Sceptical' || personalityType === 'Frustrated') {
           // Sharp citizens smell the lie immediately!
           positiveRate = 0.10;
@@ -117,8 +126,50 @@ export class DialogueSystem {
       trustChange = responseType === 'lie' ? -10 : Math.min(-3, baseTrustChange - 4);
     }
 
+    // Determine Mental Health effect:
+    let mentalHealthChange = 0;
+    let mentalHealthReason = '';
+
+    if (outcome === 'positive') {
+      if (personalityType === 'Cheerful') {
+        mentalHealthChange = 15;
+        mentalHealthReason = '❤️ +15% Morale: Warm Tea & Big Smile!';
+      } else if (personalityType === 'Rude') {
+        mentalHealthChange = 12;
+        mentalHealthReason = '💪 +12% Morale: Won Over a Fierce Critic!';
+      } else {
+        mentalHealthChange = 8;
+        mentalHealthReason = '🗳️ +8% Morale: Voter Cheer!';
+      }
+    } else if (outcome === 'doubtful') {
+      if (personalityType === 'Rude') {
+        mentalHealthChange = -6;
+        mentalHealthReason = '😒 -6% Morale: Sarcastic Chuckle';
+      } else if (personalityType === 'Cheerful') {
+        mentalHealthChange = 4;
+        mentalHealthReason = '☕ +4% Morale: Gentle Encouragement';
+      } else {
+        mentalHealthChange = 0;
+      }
+    } else {
+      // Negative outcome
+      if (personalityType === 'Rude') {
+        mentalHealthChange = responseType === 'lie' ? -18 : -14;
+        mentalHealthReason = '💔 ' + mentalHealthChange + '% Morale: Brutal Stoep Insult!';
+      } else if (responseType === 'lie') {
+        mentalHealthChange = -12;
+        mentalHealthReason = '🤥 -12% Morale: Caught Lying to Citizen!';
+      } else if (personalityType === 'Cheerful') {
+        mentalHealthChange = -3;
+        mentalHealthReason = '🥺 -3% Morale: Disappointed Auntie';
+      } else {
+        mentalHealthChange = -6;
+        mentalHealthReason = '😞 -6% Morale: Rejection on Doorstep';
+      }
+    }
+
     // Extract reaction text
-    const reactionText = getComplaintReaction(complaint, responseType, outcome, partyId);
+    const reactionText = getComplaintReaction(complaint, responseType, outcome, partyId, personalityType);
 
     return {
       responseType,
@@ -126,6 +177,8 @@ export class DialogueSystem {
       reactionText,
       voteGained,
       trustChange,
+      mentalHealthChange,
+      mentalHealthReason,
       personality: personalityType,
       consecutivePromisesCount: this.recentPromiseCount
     };

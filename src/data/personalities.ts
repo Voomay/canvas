@@ -4,7 +4,9 @@ export type PersonalityType =
   | 'Loyal' 
   | 'Frustrated' 
   | 'Undecided' 
-  | 'Humour-loving';
+  | 'Humour-loving'
+  | 'Rude'
+  | 'Cheerful';
 
 export interface PersonalityDefinition {
   type: PersonalityType;
@@ -76,6 +78,22 @@ export const PERSONALITIES: Record<PersonalityType, PersonalityDefinition> = {
     blameMod: { positiveRate: 0.45, doubtfulRate: 0.35, trustChange: 0 },
     honestyMod: { positiveRate: 0.90, doubtfulRate: 0.10, trustChange: 14 },
     ignoreTrustPenalty: -2
+  },
+  'Rude': {
+    type: 'Rude',
+    description: 'Hostile, impatient, and quick to shout sharp insults off their stoep.',
+    promiseMod: { positiveRate: 0.15, doubtfulRate: 0.30, trustChange: -5 },
+    blameMod: { positiveRate: 0.10, doubtfulRate: 0.25, trustChange: -8 },
+    honestyMod: { positiveRate: 0.65, doubtfulRate: 0.25, trustChange: 8 },
+    ignoreTrustPenalty: -1
+  },
+  'Cheerful': {
+    type: 'Cheerful',
+    description: 'Warm-hearted and uplifting. Delighted to see someone working hard for the community.',
+    promiseMod: { positiveRate: 0.90, doubtfulRate: 0.10, trustChange: 8 },
+    blameMod: { positiveRate: 0.45, doubtfulRate: 0.35, trustChange: 2 },
+    honestyMod: { positiveRate: 0.85, doubtfulRate: 0.15, trustChange: 12 },
+    ignoreTrustPenalty: -4
   }
 };
 
@@ -85,5 +103,7 @@ export const ALL_PERSONALITIES: PersonalityType[] = [
   'Loyal',
   'Frustrated',
   'Undecided',
-  'Humour-loving'
+  'Humour-loving',
+  'Rude',
+  'Cheerful'
 ];

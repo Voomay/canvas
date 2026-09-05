@@ -24,3 +24,7 @@ Thumbs.db
 # Root temporary screenshots/mockups (only root pngs and gifs)
 /*.png
 /*.gif
+/*.jfif
+/*.jpeg
+/*.jpg
+

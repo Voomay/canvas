@@ -12,6 +12,11 @@ export interface GameStats {
   positiveReactions: number;
   doubtfulReactions: number;
   negativeReactions: number;
+  rudeEncounters: number;
+  cheerfulEncounters: number;
+  insultsReceived: number;
+  moraleBoosts: number;
+  burnoutsSuffered: number;
 }
 
 export class ScoreManager {
@@ -19,6 +24,7 @@ export class ScoreManager {
 
   public votes: number = INITIAL_VALUES.votes;
   public trust: number = INITIAL_VALUES.trust;
+  public mentalHealth: number = 100; // 0 to 100%
   public totalTimeRemaining: number = INITIAL_VALUES.timeSeconds;
   public currentStreetIndex: number = 1;
   public totalStreets: number = INITIAL_VALUES.streetCount;
@@ -28,6 +34,10 @@ export class ScoreManager {
   public currentAreaObstaclesHit: number = 0;
   public currentAreaResidentsApproached: number = 0;
   public totalCampaignVotes: number = 0;
+
+  // First-encounter tutorial flags
+  public hasSeenObstacleTutorial: boolean = false;
+  public hasSeenResidentTutorial: boolean = false;
 
   public stats: GameStats = {
     residentsApproached: 0,
@@ -40,7 +50,12 @@ export class ScoreManager {
     obstaclesCleared: 0,
     positiveReactions: 0,
     doubtfulReactions: 0,
-    negativeReactions: 0
+    negativeReactions: 0,
+    rudeEncounters: 0,
+    cheerfulEncounters: 0,
+    insultsReceived: 0,
+    moraleBoosts: 0,
+    burnoutsSuffered: 0
   };
 
   private constructor() {}
@@ -58,17 +73,22 @@ export class ScoreManager {
     this.currentAreaObstaclesCleared = 0;
     this.currentAreaObstaclesHit = 0;
     this.currentAreaResidentsApproached = 0;
+    // Area break refreshes candidate morale!
+    this.mentalHealth = Math.min(100, Math.max(70, this.mentalHealth + 30));
   }
 
   public resetGame() {
     this.votes = INITIAL_VALUES.votes;
     this.trust = INITIAL_VALUES.trust;
+    this.mentalHealth = 100;
     this.totalTimeRemaining = INITIAL_VALUES.timeSeconds;
     this.currentStreetIndex = 1;
     this.currentAreaObstaclesCleared = 0;
     this.currentAreaObstaclesHit = 0;
     this.currentAreaResidentsApproached = 0;
     this.totalCampaignVotes = 0;
+    this.hasSeenObstacleTutorial = false;
+    this.hasSeenResidentTutorial = false;
     this.stats = {
       residentsApproached: 0,
       residentsIgnored: 0,
@@ -80,7 +100,12 @@ export class ScoreManager {
       obstaclesCleared: 0,
       positiveReactions: 0,
       doubtfulReactions: 0,
-      negativeReactions: 0
+      negativeReactions: 0,
+      rudeEncounters: 0,
+      cheerfulEncounters: 0,
+      insultsReceived: 0,
+      moraleBoosts: 0,
+      burnoutsSuffered: 0
     };
   }
 
@@ -91,6 +116,32 @@ export class ScoreManager {
 
   public modifyTrust(amount: number) {
     this.trust = Math.min(100, Math.max(0, this.trust + amount));
+  }
+
+  public modifyMentalHealth(amount: number): { prev: number; current: number; delta: number } {
+    const prev = this.mentalHealth;
+    this.mentalHealth = Math.min(100, Math.max(0, this.mentalHealth + amount));
+    const delta = this.mentalHealth - prev;
+
+    if (amount < 0 && amount <= -8) {
+      this.stats.insultsReceived++;
+    } else if (amount > 0 && amount >= 5) {
+      this.stats.moraleBoosts++;
+    }
+
+    return { prev, current: this.mentalHealth, delta };
+  }
+
+  public getMentalHealthStatus(): { label: string; emoji: string; color: string } {
+    if (this.mentalHealth >= 80) {
+      return { label: 'Energized', emoji: '😃', color: '#44dd66' };
+    } else if (this.mentalHealth >= 50) {
+      return { label: 'Steady', emoji: '🙂', color: '#fcb813' };
+    } else if (this.mentalHealth >= 25) {
+      return { label: 'Stressed', emoji: '😰', color: '#f97316' };
+    } else {
+      return { label: 'Burnout Alert', emoji: '🤯', color: '#ef4444' };
+    }
   }
 
   public recordEncounter(
@@ -117,23 +168,41 @@ export class ScoreManager {
     this.stats.obstaclesHit++;
     this.currentAreaObstaclesHit++;
     this.modifyTrust(-3);
+    this.modifyMentalHealth(-4);
   }
 
   public recordObstacleCleared() {
     this.stats.obstaclesCleared++;
     this.currentAreaObstaclesCleared++;
     this.modifyTrust(3);
+    this.modifyMentalHealth(2);
   }
 
   public getRating(): { title: string; subtitle: string; badgeEmoji: string } {
-    const { promisesMade, blamesGiven, honestyGiven } = this.stats;
+    const { promisesMade, blamesGiven, honestyGiven, insultsReceived, burnoutsSuffered } = this.stats;
     const totalVotesEarned = this.totalCampaignVotes > 0 ? this.totalCampaignVotes : this.votes;
 
-    if (this.trust >= 75 && totalVotesEarned >= 15) {
+    if (this.trust >= 75 && totalVotesEarned >= 15 && this.mentalHealth >= 65) {
       return {
-        title: 'Community Favourite',
-        subtitle: 'The neighbourhood loves your energy and integrity! Ward councillor material.',
+        title: 'Community Favourite & Resilient Hero',
+        subtitle: 'The neighbourhood loves your energy! You stayed positive and won hearts and minds.',
         badgeEmoji: '🌟'
+      };
+    }
+
+    if (insultsReceived >= 4 && this.mentalHealth >= 50) {
+      return {
+        title: 'Tough as Nails Canvasser',
+        subtitle: 'You weathered door-slams, sharp stoep insults, and cynical voters without losing your stride!',
+        badgeEmoji: '🛡️'
+      };
+    }
+
+    if (burnoutsSuffered >= 2) {
+      return {
+        title: 'Exhausted Comrade',
+        subtitle: 'Running door-to-door pushed your nerves to the absolute limit! Time for a warm rooibos break.',
+        badgeEmoji: '☕'
       };
     }
 
@@ -164,7 +233,7 @@ export class ScoreManager {
     if (this.trust < 40 || this.votes < 8) {
       return {
         title: 'Back to the Drawing Board',
-        subtitle: 'Too many potholes tripped you up. Time to rethink the manifesto before the next by-election!',
+        subtitle: 'Too many potholes and rude doors tripped you up. Time to rethink the manifesto!',
         badgeEmoji: '🚧'
       };
     }

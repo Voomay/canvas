@@ -49,8 +49,8 @@ export class ParallaxBackground {
 
     // 3. Road & Panorama positioning
     const roadY = getDynamicRoadY(height, width);
-    const roadScale = isPortrait ? (height - roadY) / 292 : 1;
-    const roadHeight = isPortrait ? (height - roadY + 8) : 292;
+    const roadScale = isPortrait ? (height - roadY) / 352 : 1;
+    const roadHeight = isPortrait ? (height - roadY + 8) : 352;
 
     // Detect if high-res panoramic image (740-750px tall)
     const tex = scene.textures.get(selectedLocationTexture);
@@ -61,14 +61,31 @@ export class ParallaxBackground {
     const isCustomLocation = selectedLocationTexture.startsWith('bg_location_');
 
     if (this.isPanorama700) {
-      // Scale so panorama curb line (y ≈ 670) aligns seamlessly with roadY
-      this.panoramaScale = (roadY + 16) / 670;
-      this.housesTile = scene.add.tileSprite(0, 0, width, roadY + 24, selectedLocationTexture).setOrigin(0, 0);
+      // For high-res panoramas (~745px high), scale dynamically so ground baseline (texGroundY ≈ 710)
+      // aligns seamlessly with the top curb of the road without gaps or repetition
+      const targetHeight = roadY + 24;
+      const texGroundY = 710;
+      this.panoramaScale = isPortrait ? Math.max(0.72, targetHeight / texGroundY) : 0.82;
+      this.housesTile = scene.add.tileSprite(0, 0, width, targetHeight, selectedLocationTexture).setOrigin(0, 0);
       this.housesTile.tileScaleX = this.panoramaScale;
       this.housesTile.tileScaleY = this.panoramaScale;
+
+      const neededTexH = targetHeight / this.panoramaScale;
+      this.housesTile.tilePositionY = Math.max(0, texGroundY - neededTexH);
+    } else if (isCustomLocation) {
+      // For Joburg skyline (height 432)
+      const targetHeight = roadY + 24;
+      const texGroundY = 415;
+      this.panoramaScale = isPortrait ? Math.max(0.95, targetHeight / texGroundY) : 1.05;
+      this.housesTile = scene.add.tileSprite(0, 0, width, targetHeight, selectedLocationTexture).setOrigin(0, 0);
+      this.housesTile.tileScaleX = this.panoramaScale;
+      this.housesTile.tileScaleY = this.panoramaScale;
+
+      const neededTexH = targetHeight / this.panoramaScale;
+      this.housesTile.tilePositionY = Math.max(0, texGroundY - neededTexH);
     } else {
-      const locHeight = isCustomLocation ? 432 : 260;
-      const locY = isPortrait ? roadY - locHeight + 28 : (isCustomLocation ? 0 : 170);
+      const locHeight = Math.min(260, roadY + 24);
+      const locY = isPortrait ? roadY - locHeight + 24 : 170;
       this.housesTile = scene.add.tileSprite(0, locY, width, locHeight, selectedLocationTexture).setOrigin(0, 0);
     }
     this.housesTile.setDepth(1);
@@ -83,12 +100,13 @@ export class ParallaxBackground {
       cloudKey = 'bg_clouds';
     }
 
-    // Bring clouds lower down so they are beautifully visible across the blue sky below the top HUD badges
-    const cloudY = isPortrait ? 90 : (isCustomLocation ? 15 : 30);
-    const cloudHeight = isPortrait ? 130 : (isCustomLocation ? 120 : 200);
+    const cloudY = isPortrait ? 90 : 30;
+    const cloudHeight = isPortrait ? 130 : 160;
 
     this.cloudsTile = scene.add.tileSprite(0, cloudY, width, cloudHeight, cloudKey).setOrigin(0, 0);
     this.cloudsTile.setDepth(2);
+    // Hide retro pixel clouds over realistic location panoramas so landmarks are pristine and unobstructed
+    this.cloudsTile.setVisible(!this.isPanorama700 && !isCustomLocation);
 
     // 5. Streetlights (Only spawn if custom artwork does not already feature poles/lamps)
     if (!isCustomLocation && !scene.textures.exists('real_bg_houses')) {
@@ -112,22 +130,21 @@ export class ParallaxBackground {
   private getPavementY(): number {
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
     const roadY = getDynamicRoadY(this.scene.scale.height, this.scene.scale.width);
-    const roadScale = isPortrait ? (this.scene.scale.height - roadY) / 292 : 1;
+    const roadScale = isPortrait ? (this.scene.scale.height - roadY) / 352 : 1;
     // Base placed on top of the pavement surface (well above curb lip and asphalt road)
-    return roadY + 16 * roadScale;
+    return roadY + 20 * roadScale;
   }
 
   private spawnInitialCurbBanners(width: number, _locationKey: string) {
     const bannerKey = this.scene.textures.exists('prop_curb_banner_parties') ? 'prop_curb_banner_parties' : (this.scene.textures.exists('prop_curb_banner_pa') ? 'prop_curb_banner_pa' : null);
     if (!bannerKey) return;
     const isPortrait = this.scene.scale.height > this.scene.scale.width;
+    const spacing = isPortrait ? 420 : 520;
     
-    // Spawn initial multi-party lampposts on the sidewalk curb
-    if (isPortrait) {
-      this.createCurbBanner(width * 0.75, bannerKey);
-    } else {
-      this.createCurbBanner(width * 0.42, bannerKey);
-      this.createCurbBanner(width * 0.88, bannerKey);
+    // Spawn multi-party election lampposts at regular intervals across and ahead of the curb
+    const startX = isPortrait ? width * 0.45 : width * 0.55;
+    for (let x = startX; x <= width + spacing * 2; x += spacing) {
+      this.createCurbBanner(x, bannerKey);
     }
   }
 
@@ -155,37 +172,10 @@ export class ParallaxBackground {
     return banner;
   }
 
-  private drawSandyVerge(width: number, height: number, isPortrait: boolean) {
+  private drawSandyVerge(_width: number, _height: number, _isPortrait: boolean) {
+    // New road asset natively includes high-fidelity sandy verge with grass and pebbles along the bottom edge
     if (this.sandyVerge) {
       this.sandyVerge.destroy();
-    }
-
-    this.sandyVerge = this.scene.add.graphics();
-    this.sandyVerge.setDepth(4);
-
-    const vergeHeight = isPortrait ? 38 : 36;
-    const vergeY = height - vergeHeight;
-
-    // Sandy soil base
-    this.sandyVerge.fillStyle(0x8a6a3b, 1);
-    this.sandyVerge.fillRect(0, vergeY, width, vergeHeight);
-
-    // Top curb lip / gravel line
-    this.sandyVerge.lineStyle(2, 0x5a4524, 1);
-    this.sandyVerge.lineBetween(0, vergeY, width, vergeY);
-
-    // Subtle grass tufts along roadside
-    const seedStep = isPortrait ? 60 : 90;
-    for (let x = 15; x < width; x += seedStep) {
-      // Grass blades
-      this.sandyVerge.lineStyle(3, 0x4a7c29, 0.9);
-      this.sandyVerge.lineBetween(x, vergeY + 6, x - 4, vergeY - 8);
-      this.sandyVerge.lineBetween(x, vergeY + 6, x + 2, vergeY - 10);
-      this.sandyVerge.lineBetween(x, vergeY + 6, x + 7, vergeY - 6);
-
-      // Small roadside pebble
-      this.sandyVerge.fillStyle(0x4a3c28, 0.8);
-      this.sandyVerge.fillCircle(x + 24, vergeY + 12, 3);
     }
   }
 
@@ -206,20 +196,35 @@ export class ParallaxBackground {
     const h = height ?? this.scene.scale.height;
     const isPortrait = h > width;
     const roadY = getDynamicRoadY(h, width);
-    const roadScale = isPortrait ? (h - roadY) / 292 : 1;
-    const roadHeight = isPortrait ? (h - roadY + 8) : 292;
+    const roadScale = isPortrait ? (h - roadY) / 352 : 1;
+    const roadHeight = isPortrait ? (h - roadY + 8) : 352;
 
     this.skyImage.setDisplaySize(width, h);
     this.cloudsTile.setSize(width, this.cloudsTile.height);
     if (this.isPanorama700) {
-      this.panoramaScale = (roadY + 16) / 670;
-      this.housesTile.setSize(width, roadY + 24);
+      const targetHeight = roadY + 24;
+      const texGroundY = 710;
+      this.panoramaScale = isPortrait ? Math.max(0.72, targetHeight / texGroundY) : 0.82;
+      this.housesTile.setSize(width, targetHeight);
       this.housesTile.y = 0;
       this.housesTile.tileScaleX = this.panoramaScale;
       this.housesTile.tileScaleY = this.panoramaScale;
+      const neededTexH = targetHeight / this.panoramaScale;
+      this.housesTile.tilePositionY = Math.max(0, texGroundY - neededTexH);
+    } else if (this.housesTile.texture.key.startsWith('bg_location_')) {
+      const targetHeight = roadY + 24;
+      const texGroundY = 415;
+      this.panoramaScale = isPortrait ? Math.max(0.95, targetHeight / texGroundY) : 1.05;
+      this.housesTile.setSize(width, targetHeight);
+      this.housesTile.y = 0;
+      this.housesTile.tileScaleX = this.panoramaScale;
+      this.housesTile.tileScaleY = this.panoramaScale;
+      const neededTexH = targetHeight / this.panoramaScale;
+      this.housesTile.tilePositionY = Math.max(0, texGroundY - neededTexH);
     } else {
-      this.housesTile.setSize(width, this.housesTile.height);
-      this.housesTile.y = isPortrait ? roadY - this.housesTile.height + 28 : 0;
+      const locHeight = Math.min(260, roadY + 24);
+      this.housesTile.setSize(width, locHeight);
+      this.housesTile.y = isPortrait ? roadY - locHeight + 24 : 0;
     }
     this.roadTile.setSize(width, roadHeight);
     this.roadTile.y = roadY;
@@ -236,53 +241,45 @@ export class ParallaxBackground {
 
   public update(speed: number, delta: number) {
     const dt = delta / 1000;
+    const moveDist = speed * dt;
     
-    // Natural cloud drift in the blue sky + gentle runner movement parallax
-    this.cloudsTile.tilePositionX += (18 + speed * 0.08) * dt;
+    // 1. Natural cloud drift in the blue sky + gentle runner movement parallax
+    this.cloudsTile.tilePositionX += (12 + speed * 0.05) * dt;
 
-    // Location artwork moves at ~0.35x runner speed (calibrated with texture scale)
-    const panoramaSpeedFactor = this.isPanorama700 ? (speed * 0.35) / Math.max(0.1, this.panoramaScale) : speed * 0.35;
+    // 2. Slower parallax for houses and mountains (~0.25x runner speed)
+    const panoramaSpeedFactor = this.isPanorama700 ? (speed * 0.25) / Math.max(0.1, this.panoramaScale) : speed * 0.25;
     this.housesTile.tilePositionX += panoramaSpeedFactor * dt;
 
-    // Streetlights (if spawned) move with houses/pavement
-    if (this.streetlights.length > 0) {
-      const lightMove = (speed * 0.7) * dt;
-      for (let i = this.streetlights.length - 1; i >= 0; i--) {
-        const lamp = this.streetlights[i];
-        lamp.x -= lightMove;
-        if (lamp.x < -100) {
-          lamp.destroy();
-          this.streetlights.splice(i, 1);
-        }
-      }
+    // 3. Road & Pavement scrolling right to left (1.0x foreground runner speed)
+    const roadSpeedFactor = speed / Math.max(0.1, this.roadTile.tileScaleX);
+    this.roadTile.tilePositionX += roadSpeedFactor * dt;
 
-      // Spawn new streetlights on the right
-      const rightmostX = Math.max(...this.streetlights.map(l => l.x));
-      if (rightmostX < this.scene.scale.width) {
-        this.createStreetlight(rightmostX + Phaser.Math.Between(340, 420));
-      }
-    }
-
-    // Curb Banners move with the pavement/road (1.0x runner speed)
+    // 4. Poles (election banner poles) scroll right to left, wrapping seamlessly
     if (this.curbBanners.length > 0) {
-      const bannerMove = speed * dt;
-      for (let i = this.curbBanners.length - 1; i >= 0; i--) {
-        const banner = this.curbBanners[i];
-        banner.x -= bannerMove;
-        if (banner.x < -120) {
-          banner.destroy();
-          this.curbBanners.splice(i, 1);
-        }
+      const isPortrait = this.scene.scale.height > this.scene.scale.width;
+      const spacing = isPortrait ? 420 : 520;
+      for (const banner of this.curbBanners) {
+        banner.x -= moveDist;
       }
-
-      // Spawn subsequent curb lampposts periodically along the route
-      const rightmostX = this.curbBanners.length > 0 ? Math.max(...this.curbBanners.map(b => b.x)) : -999;
-      if (rightmostX < this.scene.scale.width + 400) {
-        this.createCurbBanner(Math.max(this.scene.scale.width + 100, rightmostX + Phaser.Math.Between(850, 1300)));
+      for (const banner of this.curbBanners) {
+        if (banner.x < -120) {
+          const maxX = Math.max(this.scene.scale.width, ...this.curbBanners.map(b => b.x));
+          banner.x = maxX + spacing;
+        }
       }
     }
 
-    // Road & Pavement moves at full 1.0x runner speed
-    this.roadTile.tilePositionX += speed * dt;
+    // 5. Streetlights scroll right to left if active, wrapping seamlessly
+    if (this.streetlights.length > 0) {
+      for (const lamp of this.streetlights) {
+        lamp.x -= moveDist;
+      }
+      for (const lamp of this.streetlights) {
+        if (lamp.x < -120) {
+          const maxLampX = Math.max(this.scene.scale.width, ...this.streetlights.map(l => l.x));
+          lamp.x = maxLampX + 380;
+        }
+      }
+    }
   }
 }

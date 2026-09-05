@@ -84,6 +84,12 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('vehicle_car_ferrari', 'assets/vehicles/car_red_ferrari.png');
     this.load.image('vehicle_car_suv', 'assets/vehicles/car_blue_suv.png');
 
+    // 1b. Load Stumbling Blocks / Obstacles (Authentic PNG artwork) - high priority
+    this.load.image('obs_brokenDrain', 'assets/obstacles/broken_drain.png');
+    this.load.image('obs_potholeWater', 'assets/obstacles/pothole_water.png');
+    this.load.image('obs_potholeSmall', 'assets/obstacles/pothole_small.png');
+    this.load.image('obs_openManhole', 'assets/obstacles/open_manhole.png');
+
     // 2. Load Player Sprite Frames for DA, ANC, PA
     const parties: Array<'da' | 'anc' | 'pa'> = ['da', 'anc', 'pa'];
     parties.forEach(p => {
@@ -111,23 +117,21 @@ export class PreloadScene extends Phaser.Scene {
       frameHeight: 230
     });
 
-    // 5. Load Stumbling Blocks / Obstacles
-    this.load.image('obs_brokenDrain', 'assets/obstacles/broken_drain.png');
-    this.load.image('obs_potholeWater', 'assets/obstacles/pothole_water.png');
-    this.load.image('obs_potholeLarge', 'assets/obstacles/pothole_water.png');
-    this.load.image('obs_potholeSmall', 'assets/obstacles/pothole_small.png');
-    this.load.image('obs_openManhole', 'assets/obstacles/open_manhole.png');
-
-    // Anti-Freeze Watchdog Timer: Guarantees transition to MainMenuScene within 2.5s
+    // Anti-Freeze Watchdog Timer: Safety net in case of network stall (15 seconds)
     const watchdogTimer = setTimeout(() => {
       if (!this.hasAdvanced) {
         console.warn('[PreloadScene] Watchdog timer triggered - advancing to MainMenuScene');
         this.advanceToMainMenu();
       }
-    }, 2500);
+    }, 15000);
+
+    this.load.on('loaderror', (file: any) => {
+      console.error('[PreloadScene] Asset failed to load:', file?.key, file?.src);
+    });
 
     this.load.once('complete', () => {
       clearTimeout(watchdogTimer);
+      this.advanceToMainMenu();
     });
 
     // Tap or Click to skip loading screen immediately

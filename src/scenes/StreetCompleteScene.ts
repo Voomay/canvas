@@ -75,11 +75,11 @@ export class StreetCompleteScene extends Phaser.Scene {
     }
 
     // Header & Badge
-    const headerTitle = isWardWon ? `🎉 SELECTED FOR AREA ${completedStreetIndex}!` : `❌ AREA ${completedStreetIndex} NOT WON`;
+    const headerTitle = isWardWon ? `🎉 SELECTED FOR WARD ${completedStreetIndex}!` : `❌ WARD ${completedStreetIndex} NOT WON`;
     const headerColor = isWardWon ? '#2ecc71' : '#ff5555';
     const subMsg = isWardWon
-      ? `🏆 VICTORY! You secured ${scoreManager.votes}/${targetVotes} votes in 30s and won this Area election!`
-      : `⚠️ You got ${scoreManager.votes}/${targetVotes} votes. You needed at least ${targetVotes} votes in 30s to win this Area!`;
+      ? `🏆 VICTORY! You secured ${scoreManager.votes}/${targetVotes} votes in 30s and won this Ward election!`
+      : `⚠️ You got ${scoreManager.votes}/${targetVotes} votes. You needed at least ${targetVotes} votes in 30s to win this Ward!`;
 
     const topOffset = height / 2 - ch / 2;
 
@@ -109,13 +109,14 @@ export class StreetCompleteScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5);
 
     // 6 Stats Grid (3 cols x 2 rows in landscape, 2 cols x 3 rows in portrait)
+    const mhStatus = scoreManager.getMentalHealthStatus();
     const statItems = [
-      { label: 'Area Votes Secured', val: `${scoreManager.votes} / ${targetVotes} 🗳️`, color: isWardWon ? '#44dd66' : '#ff7777' },
+      { label: 'Ward Votes Secured', val: `${scoreManager.votes} / ${targetVotes} 🗳️`, color: isWardWon ? '#44dd66' : '#ff7777' },
       { label: 'Infrastructure Restored', val: `${scoreManager.currentAreaObstaclesCleared} Fixed 🛠️`, color: '#38bdf8' },
       { label: 'Community Trust', val: `${Math.round(scoreManager.trust)}% 🤝`, color: '#fcb813' },
-      { label: 'Residents Approached', val: `${scoreManager.currentAreaResidentsApproached} 🗣️`, color: '#ffffff' },
+      { label: 'Mental Health', val: `${Math.round(scoreManager.mentalHealth)}% ${mhStatus.emoji}`, color: mhStatus.color },
       { label: 'Hazards Stumbled', val: `${scoreManager.currentAreaObstaclesHit} 💥`, color: scoreManager.currentAreaObstaclesHit > 0 ? '#ff7777' : '#44dd66' },
-      { label: 'Area Status', val: isWardWon ? 'ELECTED! 🏆' : 'DEFEATED ❌', color: isWardWon ? '#44dd66' : '#ff5555' }
+      { label: 'Ward Status', val: isWardWon ? 'ELECTED! 🏆' : 'DEFEATED ❌', color: isWardWon ? '#44dd66' : '#ff5555' }
     ];
 
     if (isPortrait) {
@@ -186,7 +187,7 @@ export class StreetCompleteScene extends Phaser.Scene {
 
     // Buttons: Win vs Retry Loop
     const hasMoreStreets = completedStreetIndex < scoreManager.totalStreets;
-    const btnY = topOffset + (isPortrait ? 354 : 368);
+    const btnY = topOffset + (isPortrait ? 342 : 368);
     const party = PARTIES[this.partyId] || PARTIES.da;
 
     const openShareModal = () => {
@@ -207,7 +208,7 @@ export class StreetCompleteScene extends Phaser.Scene {
 
     if (isWardWon) {
       const btnText = hasMoreStreets 
-        ? `PROCEED TO NEXT AREA ➔` 
+        ? `PROCEED TO NEXT WARD ➔` 
         : 'VIEW FINAL RESULTS ➔';
 
       if (isPortrait) {
@@ -259,36 +260,81 @@ export class StreetCompleteScene extends Phaser.Scene {
         });
       }
     } else {
-      const btnW = isPortrait ? (cw - 36) / 2 : 300;
-      const btnH = isPortrait ? 48 : 58;
-      const btnColOffset = isPortrait ? btnW / 2 + 4 : 160;
+      if (isPortrait) {
+        const halfBtnW = (cw - 36) / 2;
+        const btnH = 46;
 
-      // High-Urgency Retry Button
-      new Button(this, width / 2 - btnColOffset, btnY, isPortrait ? 'RETRY AREA ↺' : '⚡ RETRY AREA (30s) ↺', () => {
-        this.scene.start('GameScene', { partyId: this.partyId });
-      }, {
-        width: btnW,
-        height: btnH,
-        bgColor: 0xdb580a,
-        hoverColor: 0xf06a1a,
-        fontSize: isPortrait ? '13px' : '19px'
-      });
-
-      // Continue button anyway
-      new Button(this, width / 2 + btnColOffset, btnY, isPortrait ? 'CONTINUE ➔' : 'CONTINUE ANYWAY ➔', () => {
-        if (hasMoreStreets) {
-          scoreManager.currentStreetIndex++;
+        // Row 1: High-Urgency Retry Button & Continue Button
+        new Button(this, width / 2 - halfBtnW / 2 - 4, btnY, 'RETRY WARD ↺', () => {
           this.scene.start('GameScene', { partyId: this.partyId });
-        } else {
-          this.scene.start('ResultsScene', { partyId: this.partyId });
-        }
-      }, {
-        width: btnW,
-        height: btnH,
-        bgColor: 0x1f3c6e,
-        hoverColor: 0x2b5294,
-        fontSize: isPortrait ? '13px' : '17px'
-      });
+        }, {
+          width: halfBtnW,
+          height: btnH,
+          bgColor: 0xdb580a,
+          hoverColor: 0xf06a1a,
+          fontSize: '13.5px'
+        });
+
+        new Button(this, width / 2 + halfBtnW / 2 + 4, btnY, 'CONTINUE ➔', () => {
+          if (hasMoreStreets) {
+            scoreManager.currentStreetIndex++;
+            this.scene.start('GameScene', { partyId: this.partyId });
+          } else {
+            this.scene.start('ResultsScene', { partyId: this.partyId });
+          }
+        }, {
+          width: halfBtnW,
+          height: btnH,
+          bgColor: 0x1f3c6e,
+          hoverColor: 0x2b5294,
+          fontSize: '13.5px'
+        });
+
+        // Row 2: Share Ward Results Button
+        new Button(this, width / 2, btnY + 52, '📤 SHARE WARD RESULTS 🔗', openShareModal, {
+          width: cw - 32,
+          height: 44,
+          bgColor: 0x005ba6,
+          hoverColor: 0x1a75c2,
+          fontSize: '14px'
+        });
+      } else {
+        const thirdBtnW = Math.min(250, (cw - 64) / 3);
+        const btnH = 54;
+
+        new Button(this, width / 2 - thirdBtnW - 12, btnY, '⚡ RETRY WARD (30s) ↺', () => {
+          this.scene.start('GameScene', { partyId: this.partyId });
+        }, {
+          width: thirdBtnW,
+          height: btnH,
+          bgColor: 0xdb580a,
+          hoverColor: 0xf06a1a,
+          fontSize: '16px'
+        });
+
+        new Button(this, width / 2, btnY, 'CONTINUE ANYWAY ➔', () => {
+          if (hasMoreStreets) {
+            scoreManager.currentStreetIndex++;
+            this.scene.start('GameScene', { partyId: this.partyId });
+          } else {
+            this.scene.start('ResultsScene', { partyId: this.partyId });
+          }
+        }, {
+          width: thirdBtnW,
+          height: btnH,
+          bgColor: 0x1f3c6e,
+          hoverColor: 0x2b5294,
+          fontSize: '16px'
+        });
+
+        new Button(this, width / 2 + thirdBtnW + 12, btnY, '📤 SHARE RESULTS 🔗', openShareModal, {
+          width: thirdBtnW,
+          height: btnH,
+          bgColor: 0x005ba6,
+          hoverColor: 0x1a75c2,
+          fontSize: '16px'
+        });
+      }
     }
   }
 }

@@ -6,9 +6,11 @@ import { ParallaxBackground } from '../systems/ParallaxBackground';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { ScoreManager } from '../systems/ScoreManager';
 import { HUD } from '../ui/HUD';
-import { DialogueModal } from './DialogueModal';
+import { DialogueModal, getMobileDialoguePanelHeight } from './DialogueModal';
 import { ReactionModal } from './ReactionModal';
+import { PauseModal } from './PauseModal';
 import { STREETS, StreetLevel } from '../data/streets';
+import { PARTIES } from '../data/parties';
 import { ResponseType } from '../data/complaints';
 import { SoundFX } from '../systems/SoundFX';
 import { 
@@ -36,7 +38,7 @@ export class GameScene extends Phaser.Scene {
 
   // Curbside Minibus Taxi (Cape Town / Hanover Park)
   private curbsideTaxi: Phaser.GameObjects.Sprite | null = null;
-  private nextTaxiSpawnDistance: number = 0;
+  private nextCurbsideVehicleTimer: number = 0;
   
   private currentSpeed: number = RUN_SPEED_BASE;
   private targetSpeed: number = RUN_SPEED_BASE;
@@ -52,8 +54,16 @@ export class GameScene extends Phaser.Scene {
   private residentAdvanceBeacon: Phaser.GameObjects.Container | null = null;
   private advanceBeaconDistanceText: Phaser.GameObjects.Text | null = null;
   private isEncounterPaused: boolean = false;
-  private hasStartedRunning: boolean = false;
-  private startBanner: Phaser.GameObjects.Container | null = null;
+  private isGamePaused: boolean = false;
+  private pauseModal: PauseModal | null = null;
+
+  // Mobile interaction state machine
+  private mobileInteractionState: 'RUNNING' | 'RESIDENT_DETECTED' | 'ACTION_CHOICE' | 'TALKING' | 'CHOOSING_RESPONSE' | 'SHOWING_RESULT' = 'RUNNING';
+  private encounterChoiceBannerAnimating: boolean = false;
+  private hasStartedRunning: boolean = true;
+  private obstacleTutorialContainer: Phaser.GameObjects.Container | null = null;
+  private residentTutorialContainer: Phaser.GameObjects.Container | null = null;
+  private ghostGuideArcContainer: Phaser.GameObjects.Container | null = null;
 
   // Desktop Controls
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -63,6 +73,7 @@ export class GameScene extends Phaser.Scene {
   private shiftKey?: Phaser.Input.Keyboard.Key;
   private keyE?: Phaser.Input.Keyboard.Key;
   private keyR?: Phaser.Input.Keyboard.Key;
+  private keyP?: Phaser.Input.Keyboard.Key;
   private escKey?: Phaser.Input.Keyboard.Key;
 
   constructor() {
@@ -83,20 +94,24 @@ export class GameScene extends Phaser.Scene {
 
   public create() {
     this.dialogueSystem = new DialogueSystem();
-    this.hasStartedRunning = false;
-    this.currentSpeed = 0;
-    this.targetSpeed = 0;
+    this.hasStartedRunning = true;
+    this.currentSpeed = RUN_SPEED_BASE;
+    this.targetSpeed = RUN_SPEED_BASE;
     this.streetDistanceCovered = 0;
     this.streetTimer = this.currentStreet.durationSeconds;
     this.isEncounterPaused = false;
+    this.isGamePaused = false;
+    this.pauseModal = null;
     this.activeResidentInEncounter = null;
     this.residentAdvanceBeacon = null;
     this.advanceBeaconDistanceText = null;
-    this.startBanner = null;
+    this.obstacleTutorialContainer = null;
+    this.residentTutorialContainer = null;
+    this.ghostGuideArcContainer = null;
     this.obstacles = [];
     this.residents = [];
     this.curbsideTaxi = null;
-    this.nextTaxiSpawnDistance = 2500;
+    this.nextCurbsideVehicleTimer = 0;
     this.nextObstacleTime = 2200; // Road starts clear - first obstacle appears smoothly
 
     // 1. Create Parallax Background (Cape Town / Hanover Park vs Johannesburg)
@@ -107,11 +122,11 @@ export class GameScene extends Phaser.Scene {
     const ground = this.add.rectangle(this.scale.width / 2, currentGroundY + 150, this.scale.width * 3, 300, 0x000000, 0);
     this.physics.add.existing(ground, true);
 
-    // 3. Create Player Character (starts standing in IDLE pose, positioned back on mobile for maximum runway)
+    // 3. Create Player Character (starts running down the street immediately!)
     const isPortrait = this.scale.height > this.scale.width;
     const playerX = isPortrait ? 95 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
     this.player = new Player(this, playerX, currentGroundY, this.partyId);
-    this.player.setPlayerState('IDLE');
+    this.player.setPlayerState('RUNNING');
     this.physics.add.collider(this.player, ground);
 
     // 4. Create HUD Overlay
@@ -123,8 +138,7 @@ export class GameScene extends Phaser.Scene {
     // Setup Curbside Minibus Taxi / Luxury Sports Cars (Hanover Park, Mitchells Plain, Khayelitsha & Camps Bay)
     const loc = this.currentStreet.locationKey;
     if (loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha') {
-      const isPortrait = this.scale.height > this.scale.width;
-      const initialTaxiX = isPortrait ? this.scale.width * 0.70 : this.scale.width * 0.72;
+      const initialTaxiX = isPortrait ? this.scale.width * 0.70 : this.scale.width * 0.75;
       this.spawnCurbsideTaxi(initialTaxiX);
     }
 
@@ -138,7 +152,9 @@ export class GameScene extends Phaser.Scene {
         ground.width = gameSize.width * 3;
       }
       if (this.curbsideTaxi && this.curbsideTaxi.active) {
+        const isPort = gameSize.height > gameSize.width;
         this.curbsideTaxi.y = this.getCurbsideY();
+        this.curbsideTaxi.setScale(isPort ? 0.92 : 1.15);
       }
     });
 
@@ -151,15 +167,15 @@ export class GameScene extends Phaser.Scene {
       this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
       this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
       this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+      this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
       this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
-      this.escKey.on('down', () => {
-        SoundFX.getInstance().stopBGM(true);
-        this.scene.start('MainMenuScene');
-      });
+      this.keyP.on('down', () => this.togglePause());
+      this.escKey.on('down', () => this.togglePause());
     }
 
-    // Listen for Exit Menu event from HUD
+    // Listen for Pause & Exit Menu events from HUD
+    this.events.on('pause-game', () => this.pauseGame());
     this.events.on('exit-to-menu', () => {
       SoundFX.getInstance().stopBGM(true);
       this.scene.start('MainMenuScene');
@@ -171,11 +187,7 @@ export class GameScene extends Phaser.Scene {
 
     // Mobile / Touch Controls (Tap to Jump, Hold to Sprint)
     this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer) => {
-      // If hasn't started running yet, tap anywhere starts running!
-      if (!this.hasStartedRunning) {
-        this.startCanvassing();
-        return;
-      }
+      if (this.isGamePaused) return;
 
       // If running, tapping triggers jump and holding triggers sprint
       if (!this.isEncounterPaused) {
@@ -192,26 +204,13 @@ export class GameScene extends Phaser.Scene {
       this.isSprinting = false;
     });
 
-    // Display initial Standing Ready Banner
-    this.createStartBanner();
+    // Start BGM and show quick non-blocking area start toast
+    SoundFX.getInstance().playBGM();
+    this.showAreaStartNotification();
   }
 
   public update(time: number, delta: number) {
-    if (this.isEncounterPaused) return;
-
-    // If haven't started running yet, check inputs to start
-    if (!this.hasStartedRunning) {
-      if (
-        (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) ||
-        (this.cursors?.up && Phaser.Input.Keyboard.JustDown(this.cursors.up)) ||
-        (this.cursors?.right && Phaser.Input.Keyboard.JustDown(this.cursors.right)) ||
-        (this.keyW && Phaser.Input.Keyboard.JustDown(this.keyW)) ||
-        (this.enterKey && Phaser.Input.Keyboard.JustDown(this.enterKey))
-      ) {
-        this.startCanvassing();
-      }
-      return;
-    }
+    if (this.isGamePaused || this.isEncounterPaused) return;
 
     // Check Jump Input (Space, Up Arrow, or W key)
     if (
@@ -229,7 +228,9 @@ export class GameScene extends Phaser.Scene {
     );
 
     // Apply Sprint Speed vs Base Running Speed
-    if (this.isSprinting || isKeySprinting) {
+    const sprintingNow = Boolean(this.isSprinting || isKeySprinting);
+    this.player.isSprinting = sprintingNow;
+    if (sprintingNow) {
       this.targetSpeed = RUN_SPEED_SPRINT;
     } else {
       this.targetSpeed = RUN_SPEED_BASE;
@@ -296,10 +297,8 @@ export class GameScene extends Phaser.Scene {
         
         // Prevent obstacle from spawning directly on top of a resident
         const residentOnPoint = this.residents.some(r => Math.abs(r.x - spawnX) < 180);
-        // Prevent obstacle from spawning on top of or right next to curbside taxi/vehicle (buffer 550px)
-        const taxiOnPoint = this.curbsideTaxi && this.curbsideTaxi.active && Math.abs(this.curbsideTaxi.x - spawnX) < 550;
 
-        if (!residentOnPoint && !taxiOnPoint) {
+        if (!residentOnPoint) {
           this.spawnObstacle();
           this.nextObstacleTime = Phaser.Math.Between(
             this.currentStreet.obstacleSpawnRateMin,
@@ -314,18 +313,11 @@ export class GameScene extends Phaser.Scene {
     // 2. Resident Spawning
     this.nextResidentTime -= delta;
     if (this.nextResidentTime <= 0 && !this.activeResidentInEncounter) {
-      const isPortrait = this.scale.height > this.scale.width;
-      const spawnX = this.scale.width + (isPortrait ? 380 : 440);
-      const taxiOnPoint = this.curbsideTaxi && this.curbsideTaxi.active && Math.abs(this.curbsideTaxi.x - spawnX) < 320;
-      if (!taxiOnPoint) {
-        this.spawnResident();
-        this.nextResidentTime = Phaser.Math.Between(
-          this.currentStreet.residentSpawnRateMin,
-          this.currentStreet.residentSpawnRateMax
-        );
-      } else {
-        this.nextResidentTime = 600;
-      }
+      this.spawnResident();
+      this.nextResidentTime = Phaser.Math.Between(
+        this.currentStreet.residentSpawnRateMin,
+        this.currentStreet.residentSpawnRateMax
+      );
     }
   }
 
@@ -342,7 +334,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const spawnX = initialX !== undefined ? initialX : this.scale.width + 450;
+    const isPortrait = this.scale.height > this.scale.width;
+    const defaultX = isPortrait ? this.scale.width * 0.45 : this.scale.width * 0.50;
+    const spawnX = initialX !== undefined ? initialX : defaultX;
     const curbsideY = this.getCurbsideY();
 
     // Clear any obstacles around the vehicle's spawn point with generous clearance (550px buffer)
@@ -354,13 +348,13 @@ export class GameScene extends Phaser.Scene {
       const chosenCar = Phaser.Utils.Array.GetRandom(luxuryCars);
       if (!this.textures.exists(chosenCar)) return;
 
-      const car = this.add.sprite(spawnX, curbsideY + 8, chosenCar);
+      const car = this.add.sprite(spawnX, curbsideY, chosenCar);
       car.setOrigin(0.5, 1);
       car.setDepth(4); // Behind residents (6) & player (7), above road (3)
       if (chosenCar === 'vehicle_car_suv') {
-        car.setScale(0.58);
+        car.setScale(isPortrait ? 0.72 : 0.85);
       } else {
-        car.setScale(0.62);
+        car.setScale(isPortrait ? 0.76 : 0.90);
       }
 
       // Make interactive: click/tap plays authentic supercar rev sound & bounce
@@ -382,6 +376,7 @@ export class GameScene extends Phaser.Scene {
       this.curbsideTaxi = this.add.sprite(spawnX, curbsideY, 'vehicle_taxi_minibus');
       this.curbsideTaxi.setOrigin(0.5, 1);
       this.curbsideTaxi.setDepth(4); // Behind residents (6) & player (7), above road (3)
+      this.curbsideTaxi.setScale(isPortrait ? 0.92 : 1.15);
       this.curbsideTaxi.play('taxi_minibus_anim');
 
       // Make interactive: click/tap plays authentic taxi horn ("pip-pip!")
@@ -391,8 +386,8 @@ export class GameScene extends Phaser.Scene {
         if (this.curbsideTaxi) {
           this.tweens.add({
             targets: this.curbsideTaxi,
-            scaleY: 1.05,
-            scaleX: 0.98,
+            scaleY: (isPortrait ? 0.92 : 1.15) * 1.05,
+            scaleX: (isPortrait ? 0.92 : 1.15) * 0.98,
             duration: 90,
             yoyo: true,
             ease: 'Quad.easeInOut'
@@ -403,18 +398,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateCurbsideTaxi(deltaSeconds: number) {
-    const loc = this.currentStreet.locationKey;
-    const hasCurbsideVehicles = loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha';
-
     if (this.curbsideTaxi && this.curbsideTaxi.active) {
       this.curbsideTaxi.x -= this.currentSpeed * deltaSeconds;
-      if (this.curbsideTaxi.x < -400) {
+
+      if (this.curbsideTaxi.x < -300) {
         this.curbsideTaxi.destroy();
         this.curbsideTaxi = null;
+        this.nextCurbsideVehicleTimer = Phaser.Math.Between(10000, 18000);
       }
-    } else if (hasCurbsideVehicles && this.streetDistanceCovered >= this.nextTaxiSpawnDistance) {
-      this.spawnCurbsideTaxi();
-      this.nextTaxiSpawnDistance += Phaser.Math.Between(2600, 3600);
+    } else if (this.hasStartedRunning && !this.isEncounterPaused && !this.activeResidentInEncounter) {
+      const loc = this.currentStreet.locationKey;
+      const hasCurbsideVehicles = loc === 'capetown' || loc === 'hanover_park' || loc === 'campsbay' || loc === 'mitchells_plain' || loc === 'khayelitsha';
+      if (hasCurbsideVehicles) {
+        this.nextCurbsideVehicleTimer -= deltaSeconds * 1000;
+        if (this.nextCurbsideVehicleTimer <= 0) {
+          const spawnX = this.scale.width + Phaser.Math.Between(300, 550);
+          this.spawnCurbsideTaxi(spawnX);
+        }
+      }
     }
   }
 
@@ -434,7 +435,9 @@ export class GameScene extends Phaser.Scene {
     // brokenDrain is a curb storm inlet that sits seamlessly embedded IN the sidewalk curb,
     // while road potholes sit in the runner's lane on the asphalt.
     const roadY = getDynamicRoadY(this.scale.height, this.scale.width);
-    const spawnY = (type === 'brokenDrain') ? roadY + 46 : this.getGroundY();
+    const isPortrait = this.scale.height > this.scale.width;
+    const roadScale = isPortrait ? (this.scale.height - roadY) / 352 : 1;
+    const spawnY = (type === 'brokenDrain') ? roadY + 42 * roadScale : this.getGroundY();
 
     const obstacle = new Obstacle(this, spawnX, spawnY, type);
     this.obstacles.push(obstacle);
@@ -464,13 +467,14 @@ export class GameScene extends Phaser.Scene {
   private updateObstacles(delta: number) {
     const playerX = this.player.x;
     const groundY = this.getGroundY();
+    const isPortrait = this.scale.height > this.scale.width;
 
     // Safety: Ensure brokenDrain never overlaps or sits directly beside the curbside taxi
     if (this.curbsideTaxi && this.curbsideTaxi.active) {
       const taxiX = this.curbsideTaxi.x;
       for (let i = this.obstacles.length - 1; i >= 0; i--) {
         const obs = this.obstacles[i];
-        if (obs.type === 'brokenDrain' && Math.abs(obs.x - taxiX) < 450) {
+        if (obs.obstacleType === 'brokenDrain' && Math.abs(obs.x - taxiX) < 450) {
           obs.destroy();
           this.obstacles.splice(i, 1);
         }
@@ -487,6 +491,15 @@ export class GameScene extends Phaser.Scene {
 
       // Check jumping over vs stumbling
       if (!obs.isResolved && obs.active) {
+        // First-time obstacle tutorial halt with jump trajectory ghost guide arc
+        if (!this.scoreManager.hasSeenObstacleTutorial && !this.isGamePaused && !this.isEncounterPaused && this.hasStartedRunning) {
+          const distToObs = obs.x - playerX;
+          if (distToObs > 150 && distToObs < (isPortrait ? 260 : 340)) {
+            this.triggerFirstObstacleTutorial(obs);
+            return;
+          }
+        }
+
         const dx = obs.x - playerX;
         
         // When obstacle enters player's interaction window (-25 to +45)
@@ -497,6 +510,8 @@ export class GameScene extends Phaser.Scene {
             // Player successfully jumped over it -> FIXED! (+5s bonus)
             obs.resolveCleared();
             this.scoreManager.recordObstacleCleared();
+            this.hud.updateValues();
+            this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
             SoundFX.getInstance().playObstacleFixed();
             this.addTimeBonus(5, '✨ FIXED! +5s ⏱️');
           } else if (this.player.y >= groundY - 20 && this.player.playerState !== 'JUMPING') {
@@ -505,12 +520,21 @@ export class GameScene extends Phaser.Scene {
             const wasHit = this.player.onHitObstacle();
             if (wasHit) {
               this.scoreManager.recordObstacleHit();
+              this.hud.updateValues();
+              this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
+              this.hud.triggerMentalHealthFlash(-4, '⚠️ -4% Morale: Tripped on hazard!');
               this.addTimeBonus(-2, '⚠️ HIT! -2s ⏱️');
+
+              if (this.scoreManager.mentalHealth <= 0) {
+                this.triggerBurnoutRecovery();
+              }
 
               // Temporarily slow running speed
               this.targetSpeed = RUN_SPEED_SLOW;
               this.time.delayedCall(800, () => {
-                this.targetSpeed = RUN_SPEED_BASE;
+                if (this.currentSpeed > 0) {
+                  this.targetSpeed = RUN_SPEED_BASE;
+                }
               });
             }
           }
@@ -522,12 +546,9 @@ export class GameScene extends Phaser.Scene {
   private updateResidents(delta: number) {
     const playerX = this.player.x;
     const isPortrait = this.scale.height > this.scale.width;
-    // Dynamic beacon distance:
-    // On desktop, the screen right edge from player is (scale.width - playerX), e.g. ~900px.
-    // The beacon MUST appear BEFORE the voter enters the visible screen (while still off-screen)!
     const screenRightEdgeDist = this.scale.width - playerX;
     const beaconMaxDist = screenRightEdgeDist + (isPortrait ? 400 : 700);
-    const beaconMinDist = isPortrait ? 380 : 440;
+    const advanceChoiceDist = isPortrait ? 280 : 420;
 
     for (let i = this.residents.length - 1; i >= 0; i--) {
       const resident = this.residents[i];
@@ -539,231 +560,349 @@ export class GameScene extends Phaser.Scene {
       resident.updateMovement(this.currentSpeed, delta);
       const distance = resident.x - playerX;
 
-      // 1. Advance warning when resident is approaching down the street (before & while entering screen)
-      if (!resident.hasEncountered && distance > beaconMinDist && distance < beaconMaxDist && !this.activeResidentInEncounter) {
+      // 1. First-time resident tutorial halt (desktop only; mobile portrait directly presents the clean TALK / RUN action bar)
+      if (!isPortrait && !this.scoreManager.hasSeenResidentTutorial && !this.isGamePaused && !this.isEncounterPaused && this.hasStartedRunning && !resident.hasEncountered) {
+        if (distance > 180 && distance < 440) {
+          this.triggerFirstResidentTutorial(resident);
+          return;
+        }
+      }
+
+      // 2. Advance warning when resident is approaching down the street
+      if (!resident.hasEncountered && distance > advanceChoiceDist && distance < beaconMaxDist && !this.activeResidentInEncounter) {
         this.showResidentAdvanceBeacon(resident, distance);
       }
 
-      // 2. Interaction zone (between 120 and beaconMinDist): Show Choice Banner
-      if (!resident.hasEncountered && distance > 120 && distance <= beaconMinDist && !this.activeResidentInEncounter) {
+      // 3. Early Interaction Choice Banner: appears well before reaching resident!
+      if (!resident.hasEncountered && distance <= advanceChoiceDist && distance > -30 && !this.activeResidentInEncounter) {
         this.hideResidentAdvanceBeacon();
         resident.isApproaching = true;
         this.activeResidentInEncounter = resident;
         resident.triggerAlertSound();
         this.showEncounterChoiceBanner(resident);
+        // Controlled approach glide giving the player ample time (2-3s) to decide
+        this.targetSpeed = Math.min(this.targetSpeed, 120);
       }
 
-      // 3. Passed without stopping -> Ignored!
-      if (!resident.hasEncountered && distance < -40) {
+      // 4. Passed without stopping -> Ignored!
+      if (!resident.hasEncountered && distance < -30) {
         this.hideResidentAdvanceBeacon();
+        this.hideEncounterChoiceBanner();
         resident.hasEncountered = true;
         this.handleResidentPassed(resident);
       }
     }
 
     // If no resident is in advance range and no encounter is active, hide beacon
-    const hasUpcoming = this.residents.some(r => !r.hasEncountered && (r.x - playerX) > beaconMinDist && (r.x - playerX) < beaconMaxDist);
+    const hasUpcoming = this.residents.some(r => !r.hasEncountered && (r.x - playerX) > advanceChoiceDist && (r.x - playerX) < beaconMaxDist);
     if (!hasUpcoming && this.residentAdvanceBeacon && !this.activeResidentInEncounter) {
       this.hideResidentAdvanceBeacon();
     }
   }
 
-  private createStartBanner() {
+  private showAreaStartNotification() {
     const { width, height } = this.scale;
     const isPortrait = height > width;
-    const bannerY = isPortrait ? Math.round(height * 0.38) : 260;
-    const banner = this.add.container(width / 2, bannerY);
+    const toastY = isPortrait ? 180 : 120;
+    const banner = this.add.container(width / 2, toastY);
     banner.setDepth(150);
 
-    const w = Math.min(width - 28, 500);
-    const h = isPortrait ? 205 : 190;
+    const w = Math.min(width - 40, 420);
+    const h = 58;
 
     const bg = this.add.graphics();
-    bg.fillStyle(0x0c1524, 0.96);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 20);
-    bg.lineStyle(3, 0xfcb813, 1);
-    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
+    bg.fillStyle(0x0c1524, 0.92);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
+    bg.lineStyle(2, 0xfcb813, 0.9);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
 
     const targetVotes = this.currentStreet.targetVotes || 10;
-    const title = this.add.text(0, -h / 2 + 30, '⚡ 30-SECOND AREA SPRINT!', {
+    const title = this.add.text(0, -10, `🏃 ${this.currentStreet.name.toUpperCase()}`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '20px' : '25px',
+      fontSize: isPortrait ? '15px' : '17px',
       color: '#fcb813',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    const subtitle = this.add.text(0, -h / 2 + 60, `Target: Win ${targetVotes} votes in 30s to unlock next area!`, {
+    const sub = this.add.text(0, 12, `Target: Win ${targetVotes} Votes • Tap / Space to Jump!`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13px' : '15px',
-      color: '#f1f5f9',
+      fontSize: isPortrait ? '11px' : '12px',
+      color: '#e2e8f0',
       fontStyle: '600'
     }).setOrigin(0.5, 0.5);
 
-    // Control hint badges
-    const hintBg = this.add.graphics();
-    hintBg.fillStyle(0x132238, 0.9);
-    hintBg.fillRoundedRect(-w / 2 + 16, -h / 2 + 82, w - 32, 34, 8);
-    hintBg.lineStyle(1.5, 0x4fc3f7, 0.7);
-    hintBg.strokeRoundedRect(-w / 2 + 16, -h / 2 + 82, w - 32, 34, 8);
+    banner.add([bg, title, sub]);
 
-    const hintText = this.add.text(0, -h / 2 + 99, '👆 TAP Screen to JUMP  •  ✋ HOLD to SPRINT', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '12px' : '13.5px',
-      color: '#ffea77',
-      fontStyle: '900'
-    }).setOrigin(0.5, 0.5);
-
-    // Green action button
-    const btnW = Math.min(280, w - 40);
-    const btnH = 46;
-    const btnY = h / 2 - 32;
-
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x1f9137, 1);
-    btnBg.fillRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
-    btnBg.lineStyle(2, 0xffffff, 0.9);
-    btnBg.strokeRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
-
-    const btnTxt = this.add.text(0, btnY, '🏃 START SPRINT ➔', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '18px',
-      color: '#ffffff',
-      fontStyle: '900'
-    }).setOrigin(0.5, 0.5);
-
-    const btnZone = this.add.zone(0, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
-    btnZone.on('pointerdown', () => this.startCanvassing());
-
-    banner.add([bg, title, subtitle, hintBg, hintText, btnBg, btnTxt, btnZone]);
-
-    // Entrance pop
-    banner.setScale(0.9);
+    banner.setScale(0.85);
+    banner.setAlpha(0);
     this.tweens.add({
       targets: banner,
       scaleX: 1.0,
       scaleY: 1.0,
-      duration: 220,
-      ease: 'Back.easeOut'
-    });
-
-    this.startBanner = banner;
-
-    // Natural auto-start after 2.4 seconds if user has not clicked
-    this.time.delayedCall(2400, () => {
-      if (!this.hasStartedRunning) {
-        this.startCanvassing();
+      alpha: 1,
+      duration: 200,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(1600, () => {
+          this.tweens.add({
+            targets: banner,
+            alpha: 0,
+            y: toastY - 20,
+            duration: 250,
+            ease: 'Power2.easeIn',
+            onComplete: () => banner.destroy()
+          });
+        });
       }
     });
-  }
-
-  private startCanvassing() {
-    if (this.hasStartedRunning) return;
-    this.hasStartedRunning = true;
-
-    if (this.startBanner) {
-      this.tweens.add({
-        targets: this.startBanner,
-        alpha: 0,
-        y: this.startBanner.y - 25,
-        duration: 250,
-        onComplete: () => {
-          this.startBanner?.destroy();
-          this.startBanner = null;
-        }
-      });
-    }
-
-    this.player.setPlayerState('RUNNING');
-    this.targetSpeed = RUN_SPEED_BASE;
-    SoundFX.getInstance().playBGM();
   }
 
   private showEncounterChoiceBanner(resident: Resident) {
     if (this.encounterChoiceBanner) {
       this.encounterChoiceBanner.destroy();
     }
+    if (this.encounterChoiceBannerAnimating) return;
+    // Prevent opening action choice panel if another interaction is already active
+    if (this.mobileInteractionState !== 'RUNNING' && this.mobileInteractionState !== 'RESIDENT_DETECTED' && this.mobileInteractionState !== 'ACTION_CHOICE') return;
 
     const { width, height } = this.scale;
     const isPortrait = height > width;
-    // Positioned cleanly in clear upper area of mobile portrait view for thumb accessibility & breathing room
-    const bannerY = isPortrait ? Math.round(height * 0.28) : 140;
-    const banner = this.add.container(width / 2, bannerY);
-    banner.setDepth(140);
+    this.mobileInteractionState = 'ACTION_CHOICE';
 
-    const bannerW = isPortrait ? Math.min(width - 20, 424) : 540;
-    const bannerH = isPortrait ? 96 : 108;
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0c1524, 0.96);
-    bg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
-    bg.lineStyle(2.5, 0xfcb813, 1);
-    bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
+    if (isPortrait) {
+      // ═══════ MOBILE: Slide-up Action Bar at bottom (Talk or Run - Matches Image 1) ═══════
+      const bannerW = Math.min(width - 20, 480);
+      const bannerH = 180;
+      const bannerFinalY = height - bannerH / 2 - 14;
+      const bannerStartY = height + bannerH;
 
-    const title = this.add.text(0, -bannerH / 2 + 20, '👤 RESIDENT WANTS TO TALK!', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '15px' : '18px',
-      color: '#fcb813',
-      fontStyle: '900'
-    }).setOrigin(0.5, 0.5);
+      const banner = this.add.container(width / 2, bannerStartY);
+      banner.setDepth(140);
 
-    const btnW = isPortrait ? (bannerW - 30) / 2 : 235;
-    const btnH = isPortrait ? 42 : 46;
-    const btnY = isPortrait ? 14 : 25;
-    const colOffset = isPortrait ? btnW / 2 + 5 : 127;
+      // Panel background with rounded corners & shadow
+      const bg = this.add.graphics();
+      // Drop shadow
+      bg.fillStyle(0x000000, 0.45);
+      bg.fillRoundedRect(-bannerW / 2 + 3, -bannerH / 2 + 5, bannerW, bannerH, 20);
+      // Dark navy container body
+      bg.fillStyle(0x0c1524, 0.98);
+      bg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 20);
+      bg.lineStyle(1.5, 0x1e293b, 1);
+      bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 20);
 
-    // Stop & Talk Button (Large & touch-friendly green)
-    const stopBtnBg = this.add.graphics();
-    stopBtnBg.fillStyle(0x1f9137, 1);
-    stopBtnBg.fillRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
-    stopBtnBg.lineStyle(2, 0xffffff, 0.9);
-    stopBtnBg.strokeRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      // Person icon on left
+      const personIcon = this.add.text(-bannerW / 2 + 22, -bannerH / 2 + 32, '👤', {
+        fontSize: '28px',
+        color: '#22c55e'
+      }).setOrigin(0, 0.5);
 
-    const stopTxt = this.add.text(-colOffset, btnY, '✋ STOP & TALK [E]', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13px' : '16px',
-      color: '#ffffff',
-      fontStyle: '900'
-    }).setOrigin(0.5, 0.5);
+      // Title & subtitle next to person icon (Bolder & Bigger)
+      const title = this.add.text(-bannerW / 2 + 60, -bannerH / 2 + 24, 'Resident wants to talk!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '19px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0, 0.5);
 
-    const stopZone = this.add.zone(-colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
-    stopZone.on('pointerdown', () => this.triggerStopAndListen(resident));
+      const subtitle = this.add.text(-bannerW / 2 + 60, -bannerH / 2 + 45, 'Stop and chat or keep running.', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '13.5px',
+        color: '#94a3b8',
+        fontStyle: '600'
+      }).setOrigin(0, 0.5);
 
-    // Keep Running Button (Large & touch-friendly orange)
-    const runBtnBg = this.add.graphics();
-    runBtnBg.fillStyle(0xdb580a, 1);
-    runBtnBg.fillRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
-    runBtnBg.lineStyle(2, 0x111111, 0.8);
-    runBtnBg.strokeRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      // Two large side-by-side buttons with generous padding
+      const btnGap = 12;
+      const btnW = (bannerW - 32 - btnGap) / 2;
+      const btnH = 76;
+      const btnY = bannerH / 2 - btnH / 2 - 16;
+      const leftX = -(btnW + btnGap) / 2;
+      const rightX = (btnW + btnGap) / 2;
 
-    const runTxt = this.add.text(colOffset, btnY, '🏃 KEEP RUNNING [➔]', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: isPortrait ? '13px' : '16px',
-      color: '#ffffff',
-      fontStyle: '900'
-    }).setOrigin(0.5, 0.5);
+      // 💬 TALK Button (Bolder, Bigger, Vibrant Green)
+      const talkContainer = this.add.container(leftX, btnY);
+      const talkBg = this.add.graphics();
+      talkBg.fillStyle(0x16a34a, 1);
+      talkBg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 16);
+      talkBg.lineStyle(2, 0x22c55e, 0.95);
+      talkBg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 16);
 
-    const runZone = this.add.zone(colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
-    runZone.on('pointerdown', () => this.triggerKeepRunning(resident));
+      const talkEmoji = this.add.text(0, -14, '💬', {
+        fontSize: '26px'
+      }).setOrigin(0.5, 0.5);
 
-    banner.add([bg, title, stopBtnBg, stopTxt, stopZone, runBtnBg, runTxt, runZone]);
+      const talkLabel = this.add.text(0, 16, 'TALK', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '21px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
 
-    // Entrance pop
-    banner.setScale(0.9);
-    this.tweens.add({
-      targets: banner,
-      scaleX: 1.0,
-      scaleY: 1.0,
-      duration: 180,
-      ease: 'Back.easeOut'
-    });
+      talkContainer.add([talkBg, talkEmoji, talkLabel]);
 
-    this.encounterChoiceBanner = banner;
+      const talkZone = this.add.zone(leftX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      talkZone.on('pointerdown', () => {
+        this.tweens.add({
+          targets: talkContainer,
+          scaleX: 0.95,
+          scaleY: 0.95,
+          duration: 70,
+          yoyo: true,
+          onComplete: () => {
+            this.triggerStopAndListen(resident);
+          }
+        });
+      });
+
+      // 🏃 RUN Button (Bolder, Bigger, Vibrant Orange)
+      const runContainer = this.add.container(rightX, btnY);
+      const runBg = this.add.graphics();
+      runBg.fillStyle(0xea580c, 1);
+      runBg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 16);
+      runBg.lineStyle(2, 0xf97316, 0.95);
+      runBg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 16);
+
+      const runEmoji = this.add.text(0, -14, '🏃', {
+        fontSize: '26px'
+      }).setOrigin(0.5, 0.5);
+
+      const runLabel = this.add.text(0, 16, 'RUN', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '21px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      runContainer.add([runBg, runEmoji, runLabel]);
+
+      const runZone = this.add.zone(rightX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      runZone.on('pointerdown', () => {
+        this.tweens.add({
+          targets: runContainer,
+          scaleX: 0.95,
+          scaleY: 0.95,
+          duration: 70,
+          yoyo: true,
+          onComplete: () => {
+            this.triggerKeepRunning(resident);
+          }
+        });
+      });
+
+      banner.add([bg, personIcon, title, subtitle, talkContainer, talkZone, runContainer, runZone]);
+
+      // Slide-up entrance animation from bottom
+      this.encounterChoiceBannerAnimating = true;
+      this.tweens.add({
+        targets: banner,
+        y: bannerFinalY,
+        duration: 250,
+        ease: 'Cubic.easeOut',
+        onComplete: () => {
+          this.encounterChoiceBannerAnimating = false;
+        }
+      });
+
+      this.encounterChoiceBanner = banner;
+    } else {
+      // ═══════ DESKTOP: Existing top-center banner layout (unchanged) ═══════
+      const bannerY = 140;
+      const banner = this.add.container(width / 2, bannerY);
+      banner.setDepth(140);
+
+      const bannerW = 540;
+      const bannerH = 108;
+      const bg = this.add.graphics();
+      bg.fillStyle(0x0c1524, 0.96);
+      bg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
+      bg.lineStyle(2.5, 0xfcb813, 1);
+      bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
+
+      const title = this.add.text(0, -bannerH / 2 + 20, '👤 RESIDENT WANTS TO TALK!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '18px',
+        color: '#fcb813',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const btnW = 235;
+      const btnH = 46;
+      const btnY = 25;
+      const colOffset = 127;
+
+      const stopBtnBg = this.add.graphics();
+      stopBtnBg.fillStyle(0x16a34a, 1);
+      stopBtnBg.fillRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      stopBtnBg.lineStyle(2, 0x4ade80, 0.95);
+      stopBtnBg.strokeRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+
+      const stopTxt = this.add.text(-colOffset, btnY, '🗣️ TALK TO RESIDENT [E]', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '15px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const stopZone = this.add.zone(-colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      stopZone.on('pointerdown', () => this.triggerStopAndListen(resident));
+
+      const runBtnBg = this.add.graphics();
+      runBtnBg.fillStyle(0x1e293b, 1);
+      runBtnBg.fillRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      runBtnBg.lineStyle(2, 0xef4444, 0.9);
+      runBtnBg.strokeRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+
+      const runTxt = this.add.text(colOffset, btnY, '🏃 IGNORE [R]', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '15px',
+        color: '#f87171',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const runZone = this.add.zone(colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      runZone.on('pointerdown', () => this.triggerKeepRunning(resident));
+
+      banner.add([bg, title, stopBtnBg, stopTxt, stopZone, runBtnBg, runTxt, runZone]);
+
+      banner.setScale(0.9);
+      this.tweens.add({
+        targets: banner,
+        scaleX: 1.0,
+        scaleY: 1.0,
+        duration: 180,
+        ease: 'Back.easeOut'
+      });
+
+      this.encounterChoiceBanner = banner;
+    }
+
     this.hud.setResidentAlertVisible(true);
   }
 
-  private hideEncounterChoiceBanner() {
+  private hideEncounterChoiceBanner(animated: boolean = false) {
     if (this.encounterChoiceBanner) {
-      this.encounterChoiceBanner.destroy();
-      this.encounterChoiceBanner = null;
+      const isPortrait = this.scale.height > this.scale.width;
+      if (animated && isPortrait && !this.encounterChoiceBannerAnimating) {
+        // Mobile: slide down and destroy
+        this.encounterChoiceBannerAnimating = true;
+        const targetY = this.scale.height + 180;
+        this.tweens.add({
+          targets: this.encounterChoiceBanner,
+          y: targetY,
+          duration: 200,
+          ease: 'Cubic.easeIn',
+          onComplete: () => {
+            if (this.encounterChoiceBanner) {
+              this.encounterChoiceBanner.destroy();
+              this.encounterChoiceBanner = null;
+            }
+            this.encounterChoiceBannerAnimating = false;
+          }
+        });
+      } else {
+        this.encounterChoiceBanner.destroy();
+        this.encounterChoiceBanner = null;
+      }
     }
     this.hideResidentAdvanceBeacon();
     this.hud.setResidentAlertVisible(false);
@@ -779,7 +918,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const beaconX = this.scale.width - (isPortrait ? 88 : 110);
-    const beaconY = isPortrait ? this.scale.height - 290 : 380;
+    const beaconY = isPortrait ? this.getGroundY() - 195 : 380;
     const beacon = this.add.container(beaconX, beaconY);
     beacon.setDepth(130);
 
@@ -826,12 +965,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private triggerStopAndListen(resident: Resident) {
-    if (this.isEncounterPaused) return;
+    if (this.mobileInteractionState === 'CHOOSING_RESPONSE' || this.mobileInteractionState === 'SHOWING_RESULT') return;
 
     this.isEncounterPaused = true;
-    this.hideEncounterChoiceBanner();
+    this.mobileInteractionState = 'TALKING';
+    this.hideEncounterChoiceBanner(true);
     this.hideResidentAdvanceBeacon();
     resident.hideAlert();
+    resident.hideAngrySpeechBubble();
     resident.hasEncountered = true;
 
     // Halt movement and enter Talking state
@@ -840,33 +981,156 @@ export class GameScene extends Phaser.Scene {
     this.player.setPlayerState('TALKING');
     SoundFX.getInstance().duckBGM(0.08);
 
-    // Smoothly position resident facing representative
-    const isPortrait = this.scale.height > this.scale.width;
-    const residentTargetX = isPortrait ? this.player.x + 140 : this.player.x + 150;
-    this.tweens.add({
-      targets: resident,
-      x: residentTargetX,
-      duration: 250,
-      ease: 'Power2.easeOut'
-    });
+    const { width, height } = this.scale;
+    const isPortrait = height > width;
 
-    // Launch Dialogue Modal after brief transition delay to prevent touch gesture bleed
-    this.time.delayedCall(150, () => {
+    if (isPortrait) {
+      // ═══════ MOBILE SYNCHRONIZED TALK POSITION & ANIMATION ═══════
+      // 1. Calculate responsive conversation position
+      const normalGroundY = this.getGroundY();
+      const panelH = getMobileDialoguePanelHeight(height);
+      const panelTopY = height - panelH;
+      const charH = 200 * 1.15; // Candidate & resident visual height (~230px)
+
+      // Target ground position: upper body (head, shoulders, chest, waist) visible above panelTopY
+      let targetGroundY = Math.round(panelTopY + charH * 0.38);
+      targetGroundY = Math.min(normalGroundY - 40, targetGroundY);
+
+      // Horizontal positions remain beside each other
+      const residentTargetX = Math.min(width - 85, this.player.x + 155);
+
+      // Position speech bubble directly above characters, with pointer tail to resident
+      const charHeadY = targetGroundY - charH;
+      const textLen = resident.complaint.complaintText.length;
+      const bubbleH = textLen > 85 ? 96 : (textLen > 50 ? 86 : 76);
+      const bubbleBottom = charHeadY - 8;
+      let targetBubbleY = bubbleBottom - bubbleH / 2;
+      // Ensure breathing room below HUD (~138px)
+      const minBubbleY = 138 + bubbleH / 2 + 10;
+      targetBubbleY = Math.max(minBubbleY, targetBubbleY);
+
+      // 2. Synchronized 280ms transition: Candidate and Resident slide upward together
+      this.tweens.add({
+        targets: this.player,
+        y: targetGroundY,
+        duration: 280,
+        ease: 'Cubic.easeOut'
+      });
+
+      this.tweens.add({
+        targets: resident,
+        x: residentTargetX,
+        y: targetGroundY,
+        duration: 280,
+        ease: 'Cubic.easeOut'
+      });
+
+      // 3. Immediately launch DialogueModal: speech bubble and response panel animate together
+      this.mobileInteractionState = 'CHOOSING_RESPONSE';
       const dialogueModal = new DialogueModal(this, {
         complaint: resident.complaint,
         partyId: this.partyId,
+        residentX: residentTargetX,
+        targetBubbleY: targetBubbleY,
         onChoiceSelected: (choice: ResponseType) => {
+          this.mobileInteractionState = 'SHOWING_RESULT';
           dialogueModal.destroyModal();
           this.handleResponseChosen(resident, choice);
+        },
+        onCancel: () => {
+          dialogueModal.destroyModal();
+          // Smoothly translate candidate and resident back down to normal ground line
+          this.tweens.add({
+            targets: [this.player, resident],
+            y: normalGroundY,
+            duration: 300,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+              this.triggerKeepRunning(resident);
+            }
+          });
         }
       });
-    });
+    } else {
+      // ═══════ DESKTOP (unchanged) ═══════
+      const residentTargetX = this.player.x + 150;
+      this.tweens.add({
+        targets: resident,
+        x: residentTargetX,
+        duration: 250,
+        ease: 'Power2.easeOut'
+      });
+
+      this.time.delayedCall(150, () => {
+        this.mobileInteractionState = 'CHOOSING_RESPONSE';
+        const dialogueModal = new DialogueModal(this, {
+          complaint: resident.complaint,
+          partyId: this.partyId,
+          residentX: resident.x,
+          onChoiceSelected: (choice: ResponseType) => {
+            this.mobileInteractionState = 'SHOWING_RESULT';
+            dialogueModal.destroyModal();
+            this.handleResponseChosen(resident, choice);
+          },
+          onCancel: () => {
+            dialogueModal.destroyModal();
+            this.triggerKeepRunning(resident);
+          }
+        });
+      });
+    }
   }
 
   private triggerKeepRunning(resident: Resident) {
-    this.hideEncounterChoiceBanner();
+    const isPortrait = this.scale.height > this.scale.width;
+    this.hideEncounterChoiceBanner(true);
     resident.hasEncountered = true;
+    this.targetSpeed = RUN_SPEED_BASE;
+    this.mobileInteractionState = 'RUNNING';
     this.handleResidentPassed(resident);
+
+    // Mobile: show "You kept running..." toast
+    if (isPortrait) {
+      const toastW = 220;
+      const toastH = 42;
+      const toastY = this.scale.height - 100;
+      const toast = this.add.container(this.scale.width / 2, toastY);
+      toast.setDepth(155);
+
+      const toastBg = this.add.graphics();
+      toastBg.fillStyle(0x0c1524, 0.92);
+      toastBg.fillRoundedRect(-toastW / 2, -toastH / 2, toastW, toastH, 10);
+      toastBg.lineStyle(1.5, 0x94a3b8, 0.6);
+      toastBg.strokeRoundedRect(-toastW / 2, -toastH / 2, toastW, toastH, 10);
+
+      const toastTxt = this.add.text(0, 0, '🏃 You kept running...', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '14px',
+        color: '#94a3b8',
+        fontStyle: '700'
+      }).setOrigin(0.5, 0.5);
+
+      toast.add([toastBg, toastTxt]);
+      toast.setAlpha(0);
+
+      this.tweens.add({
+        targets: toast,
+        alpha: 1,
+        duration: 200,
+        ease: 'Sine.easeOut',
+        onComplete: () => {
+          this.tweens.add({
+            targets: toast,
+            alpha: 0,
+            y: toastY - 20,
+            delay: 1000,
+            duration: 400,
+            ease: 'Sine.easeIn',
+            onComplete: () => toast.destroy()
+          });
+        }
+      });
+    }
   }
 
   private handleResidentPassed(resident: Resident) {
@@ -875,30 +1139,46 @@ export class GameScene extends Phaser.Scene {
       this.activeResidentInEncounter = null;
     }
     this.hideEncounterChoiceBanner();
+    this.isEncounterPaused = false;
+    this.targetSpeed = RUN_SPEED_BASE;
+    this.mobileInteractionState = 'RUNNING';
+
+    // Resident speaks out in anger overhead
+    resident.showAngrySpeechBubble();
 
     // Frustration penalty for ignoring
-    resident.setReactionPose('negative');
     this.scoreManager.recordEncounter('ignored');
     this.scoreManager.modifyTrust(-3);
+    this.scoreManager.modifyMentalHealth(-3);
     this.hud.updateValues();
+    this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
+    this.hud.triggerMentalHealthFlash(-3, '😤 Resident Ignored: -3% Morale');
 
-    // Floating ignored warning
-    const warn = this.add.text(resident.x, resident.y - 100, 'Ignored! -3% Trust 🏃', {
+    // Floating ignored warning (clamped horizontally so it never clips off-screen)
+    const isPortrait = this.scale.height > this.scale.width;
+    const warnY = isPortrait ? resident.y - 120 : resident.y - 100;
+    const warnX = Phaser.Math.Clamp(resident.x, 150, this.scale.width - 150);
+    const warn = this.add.text(warnX, warnY, '😤 Resident Ignored! -3% Trust • -3% Morale', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '14px',
-      color: '#ff6b6b',
-      fontStyle: 'bold',
+      fontSize: '13px',
+      color: '#ff4444',
+      fontStyle: '900',
       backgroundColor: '#0c1524',
-      padding: { left: 6, right: 6, top: 2, bottom: 2 }
+      padding: { left: 10, right: 10, top: 4, bottom: 4 }
     }).setOrigin(0.5, 0.5).setDepth(150);
 
     this.tweens.add({
       targets: warn,
-      y: warn.y - 35,
-      alpha: 0,
-      duration: 1000,
+      y: warnY - 25,
+      alpha: { from: 1, to: 0 },
+      delay: 1500,
+      duration: 700,
       onComplete: () => warn.destroy()
     });
+
+    if (this.scoreManager.mentalHealth <= 0) {
+      this.triggerBurnoutRecovery();
+    }
   }
 
   private handleResponseChosen(resident: Resident, choice: ResponseType) {
@@ -915,8 +1195,20 @@ export class GameScene extends Phaser.Scene {
     // Apply scoring updates
     this.scoreManager.addVotes(outcome.voteGained);
     this.scoreManager.modifyTrust(outcome.trustChange);
+    this.scoreManager.modifyMentalHealth(outcome.mentalHealthChange);
     this.scoreManager.recordEncounter(choice, outcome.outcome);
+
+    if (resident.personality === 'Rude') {
+      this.scoreManager.stats.rudeEncounters++;
+    } else if (resident.personality === 'Cheerful') {
+      this.scoreManager.stats.cheerfulEncounters++;
+    }
+
     this.hud.updateValues();
+    this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
+    if (outcome.mentalHealthChange !== 0) {
+      this.hud.triggerMentalHealthFlash(outcome.mentalHealthChange, outcome.mentalHealthReason);
+    }
 
     const targetVotes = this.currentStreet.targetVotes || 10;
     const isTargetWon = this.scoreManager.votes >= targetVotes;
@@ -932,37 +1224,66 @@ export class GameScene extends Phaser.Scene {
     // Display Reaction Modal
     new ReactionModal(this, outcome, () => {
       if (isTargetWon) {
-        // Party hit the target votes (10 in Area 1, 15 in Area 2)! Transition to Area Complete Scene!
+        // Party hit the target votes (10 in Area 1, 12 in Area 2)! Transition to Area Complete Scene!
         this.completeCurrentStreet();
       } else {
-        this.resumeRunningAfterEncounter();
+        this.resumeRunningAfterEncounter(resident);
       }
     });
   }
 
-  private resumeRunningAfterEncounter() {
-    this.isEncounterPaused = false;
-    this.activeResidentInEncounter = null;
-    this.player.setPlayerState('RUNNING_AGAIN');
-    this.targetSpeed = RUN_SPEED_BASE;
-    SoundFX.getInstance().unduckBGM();
-
-    // Generous spacing after an encounter so player has real distance to run!
-    this.nextResidentTime = Phaser.Math.Between(3400, 5600);
-    this.nextObstacleTime = Phaser.Math.Between(3200, 5200);
-
-    // Push back any upcoming resident or obstacle that was queued too close during the pause
-    const minDistanceAhead = this.player.x + (this.scale.height > this.scale.width ? 520 : 650);
-    this.residents.forEach(res => {
-      if (!res.hasEncountered && res.x < minDistanceAhead) {
-        res.x = minDistanceAhead + Phaser.Math.Between(150, 400);
-      }
+  private triggerBurnoutRecovery() {
+    this.targetSpeed = 0;
+    this.currentSpeed = 0;
+    this.scoreManager.stats.burnoutsSuffered++;
+    this.player.triggerBurnout(() => {
+      this.scoreManager.mentalHealth = 25;
+      this.hud.updateValues();
+      this.player.updateMentalHealthVisuals(25);
+      this.hud.triggerMentalHealthFlash(25, '💪 Second Wind! +25% Morale');
+      this.targetSpeed = RUN_SPEED_BASE;
     });
-    this.obstacles.forEach(obs => {
-      if (!obs.isResolved && obs.x < minDistanceAhead) {
-        obs.x = minDistanceAhead + Phaser.Math.Between(250, 480);
+  }
+
+  private resumeRunningAfterEncounter(resident?: Resident) {
+    const res = resident || this.activeResidentInEncounter;
+    const normalGroundY = this.getGroundY();
+    const isPortrait = this.scale.height > this.scale.width;
+
+    const finalizeResume = () => {
+      this.isEncounterPaused = false;
+      this.activeResidentInEncounter = null;
+      this.mobileInteractionState = 'RUNNING';
+      this.player.setPlayerState('RUNNING_AGAIN');
+      this.targetSpeed = RUN_SPEED_BASE;
+      this.currentSpeed = RUN_SPEED_BASE;
+      SoundFX.getInstance().unduckBGM();
+
+      // If mental health dropped to 0 from the encounter, trigger brief burnout recovery!
+      if (this.scoreManager.mentalHealth <= 0) {
+        this.triggerBurnoutRecovery();
+        return;
       }
-    });
+    };
+
+    if (isPortrait && (Math.abs(this.player.y - normalGroundY) > 5)) {
+      // Smoothly animate candidate and resident back down to normal running road line
+      const animTargets: any[] = [this.player];
+      if (res && res.active) {
+        animTargets.push(res);
+      }
+      this.tweens.add({
+        targets: animTargets,
+        y: normalGroundY,
+        duration: 300,
+        ease: 'Cubic.easeOut',
+        onComplete: finalizeResume
+      });
+    } else {
+      this.player.y = normalGroundY;
+      if (res && res.active) res.y = normalGroundY;
+      finalizeResume();
+    }
   }
 
   public addTimeBonus(seconds: number, toastText?: string) {
@@ -1001,5 +1322,661 @@ export class GameScene extends Phaser.Scene {
   private completeCurrentStreet() {
     SoundFX.getInstance().stopBGM(true);
     this.scene.start('StreetCompleteScene', { partyId: this.partyId });
+  }
+
+  public pauseGame() {
+    if (this.isGamePaused) return;
+    this.isGamePaused = true;
+    this.physics.world.pause();
+
+    this.pauseModal = new PauseModal(this, {
+      currentStreet: this.currentStreet,
+      partyId: this.partyId,
+      onResume: () => this.resumeGame(),
+      onRestart: () => this.restartArea(),
+      onMainMenu: () => {
+        SoundFX.getInstance().stopBGM(true);
+        this.scene.start('MainMenuScene');
+      }
+    });
+  }
+
+  public resumeGame() {
+    if (!this.isGamePaused) return;
+    this.isGamePaused = false;
+    this.pauseModal = null;
+    this.physics.world.resume();
+  }
+
+  public togglePause() {
+    if (this.isGamePaused) {
+      if (this.pauseModal) {
+        this.pauseModal.destroy();
+      }
+      this.resumeGame();
+    } else {
+      this.pauseGame();
+    }
+  }
+
+  public restartArea() {
+    this.isGamePaused = false;
+    this.pauseModal = null;
+    this.physics.world.resume();
+    this.scoreManager.startNewArea(this.scoreManager.currentStreetIndex);
+    this.scene.restart({ partyId: this.partyId });
+  }
+
+  private triggerFirstObstacleTutorial(obs: Obstacle) {
+    if (this.obstacleTutorialContainer) return;
+    this.isEncounterPaused = true;
+    this.currentSpeed = 0;
+    this.targetSpeed = 0;
+    this.player.setPlayerState('IDLE');
+    SoundFX.getInstance().duckBGM(0.1);
+
+    const { width, height } = this.scale;
+    const isPortrait = height > width;
+    const groundY = this.getGroundY();
+    const party = PARTIES[this.partyId];
+
+    // 1. Ghost Jump Guide Arc (Trajectory curve over obstacle)
+    const arcContainer = this.add.container(0, 0);
+    arcContainer.setDepth(135);
+
+    const arcGraphics = this.add.graphics();
+    arcContainer.add(arcGraphics);
+
+    const startX = this.player.x;
+    const startY = groundY - 25;
+    const apexX = (this.player.x + obs.x) / 2 + 10;
+    const apexY = groundY - 145;
+    const endX = obs.x + 95;
+    const endY = groundY - 25;
+
+    // Draw glowing curved trajectory
+    const curve = new Phaser.Curves.QuadraticBezier(
+      new Phaser.Math.Vector2(startX, startY),
+      new Phaser.Math.Vector2(apexX, apexY - 35),
+      new Phaser.Math.Vector2(endX, endY)
+    );
+
+    // Draw glowing dots along curve
+    const points = curve.getPoints(24);
+    arcGraphics.lineStyle(3, 0x38bdf8, 0.75);
+    curve.draw(arcGraphics);
+
+    points.forEach((p, idx) => {
+      if (idx % 2 === 0) {
+        arcGraphics.fillStyle(0xfcb813, 0.9);
+        arcGraphics.fillCircle(p.x, p.y, 4);
+      }
+    });
+
+    // Floating trajectory banner pill
+    const arcLabelBg = this.add.graphics();
+    arcLabelBg.fillStyle(0x0c1524, 0.92);
+    arcLabelBg.fillRoundedRect(apexX - 85, apexY - 45, 170, 26, 13);
+    arcLabelBg.lineStyle(1.5, 0x38bdf8, 0.9);
+    arcLabelBg.strokeRoundedRect(apexX - 85, apexY - 45, 170, 26, 13);
+
+    const arcLabelTxt = this.add.text(apexX, apexY - 32, '🦘 JUMP ARC: +5s BONUS ⏱️', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '11px',
+      color: '#38bdf8',
+      fontStyle: '900'
+    }).setOrigin(0.5, 0.5);
+
+    arcContainer.add([arcLabelBg, arcLabelTxt]);
+
+    // Animated glowing ghost runner indicator following the curve
+    const ghostBead = this.add.circle(startX, startY, 8, 0x38bdf8);
+    ghostBead.setStrokeStyle(2, 0xffffff, 1);
+    arcContainer.add(ghostBead);
+
+    const animProgress = { t: 0 };
+    const beadTween = this.tweens.add({
+      targets: animProgress,
+      t: 1,
+      duration: 1100,
+      repeat: -1,
+      ease: 'Quad.easeInOut',
+      onUpdate: () => {
+        const pt = curve.getPoint(animProgress.t);
+        ghostBead.setPosition(pt.x, pt.y);
+      }
+    });
+
+    this.ghostGuideArcContainer = arcContainer;
+
+    if (isPortrait) {
+      // ═══════ MOBILE: Bottom slide-up sheet ═══════
+      const safeBottom = 32;
+      const tutW = Math.min(width - 16, 500);
+      const tutH = 310;
+      const tutFinalY = height - safeBottom - tutH / 2;
+      const tutStartY = height + tutH;
+
+      const modal = this.add.container(width / 2, tutStartY);
+      modal.setDepth(170);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x0c1524, 0.98);
+      bg.fillRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, { tl: 20, tr: 20, bl: 12, br: 12 });
+      bg.lineStyle(2.5, 0xfcb813, 1);
+      bg.strokeRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, { tl: 20, tr: 20, bl: 12, br: 12 });
+
+      // Drag handle indicator pill
+      const handlePill = this.add.graphics();
+      handlePill.fillStyle(0x4a5568, 0.6);
+      handlePill.fillRoundedRect(-20, -tutH / 2 + 8, 40, 4, 2);
+
+      const title = this.add.text(0, -tutH / 2 + 32, '🚧 COMMUNITY HAZARD AHEAD!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '18px',
+        color: '#fcb813',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const subtitle = this.add.text(0, -tutH / 2 + 56, `WARD 1: FIXING HAZARDS FOR ${party.name.toUpperCase()}`, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#94a3b8',
+        fontStyle: '800'
+      }).setOrigin(0.5, 0.5);
+
+      const desc = this.add.text(0, -tutH / 2 + 120,
+        `A pothole or drain hazard is blocking your route!\n\n` +
+        `✨ JUMP OVER TO FIX IT: Grants +5s EXTRA TIME ⏱️ to help you win votes for ${party.name}!\n` +
+        `⚠️ STUMBLING: Tripping loses -2s and drains morale.`,
+        {
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '13px',
+          color: '#e2e8f0',
+          fontStyle: '600',
+          align: 'center',
+          lineSpacing: 4,
+          wordWrap: { width: tutW - 36 }
+        }
+      ).setOrigin(0.5, 0.5);
+
+      const btnW = tutW - 32;
+      const btnH = 58;
+      const btnY = tutH / 2 - btnH / 2 - 18;
+
+      const btnBg = this.add.graphics();
+      btnBg.fillStyle(0x16a34a, 1);
+      btnBg.fillRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+      btnBg.lineStyle(2, 0x4ade80, 1);
+      btnBg.strokeRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+
+      const btnTxt = this.add.text(0, btnY, '🦘 GOT IT! JUMP OVER (+5s ⏱️)', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '16px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const dismissMobileObstacleTutorial = () => {
+        if (!this.obstacleTutorialContainer) return;
+        window.removeEventListener('keydown', onKeyDown);
+        beadTween.stop();
+        if (this.ghostGuideArcContainer) {
+          this.tweens.add({
+            targets: this.ghostGuideArcContainer,
+            alpha: 0,
+            duration: 250,
+            onComplete: () => {
+              this.ghostGuideArcContainer?.destroy();
+              this.ghostGuideArcContainer = null;
+            }
+          });
+        }
+
+        this.tweens.add({
+          targets: modal,
+          y: height + tutH,
+          duration: 200,
+          ease: 'Cubic.easeIn',
+          onComplete: () => {
+            modal.destroy();
+            this.obstacleTutorialContainer = null;
+            if (obs && obs.active) {
+              obs.x = this.player.x + 115;
+            }
+            this.scoreManager.hasSeenObstacleTutorial = true;
+            this.isEncounterPaused = false;
+            this.targetSpeed = RUN_SPEED_BASE;
+            this.currentSpeed = RUN_SPEED_BASE;
+            this.player.setPlayerState('JUMPING');
+            SoundFX.getInstance().unduckBGM();
+            this.player.jump();
+          }
+        });
+      };
+
+      const btnZone = this.add.zone(0, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      btnZone.once('pointerdown', dismissMobileObstacleTutorial);
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+          dismissMobileObstacleTutorial();
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+
+      modal.add([bg, handlePill, title, subtitle, desc, btnBg, btnTxt, btnZone]);
+
+      this.tweens.add({
+        targets: modal,
+        y: tutFinalY,
+        duration: 280,
+        ease: 'Cubic.easeOut'
+      });
+
+      this.obstacleTutorialContainer = modal;
+    } else {
+      // ═══════ DESKTOP: Existing center modal (unchanged) ═══════
+      const tutW = Math.min(width - 24, 500);
+      const tutH = 265;
+      const tutY = 190;
+
+      const modal = this.add.container(width / 2, tutY);
+      modal.setDepth(170);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x000000, 0.65);
+      bg.fillRoundedRect(-tutW / 2 + 6, -tutH / 2 + 8, tutW, tutH, 18);
+      bg.fillStyle(0x0c1524, 0.97);
+      bg.fillRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, 18);
+      bg.lineStyle(2.5, 0xfcb813, 1);
+      bg.strokeRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, 18);
+
+      const title = this.add.text(0, -tutH / 2 + 28, '🚧 COMMUNITY HAZARD AHEAD!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '22px',
+        color: '#fcb813',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const subtitle = this.add.text(0, -tutH / 2 + 54, `WARD 1: FIXING THE WARD FOR ${party.name.toUpperCase()}`, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#94a3b8',
+        fontStyle: '800'
+      }).setOrigin(0.5, 0.5);
+
+      const desc = this.add.text(0, -tutH / 2 + 120, 
+        `A pothole or drain hazard is blocking your campaign route!\n\n` +
+        `✨ JUMP OVER TO FIX IT: Grants +5s EXTRA TIME ⏱️ to help you secure the ${this.currentStreet.targetVotes || 10} votes needed to win this ward!\n` +
+        `⚠️ STUMBLING: Tripping loses -2s and drains your mental morale.`,
+        {
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '13.5px',
+          color: '#e2e8f0',
+          fontStyle: '600',
+          align: 'center',
+          lineSpacing: 4,
+          wordWrap: { width: tutW - 40 }
+        }
+      ).setOrigin(0.5, 0.5);
+
+      const btnW = Math.min(340, tutW - 40);
+      const btnH = 46;
+      const btnY = tutH / 2 - 32;
+
+      const btnBg = this.add.graphics();
+      btnBg.fillStyle(0x16a34a, 1);
+      btnBg.fillRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
+      btnBg.lineStyle(2, 0x4ade80, 1);
+      btnBg.strokeRoundedRect(-btnW / 2, btnY - btnH / 2, btnW, btnH, 12);
+
+      const btnTxt = this.add.text(0, btnY, '🦘 GOT IT! JUMP OVER [SPACE / TAP]', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '15px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const dismissObstacleTutorial = () => {
+        if (!this.obstacleTutorialContainer) return;
+        window.removeEventListener('keydown', onKeyDown);
+        beadTween.stop();
+        if (this.ghostGuideArcContainer) {
+          this.tweens.add({
+            targets: this.ghostGuideArcContainer,
+            alpha: 0,
+            duration: 300,
+            onComplete: () => {
+              this.ghostGuideArcContainer?.destroy();
+              this.ghostGuideArcContainer = null;
+            }
+          });
+        }
+
+        this.tweens.add({
+          targets: modal,
+          scaleX: 0.9,
+          scaleY: 0.9,
+          alpha: 0,
+          duration: 160,
+          onComplete: () => {
+            modal.destroy();
+            this.obstacleTutorialContainer = null;
+            if (obs && obs.active) {
+              obs.x = this.player.x + 115;
+            }
+            this.scoreManager.hasSeenObstacleTutorial = true;
+            this.isEncounterPaused = false;
+            this.targetSpeed = RUN_SPEED_BASE;
+            this.currentSpeed = RUN_SPEED_BASE;
+            this.player.setPlayerState('JUMPING');
+            SoundFX.getInstance().unduckBGM();
+            this.player.jump();
+          }
+        });
+      };
+
+      const btnZone = this.add.zone(0, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      btnZone.once('pointerdown', dismissObstacleTutorial);
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+          dismissObstacleTutorial();
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+
+      modal.add([bg, title, subtitle, desc, btnBg, btnTxt, btnZone]);
+      modal.setScale(0.92);
+      this.tweens.add({
+        targets: modal,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Back.easeOut'
+      });
+
+      this.obstacleTutorialContainer = modal;
+    }
+  }
+
+  private triggerFirstResidentTutorial(res: Resident) {
+    if (this.residentTutorialContainer) return;
+    this.isEncounterPaused = true;
+    this.currentSpeed = 0;
+    this.targetSpeed = 0;
+    this.player.setPlayerState('IDLE');
+    SoundFX.getInstance().duckBGM(0.1);
+
+    const { width, height } = this.scale;
+    const isPortrait = height > width;
+    const party = PARTIES[this.partyId];
+
+    if (isPortrait) {
+      // ═══════ MOBILE: Bottom slide-up tutorial panel ═══════
+      const safeBottom = 32;
+      const tutW = Math.min(width - 16, 500);
+      const tutH = 340;
+      const tutFinalY = height - safeBottom - tutH / 2;
+      const tutStartY = height + tutH;
+
+      const modal = this.add.container(width / 2, tutStartY);
+      modal.setDepth(170);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x0c1524, 0.97);
+      bg.fillRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, { tl: 20, tr: 20, bl: 12, br: 12 });
+      bg.lineStyle(2.5, 0x38bdf8, 1);
+      bg.strokeRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, { tl: 20, tr: 20, bl: 12, br: 12 });
+
+      // Drag handle
+      const handlePill = this.add.graphics();
+      handlePill.fillStyle(0x4a5568, 0.6);
+      handlePill.fillRoundedRect(-20, -tutH / 2 + 8, 40, 4, 2);
+
+      const title = this.add.text(0, -tutH / 2 + 32, '🗣️ ENGAGE THE VOTER!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '19px',
+        color: '#38bdf8',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const subtitle = this.add.text(0, -tutH / 2 + 56, `WINNING VOTES FOR ${party.name.toUpperCase()}`, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#94a3b8',
+        fontStyle: '800'
+      }).setOrigin(0.5, 0.5);
+
+      const desc = this.add.text(0, -tutH / 2 + 125,
+        `A local resident has a community grievance!\n\n` +
+        `🤝 TALK: Hear their concern. Answer wisely to gain their VOTE and boost Trust for ${party.name}!\n` +
+        `🏃 IGNORE: Running past will anger them, reducing Trust and draining morale.`,
+        {
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '13px',
+          color: '#e2e8f0',
+          fontStyle: '600',
+          align: 'center',
+          lineSpacing: 4,
+          wordWrap: { width: tutW - 40 }
+        }
+      ).setOrigin(0.5, 0.5);
+
+      // Large mobile buttons
+      const btnGap = 10;
+      const btnW = (tutW - 32 - btnGap) / 2;
+      const btnH = 62;
+      const btnY = tutH / 2 - btnH / 2 - 20;
+      const leftX = -(btnW + btnGap) / 2;
+      const rightX = (btnW + btnGap) / 2;
+
+      const talkBg = this.add.graphics();
+      talkBg.fillStyle(0x16a34a, 1);
+      talkBg.fillRoundedRect(leftX - btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+      talkBg.lineStyle(2, 0x4ade80, 1);
+      talkBg.strokeRoundedRect(leftX - btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+
+      const talkEmoji = this.add.text(leftX, btnY - 10, '💬', { fontSize: '20px' }).setOrigin(0.5, 0.5);
+      const talkTxt = this.add.text(leftX, btnY + 12, 'TALK', {
+        fontFamily: 'Outfit, sans-serif', fontSize: '16px', color: '#ffffff', fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const ignoreBg = this.add.graphics();
+      ignoreBg.fillStyle(0x1e293b, 1);
+      ignoreBg.fillRoundedRect(rightX - btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+      ignoreBg.lineStyle(2, 0xef4444, 0.85);
+      ignoreBg.strokeRoundedRect(rightX - btnW / 2, btnY - btnH / 2, btnW, btnH, 14);
+
+      const ignoreEmoji = this.add.text(rightX, btnY - 10, '🏃', { fontSize: '20px' }).setOrigin(0.5, 0.5);
+      const ignoreTxt = this.add.text(rightX, btnY + 12, 'IGNORE', {
+        fontFamily: 'Outfit, sans-serif', fontSize: '16px', color: '#f87171', fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const dismissAndTalk = () => {
+        if (!this.residentTutorialContainer) return;
+        window.removeEventListener('keydown', onResidentKeyDown);
+        this.tweens.add({
+          targets: modal,
+          y: height + tutH,
+          duration: 200,
+          ease: 'Cubic.easeIn',
+          onComplete: () => {
+            modal.destroy();
+            this.residentTutorialContainer = null;
+            this.scoreManager.hasSeenResidentTutorial = true;
+            this.triggerStopAndListen(res);
+          }
+        });
+      };
+
+      const dismissAndIgnore = () => {
+        if (!this.residentTutorialContainer) return;
+        window.removeEventListener('keydown', onResidentKeyDown);
+        this.tweens.add({
+          targets: modal,
+          y: height + tutH,
+          duration: 200,
+          ease: 'Cubic.easeIn',
+          onComplete: () => {
+            modal.destroy();
+            this.residentTutorialContainer = null;
+            this.scoreManager.hasSeenResidentTutorial = true;
+            this.isEncounterPaused = false;
+            this.targetSpeed = RUN_SPEED_BASE;
+            this.player.setPlayerState('RUNNING_AGAIN');
+            SoundFX.getInstance().unduckBGM();
+            this.handleResidentPassed(res);
+          }
+        });
+      };
+
+      const talkZone = this.add.zone(leftX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      talkZone.once('pointerdown', dismissAndTalk);
+
+      const ignoreZone = this.add.zone(rightX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      ignoreZone.once('pointerdown', dismissAndIgnore);
+
+      const onResidentKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'KeyE' || e.code === 'Enter') dismissAndTalk();
+        else if (e.code === 'KeyR' || e.code === 'ArrowRight') dismissAndIgnore();
+      };
+      window.addEventListener('keydown', onResidentKeyDown);
+
+      modal.add([bg, handlePill, title, subtitle, desc, talkBg, talkEmoji, talkTxt, talkZone, ignoreBg, ignoreEmoji, ignoreTxt, ignoreZone]);
+
+      // Slide-up entrance
+      this.tweens.add({
+        targets: modal,
+        y: tutFinalY,
+        duration: 280,
+        ease: 'Cubic.easeOut'
+      });
+
+      this.residentTutorialContainer = modal;
+    } else {
+      // ═══════ DESKTOP: Existing center modal (unchanged) ═══════
+      const tutW = Math.min(width - 24, 510);
+      const tutH = 275;
+      const tutY = 190;
+
+      const modal = this.add.container(width / 2, tutY);
+      modal.setDepth(170);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x000000, 0.65);
+      bg.fillRoundedRect(-tutW / 2 + 6, -tutH / 2 + 8, tutW, tutH, 18);
+      bg.fillStyle(0x0c1524, 0.97);
+      bg.fillRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, 18);
+      bg.lineStyle(2.5, 0x38bdf8, 1);
+      bg.strokeRoundedRect(-tutW / 2, -tutH / 2, tutW, tutH, 18);
+
+      const title = this.add.text(0, -tutH / 2 + 28, '🗣️ CANVASSING: ENGAGE THE VOTER!', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '21px',
+        color: '#38bdf8',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const subtitle = this.add.text(0, -tutH / 2 + 54, `WARD 1: WINNING VOTER SUPPORT FOR ${party.name.toUpperCase()}`, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '11px',
+        color: '#94a3b8',
+        fontStyle: '800'
+      }).setOrigin(0.5, 0.5);
+
+      const desc = this.add.text(0, -tutH / 2 + 118,
+        `A local resident has a community grievance!\n\n` +
+        `🤝 TALK TO RESIDENT: Hear what they are saying. Answer wisely to gain their VOTE and boost Trust for ${party.name} to win this ward!\n` +
+        `🏃 IGNORE: Running past will anger the resident, reducing Trust and draining your mental morale.`,
+        {
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '13.5px',
+          color: '#e2e8f0',
+          fontStyle: '600',
+          align: 'center',
+          lineSpacing: 4,
+          wordWrap: { width: tutW - 40 }
+        }
+      ).setOrigin(0.5, 0.5);
+
+      const btnW = 225;
+      const btnH = 46;
+      const btnY = tutH / 2 - 32;
+      const colOffset = 122;
+
+      const talkBg = this.add.graphics();
+      talkBg.fillStyle(0x16a34a, 1);
+      talkBg.fillRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      talkBg.lineStyle(2, 0x4ade80, 1);
+      talkBg.strokeRoundedRect(-colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+
+      const talkTxt = this.add.text(-colOffset, btnY, '🗣️ TALK [E]', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '15px',
+        color: '#ffffff',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const ignoreBg = this.add.graphics();
+      ignoreBg.fillStyle(0x1e293b, 1);
+      ignoreBg.fillRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+      ignoreBg.lineStyle(2, 0xef4444, 0.85);
+      ignoreBg.strokeRoundedRect(colOffset - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+
+      const ignoreTxt = this.add.text(colOffset, btnY, '🏃 IGNORE [R]', {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '15px',
+        color: '#f87171',
+        fontStyle: '900'
+      }).setOrigin(0.5, 0.5);
+
+      const dismissAndTalk = () => {
+        if (!this.residentTutorialContainer) return;
+        window.removeEventListener('keydown', onResidentKeyDown);
+        modal.destroy();
+        this.residentTutorialContainer = null;
+        this.scoreManager.hasSeenResidentTutorial = true;
+        this.triggerStopAndListen(res);
+      };
+
+      const dismissAndIgnore = () => {
+        if (!this.residentTutorialContainer) return;
+        window.removeEventListener('keydown', onResidentKeyDown);
+        modal.destroy();
+        this.residentTutorialContainer = null;
+        this.scoreManager.hasSeenResidentTutorial = true;
+        this.isEncounterPaused = false;
+        this.targetSpeed = RUN_SPEED_BASE;
+        this.player.setPlayerState('RUNNING_AGAIN');
+        SoundFX.getInstance().unduckBGM();
+        this.handleResidentPassed(res);
+      };
+
+      const talkZone = this.add.zone(-colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      talkZone.once('pointerdown', dismissAndTalk);
+
+      const ignoreZone = this.add.zone(colOffset, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
+      ignoreZone.once('pointerdown', dismissAndIgnore);
+
+      const onResidentKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'KeyE' || e.code === 'Enter') dismissAndTalk();
+        else if (e.code === 'KeyR' || e.code === 'ArrowRight') dismissAndIgnore();
+      };
+      window.addEventListener('keydown', onResidentKeyDown);
+
+      modal.add([bg, title, subtitle, desc, talkBg, talkTxt, talkZone, ignoreBg, ignoreTxt, ignoreZone]);
+      modal.setScale(0.92);
+      this.tweens.add({
+        targets: modal,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Back.easeOut'
+      });
+
+      this.residentTutorialContainer = modal;
+    }
   }
 }

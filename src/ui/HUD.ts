@@ -10,6 +10,9 @@ export class HUD extends Phaser.GameObjects.Container {
   private timerText!: Phaser.GameObjects.Text;
   private trustText!: Phaser.GameObjects.Text;
   private trustSubText!: Phaser.GameObjects.Text;
+  private mentalHealthContainer!: Phaser.GameObjects.Container;
+  private mentalHealthText!: Phaser.GameObjects.Text;
+  private mentalHealthBar!: Phaser.GameObjects.Graphics;
   private streetProgressNodes: (Phaser.GameObjects.Arc | Phaser.GameObjects.Text)[] = [];
   private streetProgressLine: Phaser.GameObjects.Graphics;
   private streetLabelText!: Phaser.GameObjects.Text;
@@ -24,19 +27,20 @@ export class HUD extends Phaser.GameObjects.Container {
     const height = scene.scale.height;
     const isPortrait = height > width;
 
-    // 1. Top Left Badge: WARD VOTES
+    // 1. Top Left Badge: WARD VOTES (Positioned with generous vertical clearance below utility buttons)
     const votesX = isPortrait ? 76 : 95;
-    const votesY = isPortrait ? 66 : 58;
+    const votesY = isPortrait ? 90 : 82;
     this.createVotesBadge(scene, votesX, votesY, isPortrait);
 
-    // 2. Top Center: 00:20 Pill Timer
+    // 2. Top Center: 00:20 Pill Timer & Mental Health Morale Meter
     const centerX = width / 2;
-    const centerY = isPortrait ? 66 : 58;
+    const centerY = isPortrait ? 84 : 76;
     this.createCenterTitleAndTimer(scene, centerX, centerY, isPortrait);
+    this.createMentalHealthBadge(scene, centerX, centerY + (isPortrait ? 36 : 38), isPortrait);
 
     // 3. Top Right Badge: TRUST
     const trustX = isPortrait ? width - 76 : width - 95;
-    const trustY = isPortrait ? 66 : 58;
+    const trustY = isPortrait ? 90 : 82;
     this.createTrustBadge(scene, trustX, trustY, isPortrait);
 
     // 4. Street Progress Track (Bottom Center on sandy verge)
@@ -114,7 +118,7 @@ export class HUD extends Phaser.GameObjects.Container {
     // Rounded Pill Timer
     const pillBg = scene.add.graphics();
     const pillW = isPortrait ? 108 : 120;
-    const pillH = isPortrait ? 38 : 42;
+    const pillH = isPortrait ? 34 : 38;
 
     pillBg.fillStyle(0x0c1524, 0.96);
     pillBg.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 12);
@@ -123,13 +127,36 @@ export class HUD extends Phaser.GameObjects.Container {
 
     this.timerText = scene.add.text(0, 0, '00:20', {
       fontFamily: 'Outfit, monospace',
-      fontSize: isPortrait ? '21px' : '24px',
+      fontSize: isPortrait ? '19px' : '22px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
     const centerContainer = scene.add.container(x, y, [pillBg, this.timerText]);
     this.add(centerContainer);
+  }
+
+  private createMentalHealthBadge(scene: Phaser.Scene, x: number, y: number, isPortrait: boolean) {
+    const pillW = isPortrait ? 122 : 138;
+    const pillH = isPortrait ? 24 : 26;
+
+    const bg = scene.add.graphics();
+    bg.fillStyle(0x0c1524, 0.95);
+    bg.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 8);
+    bg.lineStyle(1.8, 0x1f3c6e, 1);
+    bg.strokeRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 8);
+
+    this.mentalHealthText = scene.add.text(0, -2, '🧠 100% Energized', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '10px' : '11px',
+      color: '#44dd66',
+      fontStyle: '800'
+    }).setOrigin(0.5, 0.5);
+
+    this.mentalHealthBar = scene.add.graphics();
+
+    this.mentalHealthContainer = scene.add.container(x, y, [bg, this.mentalHealthText, this.mentalHealthBar]);
+    this.add(this.mentalHealthContainer);
   }
 
   private createTrustBadge(scene: Phaser.Scene, x: number, y: number, isPortrait: boolean) {
@@ -205,53 +232,98 @@ export class HUD extends Phaser.GameObjects.Container {
   }
 
   private createUtilityButtons(scene: Phaser.Scene, _width: number, isPortrait: boolean) {
-    // Menu / Exit Button (Top Left)
-    const exitBtn = scene.add.container(isPortrait ? 42 : 55, isPortrait ? 20 : 20);
-    const exitBg = scene.add.graphics();
-    exitBg.fillStyle(0x0c1524, 0.92);
-    exitBg.fillRoundedRect(-32, -12, 64, 24, 6);
-    exitBg.lineStyle(1.5, 0x1f3c6e, 1);
-    exitBg.strokeRoundedRect(-32, -12, 64, 24, 6);
+    const btnY = 20;
+    const btnW = isPortrait ? 58 : 62;
+    const btnH = 24;
+    const startX = isPortrait ? 38 : 44;
+    const stepX = isPortrait ? 64 : 68;
 
-    const exitTxt = scene.add.text(0, 0, '🏠 MENU', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '10px',
-      color: '#cbd5e1',
-      fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
+    // Helper to style utility button
+    const createPill = (x: number, label: string, color: string = '#cbd5e1') => {
+      const container = scene.add.container(x, btnY);
+      const bg = scene.add.graphics();
+      bg.fillStyle(0x0c1524, 0.94);
+      bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+      bg.lineStyle(1.5, 0x1f3c6e, 1);
+      bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
 
-    exitBtn.add([exitBg, exitTxt]);
-    exitBtn.setSize(64, 24);
-    exitBtn.setInteractive({ useHandCursor: true });
-    exitBtn.on('pointerdown', () => this.scene.events.emit('exit-to-menu'));
-    this.add(exitBtn);
+      const txt = scene.add.text(0, 0, label, {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: isPortrait ? '9.5px' : '10px',
+        color: color,
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
 
-    // Music Toggle Button (Next to Menu)
-    const soundFX = SoundFX.getInstance();
-    const musicBtn = scene.add.container(isPortrait ? 112 : 126, isPortrait ? 20 : 20);
-    const musicBg = scene.add.graphics();
-    musicBg.fillStyle(0x0c1524, 0.92);
-    musicBg.fillRoundedRect(-32, -12, 64, 24, 6);
-    musicBg.lineStyle(1.5, 0x1f3c6e, 1);
-    musicBg.strokeRoundedRect(-32, -12, 64, 24, 6);
+      container.add([bg, txt]);
+      container.setSize(btnW, btnH);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-btnW / 2, -btnH / 2, btnW, btnH),
+        Phaser.Geom.Rectangle.Contains
+      );
 
-    const isMusicMuted = soundFX.isMusicMutedState();
-    const musicTxt = scene.add.text(0, 0, isMusicMuted ? '🔇 MUTE' : '🎵 MUSIC', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '10px',
-      color: isMusicMuted ? '#94a3b8' : '#fcb813',
-      fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
+      // Subtle hover micro-animation
+      container.on('pointerover', () => {
+        bg.clear();
+        bg.fillStyle(0x1a2e4c, 0.96);
+        bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+        bg.lineStyle(1.5, 0x3b82f6, 1);
+        bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+      });
+      container.on('pointerout', () => {
+        bg.clear();
+        bg.fillStyle(0x0c1524, 0.94);
+        bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+        bg.lineStyle(1.5, 0x1f3c6e, 1);
+        bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+      });
 
-    musicBtn.add([musicBg, musicTxt]);
-    musicBtn.setSize(64, 24);
-    musicBtn.setInteractive({ useHandCursor: true });
-    musicBtn.on('pointerdown', () => {
-      const muted = soundFX.toggleMusicMute();
-      musicTxt.setText(muted ? '🔇 MUTE' : '🎵 MUSIC');
-      musicTxt.setColor(muted ? '#94a3b8' : '#fcb813');
+      return { container, bg, txt };
+    };
+
+    // 1. Menu / Exit Button
+    const menuPill = createPill(startX, '🏠 MENU', '#cbd5e1');
+    menuPill.container.on('pointerdown', () => {
+      this.scene.events.emit('exit-to-menu');
       scene.tweens.add({
-        targets: musicBtn,
+        targets: menuPill.container,
+        scaleX: 1.12,
+        scaleY: 1.12,
+        duration: 80,
+        yoyo: true,
+        ease: 'Quad.easeInOut'
+      });
+    });
+    this.add(menuPill.container);
+
+    // 2. Pause Button
+    const pausePill = createPill(startX + stepX, '⏸️ PAUSE', '#fcb813');
+    pausePill.container.on('pointerdown', () => {
+      this.scene.events.emit('pause-game');
+      scene.tweens.add({
+        targets: pausePill.container,
+        scaleX: 1.12,
+        scaleY: 1.12,
+        duration: 80,
+        yoyo: true,
+        ease: 'Quad.easeInOut'
+      });
+    });
+    this.add(pausePill.container);
+
+    // 3. Music Toggle Button
+    const soundFX = SoundFX.getInstance();
+    const isMusicMuted = soundFX.isMusicMutedState();
+    const musicPill = createPill(
+      startX + stepX * 2,
+      isMusicMuted ? '🔇 MUTE' : '🎵 MUSIC',
+      isMusicMuted ? '#94a3b8' : '#38bdf8'
+    );
+    musicPill.container.on('pointerdown', () => {
+      const muted = soundFX.toggleMusicMute();
+      musicPill.txt.setText(muted ? '🔇 MUTE' : '🎵 MUSIC');
+      musicPill.txt.setColor(muted ? '#94a3b8' : '#38bdf8');
+      scene.tweens.add({
+        targets: musicPill.container,
         scaleX: 1.15,
         scaleY: 1.15,
         duration: 80,
@@ -259,7 +331,7 @@ export class HUD extends Phaser.GameObjects.Container {
         ease: 'Quad.easeInOut'
       });
     });
-    this.add(musicBtn);
+    this.add(musicPill.container);
   }
 
   public setResidentAlertVisible(visible: boolean) {
@@ -293,6 +365,28 @@ export class HUD extends Phaser.GameObjects.Container {
       this.trustText.setColor('#fcb813');
     } else {
       this.trustText.setColor('#ff4444');
+    }
+
+    // Mental Health status & mini-bar update
+    if (this.mentalHealthText && this.mentalHealthBar) {
+      const status = this.scoreManager.getMentalHealthStatus();
+      const mh = Math.round(this.scoreManager.mentalHealth);
+      this.mentalHealthText.setText(`${status.emoji} ${mh}% ${status.label}`);
+      this.mentalHealthText.setColor(status.color);
+
+      const isPortrait = this.scene.scale.height > this.scene.scale.width;
+      const barTotalW = isPortrait ? 104 : 118;
+      const barFillW = Math.max(0, Math.min(barTotalW, (barTotalW * mh) / 100));
+      const barY = isPortrait ? 7 : 8;
+
+      this.mentalHealthBar.clear();
+      // Track background
+      this.mentalHealthBar.fillStyle(0x1a2e4c, 1);
+      this.mentalHealthBar.fillRoundedRect(-barTotalW / 2, barY, barTotalW, 3, 1.5);
+      // Active fill
+      const fillColor = mh >= 80 ? 0x44dd66 : (mh >= 50 ? 0xfcb813 : (mh >= 25 ? 0xf97316 : 0xef4444));
+      this.mentalHealthBar.fillStyle(fillColor, 1);
+      this.mentalHealthBar.fillRoundedRect(-barTotalW / 2, barY, barFillW, 3, 1.5);
     }
 
     // Format timer
@@ -350,6 +444,49 @@ export class HUD extends Phaser.GameObjects.Container {
           node.setScale(1.0);
         }
       }
+    });
+  }
+
+  public triggerMentalHealthFlash(change: number, reason?: string) {
+    if (!this.mentalHealthContainer || !this.mentalHealthContainer.scene) return;
+
+    // Pulse animation on the badge
+    this.scene.tweens.add({
+      targets: this.mentalHealthContainer,
+      scaleX: 1.18,
+      scaleY: 1.18,
+      duration: 140,
+      yoyo: true,
+      ease: 'Back.easeOut'
+    });
+
+    // Floating text feedback
+    const isGain = change > 0;
+    const color = isGain ? '#44dd66' : '#ff5555';
+    const sign = isGain ? '+' : '';
+    const labelText = reason || `${sign}${change}% Morale`;
+
+    const popup = this.scene.add.text(
+      this.mentalHealthContainer.x,
+      this.mentalHealthContainer.y + 24,
+      labelText,
+      {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '12px',
+        color: color,
+        fontStyle: '900',
+        stroke: '#080d14',
+        strokeThickness: 3
+      }
+    ).setOrigin(0.5, 0.5).setDepth(160);
+
+    this.scene.tweens.add({
+      targets: popup,
+      y: popup.y - 30,
+      alpha: 0,
+      duration: 1100,
+      ease: 'Sine.easeOut',
+      onComplete: () => popup.destroy()
     });
   }
 

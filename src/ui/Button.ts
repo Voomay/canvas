@@ -105,9 +105,20 @@ export class Button extends Phaser.GameObjects.Container {
       this.add(shortcutText);
     }
 
-    // Interactivity
+    // Interactivity with generous hit area for touch comfort
+    const hitPad = 12;
     this.setSize(this.btnWidth, this.btnHeight);
-    this.setInteractive({ useHandCursor: true });
+    this.setInteractive(
+      new Phaser.Geom.Rectangle(
+        -this.btnWidth / 2 - hitPad,
+        -this.btnHeight / 2 - hitPad,
+        this.btnWidth + hitPad * 2,
+        this.btnHeight + hitPad * 2
+      ),
+      Phaser.Geom.Rectangle.Contains
+    );
+
+    let isDown = false;
 
     this.on('pointerover', () => {
       if (!this.isEnabled) return;
@@ -117,20 +128,35 @@ export class Button extends Phaser.GameObjects.Container {
 
     this.on('pointerout', () => {
       if (!this.isEnabled) return;
+      isDown = false;
       this.drawBackground(this.bgColor);
       this.setScale(1.0);
     });
 
     this.on('pointerdown', () => {
       if (!this.isEnabled) return;
-      this.setScale(0.97);
+      isDown = true;
+      this.setScale(0.96);
     });
 
     this.on('pointerup', () => {
       if (!this.isEnabled) return;
       this.setScale(1.0);
-      this.soundFX.playButtonClick();
-      onClick();
+      if (isDown) {
+        isDown = false;
+        this.soundFX.playButtonClick();
+        onClick();
+      }
+    });
+
+    this.on('pointerupoutside', () => {
+      if (!this.isEnabled) return;
+      this.setScale(1.0);
+      if (isDown) {
+        isDown = false;
+        this.soundFX.playButtonClick();
+        onClick();
+      }
     });
 
     scene.add.existing(this);

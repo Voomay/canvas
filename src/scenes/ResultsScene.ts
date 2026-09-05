@@ -107,15 +107,16 @@ export class ResultsScene extends Phaser.Scene {
 
     // Statistics Breakdown Grid
     const totalVotes = scoreManager.totalCampaignVotes > 0 ? scoreManager.totalCampaignVotes : scoreManager.votes;
+    const mhStatus = scoreManager.getMentalHealthStatus();
     const statsList = [
       { label: 'TOTAL VOTES', val: `${totalVotes}`, color: '#44dd66', icon: '🗳️' },
       { label: 'COMMUNITY TRUST', val: `${Math.round(scoreManager.trust)}%`, color: '#fcb813', icon: '🤝' },
+      { label: 'CAMPAIGN MORALE', val: `${Math.round(scoreManager.mentalHealth)}% ${mhStatus.emoji}`, color: mhStatus.color, icon: '🧠' },
       { label: 'INFRA FIXED', val: `${scoreManager.stats.obstaclesCleared}`, color: '#38bdf8', icon: '🛠️' },
       { label: 'RESIDENTS MET', val: `${scoreManager.stats.residentsApproached}`, color: '#ffffff', icon: '🗣️' },
       { label: 'PROMISES', val: `${scoreManager.stats.promisesMade}`, color: '#55dd88', icon: '📜' },
-      { label: 'BLAMES', val: `${scoreManager.stats.blamesGiven}`, color: '#f59e0b', icon: '👉' },
       { label: 'HONESTY', val: `${scoreManager.stats.honestyGiven}`, color: '#38bdf8', icon: '😂' },
-      { label: 'HAZARDS HIT', val: `${scoreManager.stats.obstaclesHit}`, color: '#ef4444', icon: '💥' }
+      { label: 'INSULTS SURVIVED', val: `${scoreManager.stats.insultsReceived}`, color: '#f59e0b', icon: '🛡️' }
     ];
 
     const openShareCampaign = () => {

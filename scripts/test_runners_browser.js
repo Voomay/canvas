@@ -18,7 +18,7 @@ async function runVerification() {
   const page = await context.newPage();
 
   console.log('1. Loading Main Menu...');
-  await page.goto('http://localhost:3001/', { waitUntil: 'networkidle' });
+  await page.goto('http://localhost:3005/', { waitUntil: 'networkidle' });
   await page.waitForTimeout(6000);
 
   // 1. Capture Main Menu showing all 3 parties

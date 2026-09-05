@@ -32,20 +32,21 @@ export function calculateGameWidth(): number {
 
 export function getDynamicRoadY(height: number, width: number): number {
   const isPortrait = height > width;
-  return isPortrait ? height - 390 : 428;
+  return isPortrait ? Math.round(height * 0.46) : 368;
 }
 
 export function getDynamicGroundY(height: number, width: number): number {
   const isPortrait = height > width;
-  // Characters positioned comfortably in the lower lane (elevated nicely from bottom edge for mobile comfort)
-  return isPortrait ? height - 150 : 560;
+  const roadY = getDynamicRoadY(height, width);
+  // Characters (politician & residents) and potholes positioned in the lower driving lane, centered away from bottom curb
+  return isPortrait ? Math.round(roadY + (height - roadY) * 0.59) : 628;
 }
 
 export function getCurbsideTaxiY(height: number, width: number): number {
   const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
-  // Taxi positioned on curbside upper lane right along the curb, clearing ample space on the road
-  return roadY + (isPortrait ? 92 : 70);
+  // Taxi / vehicles positioned right near the upper curb side
+  return isPortrait ? Math.round(roadY + (height - roadY) * 0.20) : roadY + 120;
 }
 
 export const RUN_SPEED_BASE = 420;

@@ -12,7 +12,7 @@ export interface StreetLevel {
   obstacleSpawnRateMax: number; // ms
   residentSpawnRateMin: number; // ms
   residentSpawnRateMax: number; // ms
-  obstaclePool: ('potholeSmall' | 'potholeLarge' | 'potholeWater' | 'rubbishBag' | 'brokenDrain' | 'openManhole' | 'leakingPipe' | 'fallenPoster')[];
+  obstaclePool: ('potholeSmall' | 'potholeWater' | 'brokenDrain' | 'openManhole')[];
   allowedComplaintCategories: string[];
 }
 
@@ -77,7 +77,7 @@ export const STREETS: StreetLevel[] = [
     obstacleSpawnRateMax: 3800,
     residentSpawnRateMin: 2000,
     residentSpawnRateMax: 3400,
-    obstaclePool: ['potholeWater', 'leakingPipe', 'openManhole'],
+    obstaclePool: ['potholeWater', 'brokenDrain', 'potholeSmall', 'openManhole'],
     allowedComplaintCategories: [
       'khayelitsha_communal_taps',
       'khayelitsha_illegal_connections',
@@ -96,11 +96,13 @@ export const STREETS: StreetLevel[] = [
     durationSeconds: 30,
     targetVotes: 18,
     targetDistance: 99999,
-    obstacleSpawnRateMin: 2200,
-    obstacleSpawnRateMax: 3600,
+    // Camps Bay roads are rapidly serviced by the municipality - obstacles are very rare
+    obstacleSpawnRateMin: 8000,
+    obstacleSpawnRateMax: 14000,
     residentSpawnRateMin: 1800,
     residentSpawnRateMax: 3200,
-    obstaclePool: ['rubbishBag', 'openManhole', 'potholeLarge', 'leakingPipe'],
+    // Camps Bay has no messy rubbish/manhole hazards - only occasional small potholes
+    obstaclePool: ['potholeSmall'],
     allowedComplaintCategories: [
       'campsbay_noise',
       'campsbay_rates',
@@ -124,7 +126,7 @@ export const STREETS: StreetLevel[] = [
     obstacleSpawnRateMax: 3400,
     residentSpawnRateMin: 1600,
     residentSpawnRateMax: 2800,
-    obstaclePool: ['potholeSmall', 'potholeLarge', 'potholeWater', 'rubbishBag', 'brokenDrain', 'openManhole', 'leakingPipe', 'fallenPoster'],
+    obstaclePool: ['potholeSmall', 'potholeWater', 'brokenDrain', 'openManhole'],
     allowedComplaintCategories: [
       'joburg_city_power',
       'joburg_joburg_water',

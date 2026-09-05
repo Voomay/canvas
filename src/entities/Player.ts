@@ -20,6 +20,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private soundFX: SoundFX;
   private hitInvulnerable: boolean = false;
   private hitTimer: number = 0;
+  private stressIndicator?: Phaser.GameObjects.Text;
+  private isBurnedOut: boolean = false;
+  public isSprinting: boolean = false;
+  private ghostTrailTimer: number = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, partyId: 'da' | 'anc' | 'pa') {
     super(scene, x, y, `player_${partyId}_idle`);
@@ -45,6 +49,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setOffset(48, 40);
     }
 
+    // Floating stress droplets indicator (visible when mental health < 30%)
+    this.stressIndicator = scene.add.text(x + 20, y - 180, '💦', {
+      fontSize: '22px'
+    }).setOrigin(0.5, 0.5).setDepth(8).setVisible(false);
+
+    scene.tweens.add({
+      targets: this.stressIndicator,
+      y: y - 195,
+      duration: 500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
     this.setPlayerState('IDLE');
   }
 
@@ -57,10 +75,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     switch (newState) {
       case 'IDLE':
         this.setTexture(`player_${this.partyId}_idle`);
-        if (body) body.setVelocity(0, 0);
+        if (body) {
+          body.setVelocity(0, 0);
+          body.allowGravity = true;
+        }
         break;
 
       case 'RUNNING':
+        if (body) {
+          body.allowGravity = true;
+        }
         this.setTexture(`player_${this.partyId}_run_0`);
         break;
 
@@ -68,18 +92,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setTexture(`player_${this.partyId}_jump`);
         this.soundFX.playJump();
         if (body) {
+          body.allowGravity = true;
           body.setVelocityY(JUMP_VELOCITY);
         }
         break;
 
       case 'STOPPING':
         this.setTexture(`player_${this.partyId}_idle`);
-        if (body) body.setVelocityX(0);
+        if (body) {
+          body.setVelocityX(0);
+          body.allowGravity = true;
+        }
         break;
 
       case 'TALKING':
         this.setTexture(`player_${this.partyId}_talk`);
-        if (body) body.setVelocity(0, 0);
+        if (body) {
+          body.setVelocity(0, 0);
+          body.allowGravity = false;
+        }
         break;
 
       case 'HIT':
@@ -96,12 +127,57 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case 'RUNNING_AGAIN':
         this.clearTint();
         this.hitInvulnerable = false;
+        if (body) {
+          body.allowGravity = true;
+        }
         this.setPlayerState('RUNNING');
         break;
     }
   }
 
+  public updateMentalHealthVisuals(mentalHealth: number) {
+    if (this.stressIndicator) {
+      const isStressed = mentalHealth < 30;
+      this.stressIndicator.setVisible(isStressed);
+    }
+  }
+
+  public triggerBurnout(onRecovered: () => void) {
+    if (this.isBurnedOut) return;
+    this.isBurnedOut = true;
+
+    this.setPlayerState('STOPPING');
+    this.setTexture(`player_${this.partyId}_hit`);
+    this.setTint(0xff9977);
+
+    // Speech bubble for exhaustion
+    const bubble = this.scene.add.text(this.x, this.y - 180, '😮‍💨 Exhausted! Taking a breath...', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '13px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      backgroundColor: '#0c1524',
+      padding: { left: 8, right: 8, top: 4, bottom: 4 }
+    }).setOrigin(0.5, 0.5).setDepth(150);
+
+    this.scene.time.delayedCall(1600, () => {
+      if (bubble.active) {
+        bubble.setText('💪 Second Wind! Keep pushing!');
+        bubble.setColor('#44dd66');
+      }
+    });
+
+    this.scene.time.delayedCall(2400, () => {
+      if (bubble.active) bubble.destroy();
+      this.clearTint();
+      this.isBurnedOut = false;
+      this.setPlayerState('RUNNING_AGAIN');
+      onRecovered();
+    });
+  }
+
   public jump() {
+    if (this.isBurnedOut) return;
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (this.playerState === 'RUNNING' && body && body.blocked.down) {
       this.setPlayerState('JUMPING');
@@ -109,7 +185,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   public onHitObstacle(): boolean {
-    if (this.hitInvulnerable || this.playerState === 'HIT' || this.playerState === 'TALKING' || this.playerState === 'STOPPING') {
+    if (this.isBurnedOut || this.hitInvulnerable || this.playerState === 'HIT' || this.playerState === 'TALKING' || this.playerState === 'STOPPING') {
       return false;
     }
     this.setPlayerState('HIT');
@@ -118,6 +194,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   public update(_time: number, delta: number) {
     const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Synchronize stress droplet position with candidate
+    if (this.stressIndicator && this.stressIndicator.visible) {
+      this.stressIndicator.x = this.x + 22;
+      this.stressIndicator.y = this.y - 170;
+    }
 
     // Check ground collision for jumping
     if (this.playerState === 'JUMPING' && body && body.blocked.down) {
@@ -133,7 +215,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Run animation frames (exact party cycle count at 30-33 FPS)
-    if (this.playerState === 'RUNNING') {
+    if (this.playerState === 'RUNNING' && !this.isBurnedOut) {
       this.runAnimTimer += delta;
       if (this.runAnimTimer >= RUN_FRAME_DURATION) {
         this.runAnimTimer = 0;
@@ -147,5 +229,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       }
     }
+
+    // Dynamic runner ghost trail when jumping or sprinting
+    if (!this.isBurnedOut && (this.playerState === 'JUMPING' || (this.playerState === 'RUNNING' && this.isSprinting))) {
+      this.ghostTrailTimer += delta;
+      if (this.ghostTrailTimer >= 110) {
+        this.ghostTrailTimer = 0;
+        this.spawnGhostTrail();
+      }
+    }
+  }
+
+  private spawnGhostTrail() {
+    if (!this.scene || !this.visible) return;
+
+    const ghost = this.scene.add.sprite(this.x, this.y, this.texture.key, this.frame.name);
+    ghost.setOrigin(this.originX, this.originY);
+    ghost.setScale(this.scaleX, this.scaleY);
+    ghost.setDepth(this.depth - 0.1);
+    ghost.setAlpha(0.45);
+
+    // Tint ghost by party color
+    let tint = 0x38bdf8;
+    if (this.partyId === 'anc') tint = 0xfcb813;
+    else if (this.partyId === 'pa') tint = 0x4ea81e;
+    ghost.setTint(tint);
+
+    this.scene.tweens.add({
+      targets: ghost,
+      alpha: 0,
+      scaleX: this.scaleX * 0.96,
+      scaleY: this.scaleY * 0.96,
+      duration: 280,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        ghost.destroy();
+      }
+    });
+  }
+
+  public destroy(fromScene?: boolean) {
+    if (this.stressIndicator) {
+      this.stressIndicator.destroy();
+      this.stressIndicator = undefined;
+    }
+    super.destroy(fromScene);
   }
 }

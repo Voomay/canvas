@@ -146,8 +146,44 @@ export function getComplaintReaction(
   complaint: ComplaintData,
   type: ResponseType,
   outcome: 'positive' | 'doubtful' | 'negative',
-  partyId?: 'da' | 'anc' | 'pa'
+  partyId?: 'da' | 'anc' | 'pa',
+  personality?: string
 ): string {
+  // 1. Rude personality unique reaction lines
+  if (personality === 'Rude') {
+    if (outcome === 'negative') {
+      if (type === 'lie') {
+        return 'VOETSEK! You stand on my stoep and lie straight to my face?! Get off my gate!';
+      }
+      if (type === 'blame') {
+        return 'Typical politician! Finger-pointing and passing the buck! Tsek, don\'t waste my time!';
+      }
+      if (type === 'promise') {
+        return 'Mxm, keep your empty promises! You clowns only pitch up when you need our cross on the ballot!';
+      }
+      return 'Don\'t come smile here! We are sick and tired of your political circus!';
+    }
+    if (outcome === 'doubtful') {
+      return 'Hahaha! Do you really expect me to swallow that nonsense? Haibo, you politicians!';
+    }
+    if (outcome === 'positive') {
+      return 'Yoh! At least you have the guts to speak straight and not talk rubbish. Take my vote!';
+    }
+  }
+
+  // 2. Cheerful personality unique warm reaction lines
+  if (personality === 'Cheerful') {
+    if (outcome === 'positive') {
+      return 'Aww bless you my child! Here is a warm cup of rooibos tea. You have my full vote!';
+    }
+    if (outcome === 'doubtful') {
+      return 'Ai shame, campaigning is tough! Work hard for us and we\'ll be watching your work, neh?';
+    }
+    if (outcome === 'negative') {
+      return 'Ai my dear, don\'t let politics make you tell fibs! We still wish you well on your run!';
+    }
+  }
+
   const partySpecificReaction = partyId && complaint.partyReactions?.[partyId]?.[type]?.[outcome];
   if (partySpecificReaction) return partySpecificReaction;
 
