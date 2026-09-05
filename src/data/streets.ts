@@ -1,6 +1,7 @@
 export interface StreetLevel {
   id: number;
   name: string;
+  shortName: string;
   suburb: string;
   locationKey: 'capetown' | 'joburg' | 'campsbay' | 'khayelitsha' | 'mitchells_plain' | 'hanover_park';
   theme: string;
@@ -12,7 +13,7 @@ export interface StreetLevel {
   obstacleSpawnRateMax: number; // ms
   residentSpawnRateMin: number; // ms
   residentSpawnRateMax: number; // ms
-  obstaclePool: ('potholeSmall' | 'potholeWater' | 'brokenDrain' | 'openManhole')[];
+  obstaclePool: ('potholeSmall' | 'potholeWater' | 'openManhole')[];
   allowedComplaintCategories: string[];
 }
 
@@ -20,6 +21,7 @@ export const STREETS: StreetLevel[] = [
   {
     id: 1,
     name: 'Ward 1: Hanover Park',
+    shortName: 'Hanover Park',
     suburb: 'Hanover Park, Cape Town',
     locationKey: 'hanover_park',
     theme: 'Table Mountain & Community Flats',
@@ -47,6 +49,7 @@ export const STREETS: StreetLevel[] = [
   {
     id: 2,
     name: 'Ward 2: Mitchells Plain Town Centre',
+    shortName: 'Mitchells Plain',
     suburb: 'Town Centre & Promenade, Mitchells Plain',
     locationKey: 'mitchells_plain',
     theme: 'Town Centre Shops & Transport Hub',
@@ -74,6 +77,7 @@ export const STREETS: StreetLevel[] = [
   {
     id: 3,
     name: 'Ward 3: Khayelitsha',
+    shortName: 'Khayelitsha',
     suburb: 'Lookout Hill & Site C, Khayelitsha',
     locationKey: 'khayelitsha',
     theme: 'Lookout Hill & High Energy Rallies',
@@ -100,6 +104,7 @@ export const STREETS: StreetLevel[] = [
   {
     id: 4,
     name: 'Ward 4: Camps Bay & Clifton',
+    shortName: 'Camps Bay',
     suburb: 'Victoria Road & Beach Promenade, Camps Bay',
     locationKey: 'campsbay',
     theme: 'Sunset Strip & Atlantic Seaboard',
@@ -126,6 +131,7 @@ export const STREETS: StreetLevel[] = [
   {
     id: 5,
     name: 'Ward 5: Johannesburg (National Finale)',
+    shortName: 'Joburg',
     suburb: 'Freedom Square & Johannesburg Towers',
     locationKey: 'joburg',
     theme: 'Election Eve Grand Finale',

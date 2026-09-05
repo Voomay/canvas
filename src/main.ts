@@ -4,6 +4,8 @@ import { getGameDimensions } from './config/constants';
 import { ScoreManager } from './systems/ScoreManager';
 import { COMPLAINTS } from './data/complaints';
 
+import { Resident } from './entities/Resident';
+
 // PWA Install Prompt Handler
 let deferredPrompt: any = null;
 
@@ -102,6 +104,7 @@ async function initGame() {
   (window as any).__PHASER_GAME__ = game;
   (window as any).ScoreManager = ScoreManager;
   (window as any).COMPLAINTS = COMPLAINTS;
+  (window as any).Resident = Resident;
   (window as any).startArea = (areaId: number, partyId: 'da' | 'anc' | 'pa' = 'da') => {
     const sm = ScoreManager.getInstance();
     sm.startNewArea(areaId);

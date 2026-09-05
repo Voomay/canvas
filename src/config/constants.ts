@@ -46,8 +46,8 @@ export function getCurbsideTaxiY(height: number, width: number): number {
   const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
   const roadScale = isPortrait ? (height - roadY) / 352 : 1;
-  // Taxi / vehicles positioned firmly on the asphalt road next to the sidewalk curb
-  return isPortrait ? Math.round(roadY + 132 * roadScale) : roadY + 120;
+  // In-game vehicle contact line: sits in the upper road lane directly next to the sidewalk curb
+  return isPortrait ? Math.round(roadY + 70 * roadScale) : roadY + 80;
 }
 
 export const RUN_SPEED_BASE = 480;

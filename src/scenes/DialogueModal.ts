@@ -53,13 +53,13 @@ export function formatReadableText(text: string): string {
 }
 
 export function getMobileDialoguePanelHeight(height: number): number {
-  const cardH = height < 680 ? 58 : (height < 800 ? 64 : 68);
-  const gap = height < 680 ? 7 : (height < 800 ? 8 : 10);
-  const totalCardsH = (4 * cardH) + (3 * gap);
-  const cancelH = height < 680 ? 28 : 32;
-  const panelPaddingTop = height < 680 ? 12 : 16;
-  const bottomMargin = height < 680 ? 12 : 20;
-  return totalCardsH + cancelH + panelPaddingTop + bottomMargin;
+  const cardH = height < 680 ? 92 : 98;
+  const gapY = 6;
+  const totalCardsH = (2 * cardH) + gapY;
+  const cancelH = 26;
+  const panelPaddingTop = 8;
+  const bottomMargin = 8;
+  return totalCardsH + cancelH + panelPaddingTop + bottomMargin + 6;
 }
 
 export class DialogueModal extends Phaser.GameObjects.Container {
@@ -143,13 +143,16 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     targetBubbleY?: number
   ): Phaser.GameObjects.Container {
     const cx = scene.scale.width / 2;
-    const bubbleW = Math.min(scene.scale.width - 24, 460);
-    const bubbleH = text.length > 85 ? 96 : (text.length > 50 ? 86 : 76);
+    const bubbleW = Math.min(scene.scale.width - 20, 460);
+    const readableText = formatReadableText(text);
+    // Bigger, punchier, high-contrast speech bubble wording for mobile
+    const fontSize = readableText.length > 85 ? '15.5px' : (readableText.length > 55 ? '17px' : '18.5px');
+    const bubbleH = readableText.length > 85 ? 106 : (readableText.length > 55 ? 94 : 84);
 
     // Position directly above candidate/resident conversation area
     const bubbleY = targetBubbleY !== undefined
       ? targetBubbleY
-      : Math.max(160, Math.min(220, Math.round(scene.scale.height * 0.28)));
+      : Math.max(bubbleH / 2 + 70, Math.min(210, Math.round(scene.scale.height * 0.26)));
     const container = scene.add.container(cx, bubbleY);
     container.setDepth(151);
 
@@ -188,10 +191,10 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.fillRect(clampedTailX - tailW / 2 + 2, bubbleH / 2 - 4, tailW + 2, 5);
 
     // "RESIDENT" label badge (Dark navy pill with cyan outline on top-left of bubble)
-    const labelBadgeW = 102;
-    const labelBadgeH = 22;
+    const labelBadgeW = 106;
+    const labelBadgeH = 24;
     const labelBadgeX = -bubbleW / 2 + 14;
-    const labelBadgeY = -bubbleH / 2 - 10;
+    const labelBadgeY = -bubbleH / 2 - 11;
     const labelBg = scene.add.graphics();
     labelBg.fillStyle(0x0f172a, 1);
     labelBg.fillRoundedRect(labelBadgeX, labelBadgeY, labelBadgeW, labelBadgeH, 6);
@@ -200,15 +203,13 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     const labelTxt = scene.add.text(labelBadgeX + labelBadgeW / 2, labelBadgeY + labelBadgeH / 2, '👤 RESIDENT', {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-      fontSize: '11px',
+      fontSize: '12px',
       color: '#38bdf8',
       fontStyle: '800',
       resolution: 3
     }).setOrigin(0.5, 0.5);
 
     // Complaint text (Readable Sentence Case with 3x supersampling resolution)
-    const readableText = formatReadableText(text);
-    const fontSize = readableText.length > 85 ? '13px' : (readableText.length > 55 ? '14px' : '15px');
     const label = scene.add.text(0, 4, readableText, {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
       fontSize: fontSize,
@@ -216,7 +217,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       fontStyle: '700',
       align: 'center',
       lineSpacing: 3,
-      wordWrap: { width: bubbleW - 36 },
+      wordWrap: { width: bubbleW - 32 },
       resolution: 3
     }).setOrigin(0.5, 0.5);
 
@@ -246,23 +247,25 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const lieChoice = getComplaintChoice(complaint, 'lie', partyId);
     const honestyChoice = getComplaintChoice(complaint, 'honesty', partyId);
 
-    const cardW = Math.min(width - 24, 480);
-    const cardH = height < 680 ? 58 : (height < 800 ? 64 : 68);
-    const gap = height < 680 ? 7 : (height < 800 ? 8 : 10);
-    const cancelH = height < 680 ? 28 : 32;
-    const panelPaddingTop = height < 680 ? 12 : 16;
-    const bottomMargin = height < 680 ? 12 : 20;
     const panelH = getMobileDialoguePanelHeight(height);
+    const gridW = Math.min(width - 16, 480);
+    const gapX = 8;
+    const gapY = 6;
+    const cardW = Math.floor((gridW - gapX) / 2);
+    const cardH = height < 680 ? 92 : 98;
+    const cancelH = 26;
+    const panelPaddingTop = 8;
+    const bottomMargin = 8;
 
     const panel = scene.add.container(0, 0);
     panel.setDepth(152);
 
-    // Bottom sheet background container
+    // Sleek bottom sheet backdrop
     const sheetBg = scene.add.graphics();
     sheetBg.fillStyle(0x070e1a, 0.96);
-    sheetBg.fillRoundedRect(0, height - panelH, width, panelH + 50, { tl: 24, tr: 24, bl: 0, br: 0 });
+    sheetBg.fillRoundedRect(0, height - panelH, width, panelH + 40, { tl: 20, tr: 20, bl: 0, br: 0 });
     sheetBg.lineStyle(1.5, 0x1e293b, 1);
-    sheetBg.strokeRoundedRect(0, height - panelH, width, panelH + 50, { tl: 24, tr: 24, bl: 0, br: 0 });
+    sheetBg.strokeRoundedRect(0, height - panelH, width, panelH + 40, { tl: 20, tr: 20, bl: 0, br: 0 });
     panel.add(sheetBg);
 
     const responses: {
@@ -320,58 +323,63 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const allBtnContainers: Phaser.GameObjects.Container[] = [];
     const allBtnZones: Phaser.GameObjects.Zone[] = [];
     const startY = height - panelH + panelPaddingTop + cardH / 2;
+    const leftColX = (width / 2) - (cardW / 2) - (gapX / 2);
+    const rightColX = (width / 2) + (cardW / 2) + (gapX / 2);
 
     responses.forEach((resp, idx) => {
-      const cardY = startY + idx * (cardH + gap);
-      const cardContainer = scene.add.container(width / 2, cardY);
+      const row = Math.floor(idx / 2);
+      const col = idx % 2;
+      const cardX = col === 0 ? leftColX : rightColX;
+      const cardY = startY + row * (cardH + gapY);
 
-      // Card Background with generous padding
+      const cardContainer = scene.add.container(cardX, cardY);
+
+      // Card Background
       const cardBg = scene.add.graphics();
       cardBg.fillStyle(resp.bgColor, 1);
-      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
+      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 12);
       cardBg.lineStyle(1.8, resp.borderColor, 0.95);
-      cardBg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
+      cardBg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 12);
       cardContainer.add(cardBg);
 
-      // Left Icon
-      const iconX = -cardW / 2 + 28;
+      // Header icon + category title
+      const iconX = -cardW / 2 + 16;
+      const headerY = -cardH / 2 + 14;
+
       if (resp.iconType === 'check') {
         const iconCircle = scene.add.graphics();
         iconCircle.fillStyle(0xffffff, 1);
-        iconCircle.fillCircle(iconX, 0, 15);
-        iconCircle.lineStyle(3, 0x16a34a, 1);
+        iconCircle.fillCircle(iconX, headerY, 9);
+        iconCircle.lineStyle(2, 0x16a34a, 1);
         iconCircle.beginPath();
-        iconCircle.moveTo(iconX - 6, 0);
-        iconCircle.lineTo(iconX - 2, 4.5);
-        iconCircle.lineTo(iconX + 6.5, -4);
+        iconCircle.moveTo(iconX - 4, headerY);
+        iconCircle.lineTo(iconX - 1, headerY + 3);
+        iconCircle.lineTo(iconX + 4.5, headerY - 3);
         iconCircle.stroke();
         cardContainer.add(iconCircle);
       } else {
-        const iconTxt = scene.add.text(iconX, 0, resp.icon, {
-          fontSize: '25px'
+        const iconTxt = scene.add.text(iconX, headerY, resp.icon, {
+          fontSize: '18px'
         }).setOrigin(0.5, 0.5);
         cardContainer.add(iconTxt);
       }
 
-      // Center Text Layout (Bolder, bigger titles & clear complaint response text)
-      const textX = -cardW / 2 + 56;
-      const textW = cardW - 92;
-
-      // Title Line (TRUTH / ACTION, EXCUSE / BLAME, BOLD LIE, SPIN / DEFLECTION)
-      const titleTxt = scene.add.text(textX, -12, resp.title, {
+      const titleTxt = scene.add.text(-cardW / 2 + 30, headerY, resp.title, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-        fontSize: '14px',
+        fontSize: '12px',
         color: '#ffffff',
         fontStyle: '800',
-        letterSpacing: 0.6,
+        letterSpacing: 0.4,
         resolution: 3
       }).setOrigin(0, 0.5);
       cardContainer.add(titleTxt);
 
-      // Subtitle Line (Complaint response formatted cleanly with sentence case and 3x supersampling)
+      // Response text content: larger wording for crystal clear mobile readability
       const readableSub = formatReadableText(resp.text);
-      const subFontSize = readableSub.length > 60 ? '11.5px' : '12.5px';
-      const subTxt = scene.add.text(textX, 13, readableSub, {
+      const textW = cardW - 16;
+      const subFontSize = readableSub.length > 85 ? '11.5px' : (readableSub.length > 55 ? '12.5px' : '13.5px');
+
+      const subTxt = scene.add.text(-cardW / 2 + 8, -cardH / 2 + 28, readableSub, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: subFontSize,
         color: resp.subColor,
@@ -379,24 +387,14 @@ export class DialogueModal extends Phaser.GameObjects.Container {
         lineSpacing: 2,
         wordWrap: { width: textW },
         resolution: 3
-      }).setOrigin(0, 0.5);
+      }).setOrigin(0, 0);
       cardContainer.add(subTxt);
-
-      // Right Chevron ( > )
-      const chevron = scene.add.text(cardW / 2 - 20, 0, '›', {
-        fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-        fontSize: '24px',
-        color: '#ffffff',
-        fontStyle: '800',
-        resolution: 3
-      }).setOrigin(0.5, 0.5);
-      cardContainer.add(chevron);
 
       panel.add(cardContainer);
       allBtnContainers.push(cardContainer);
 
       // Touch Zone
-      const zone = scene.add.zone(width / 2, cardY, cardW, cardH).setInteractive({ useHandCursor: true });
+      const zone = scene.add.zone(cardX, cardY, cardW, cardH).setInteractive({ useHandCursor: true });
       zone.on('pointerdown', () => {
         if (!this.isInputReady || this.hasSelected) return;
         this.hasSelected = true;
@@ -405,7 +403,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
           if (bidx !== idx) {
             scene.tweens.add({
               targets: bc,
-              alpha: 0.35,
+              alpha: 0.3,
               duration: 100
             });
           }
@@ -419,24 +417,24 @@ export class DialogueModal extends Phaser.GameObjects.Container {
         // Highlight selected button with bounce
         scene.tweens.add({
           targets: cardContainer,
-          scaleX: 0.97,
-          scaleY: 0.97,
-          duration: 80,
+          scaleX: 0.95,
+          scaleY: 0.95,
+          duration: 70,
           yoyo: true,
           ease: 'Quad.easeInOut',
           onComplete: () => {
             // Slide panel down and fade out speech bubble
             scene.tweens.add({
               targets: panel,
-              y: panelH + 60,
-              duration: 220,
+              y: panelH + 50,
+              duration: 200,
               ease: 'Cubic.easeIn'
             });
             scene.tweens.add({
               targets: this.speechBubble,
               alpha: 0,
-              y: '-=20',
-              duration: 180,
+              y: '-=15',
+              duration: 160,
               ease: 'Cubic.easeIn',
               onComplete: () => {
                 onChoiceSelected(resp.type);
@@ -450,35 +448,43 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       allBtnZones.push(zone);
     });
 
-    // ═══════ Cancel Button ═══════
+    // ═══════ Compact Keep Running / Cancel Button ═══════
     const cancelY = height - bottomMargin - cancelH / 2;
-    const cancelTxt = scene.add.text(width / 2, cancelY, 'Cancel', {
+    const cancelPill = scene.add.graphics();
+    cancelPill.fillStyle(0x1e293b, 0.9);
+    cancelPill.fillRoundedRect(-90, cancelY - cancelH / 2, 180, cancelH, 13);
+    cancelPill.lineStyle(1, 0x334155, 1);
+    cancelPill.strokeRoundedRect(-90, cancelY - cancelH / 2, 180, cancelH, 13);
+    cancelPill.setX(width / 2);
+    panel.add(cancelPill);
+
+    const cancelTxt = scene.add.text(width / 2, cancelY, '🏃 Keep Running (Ignore)', {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-      fontSize: '15px',
-      color: '#f8fafc',
+      fontSize: '12px',
+      color: '#cbd5e1',
       fontStyle: '700',
       resolution: 3
     }).setOrigin(0.5, 0.5);
     panel.add(cancelTxt);
 
-    const cancelZone = scene.add.zone(width / 2, cancelY, 140, 36).setInteractive({ useHandCursor: true });
-    cancelZone.on('pointerover', () => cancelTxt.setColor('#94a3b8'));
-    cancelZone.on('pointerout', () => cancelTxt.setColor('#ffffff'));
+    const cancelZone = scene.add.zone(width / 2, cancelY, 190, cancelH + 8).setInteractive({ useHandCursor: true });
+    cancelZone.on('pointerover', () => cancelTxt.setColor('#ffffff'));
+    cancelZone.on('pointerout', () => cancelTxt.setColor('#cbd5e1'));
     cancelZone.on('pointerdown', () => {
       if (!this.isInputReady || this.hasSelected) return;
       this.hasSelected = true;
 
       scene.tweens.add({
         targets: panel,
-        y: panelH + 60,
-        duration: 220,
+        y: panelH + 50,
+        duration: 200,
         ease: 'Cubic.easeIn'
       });
       scene.tweens.add({
         targets: this.speechBubble,
         alpha: 0,
-        y: '-=20',
-        duration: 180,
+        y: '-=15',
+        duration: 160,
         ease: 'Cubic.easeIn',
         onComplete: () => {
           if (onCancel) {
@@ -490,12 +496,12 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     panel.add(cancelZone);
     allBtnZones.push(cancelZone);
 
-    // Slide-up entrance animation for bottom sheet (280ms Cubic.easeOut synchronized with characters)
-    panel.setY(panelH + 60);
+    // Slide-up entrance animation for bottom sheet
+    panel.setY(panelH + 50);
     scene.tweens.add({
       targets: panel,
       y: 0,
-      duration: 280,
+      duration: 250,
       ease: 'Cubic.easeOut'
     });
 

@@ -6,7 +6,7 @@ import { ParallaxBackground } from '../systems/ParallaxBackground';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { ScoreManager } from '../systems/ScoreManager';
 import { HUD } from '../ui/HUD';
-import { DialogueModal, getMobileDialoguePanelHeight } from './DialogueModal';
+import { DialogueModal } from './DialogueModal';
 import { ReactionModal } from './ReactionModal';
 import { PauseModal } from './PauseModal';
 import { STREETS, StreetLevel } from '../data/streets';
@@ -56,8 +56,12 @@ export class GameScene extends Phaser.Scene {
   private isGamePaused: boolean = false;
   private pauseModal: PauseModal | null = null;
 
+  // Pacing & Urgency State
+  private hasShownLowTimeWarning: boolean = false;
+  private residentsSpawnedInWard: number = 0;
+
   // Mobile interaction state machine
-  private mobileInteractionState: 'RUNNING' | 'RESIDENT_DETECTED' | 'ACTION_CHOICE' | 'TALKING' | 'CHOOSING_RESPONSE' | 'SHOWING_RESULT' = 'RUNNING';
+  private mobileInteractionState: 'RUNNING' | 'RESIDENT_DETECTED' | 'ACTION_CHOICE' | 'APPROACHING_RESIDENT' | 'TALKING' | 'CHOOSING_RESPONSE' | 'SHOWING_RESULT' = 'RUNNING';
   private encounterChoiceBannerAnimating: boolean = false;
   private hasStartedRunning: boolean = true;
   private obstacleTutorialContainer: Phaser.GameObjects.Container | null = null;
@@ -111,7 +115,10 @@ export class GameScene extends Phaser.Scene {
     this.residents = [];
     this.curbsideTaxi = null;
     this.nextCurbsideVehicleTimer = 0;
-    this.nextObstacleTime = 2200; // Road starts clear - first obstacle appears smoothly
+    this.hasShownLowTimeWarning = false;
+    this.residentsSpawnedInWard = 0;
+    this.nextObstacleTime = 3800; // Open clear running road before first pothole
+    this.nextResidentTime = 1600; // Early first voter encounter to get the campaign rolling quickly!
 
     // 1. Create Parallax Background (Cape Town / Hanover Park vs Johannesburg)
     this.parallaxBg = new ParallaxBackground(this, this.currentStreet.locationKey);
@@ -130,9 +137,6 @@ export class GameScene extends Phaser.Scene {
 
     // 4. Create HUD Overlay
     this.hud = new HUD(this);
-
-    // 5. Setup Spawners
-    this.nextResidentTime = Phaser.Math.Between(this.currentStreet.residentSpawnRateMin, this.currentStreet.residentSpawnRateMax);
 
     // Setup Curbside Minibus Taxi / Luxury Sports Cars (Hanover Park, Mitchells Plain, Khayelitsha & Camps Bay)
     const loc = this.currentStreet.locationKey;
@@ -153,7 +157,7 @@ export class GameScene extends Phaser.Scene {
       if (this.curbsideTaxi && this.curbsideTaxi.active) {
         const isPort = gameSize.height > gameSize.width;
         this.curbsideTaxi.y = this.getCurbsideY();
-        this.curbsideTaxi.setScale(isPort ? 0.92 : 1.15);
+        this.curbsideTaxi.setScale(isPort ? 0.84 : 1.05);
       }
     });
 
@@ -252,6 +256,12 @@ export class GameScene extends Phaser.Scene {
 
     this.hud.updateValues();
 
+    // 10-Second Low-Time Urgency Warning Alert
+    if (this.streetTimer <= 10 && this.streetTimer > 0 && !this.hasShownLowTimeWarning) {
+      this.hasShownLowTimeWarning = true;
+      this.hud.showLowTimeUrgencyWarning();
+    }
+
     // Check Street Completion
     if (this.streetDistanceCovered >= this.currentStreet.targetDistance || this.streetTimer <= 0) {
       this.completeCurrentStreet();
@@ -294,17 +304,15 @@ export class GameScene extends Phaser.Scene {
       if (this.nextObstacleTime <= 0) {
         const spawnX = this.scale.width + 120;
         
-        // Prevent obstacle from spawning directly on top of a resident
-        const residentOnPoint = this.residents.some(r => Math.abs(r.x - spawnX) < 180);
+        // Prevent obstacle from spawning directly on top of or near a resident or another obstacle
+        const residentNearby = this.residents.some(r => r.active && Math.abs(r.x - spawnX) < 280);
+        const obstacleNearby = this.obstacles.some(o => o.active && Math.abs(o.x - spawnX) < 380);
 
-        if (!residentOnPoint) {
+        if (!residentNearby && !obstacleNearby) {
           this.spawnObstacle();
-          this.nextObstacleTime = Phaser.Math.Between(
-            this.currentStreet.obstacleSpawnRateMin,
-            this.currentStreet.obstacleSpawnRateMax
-          );
+          this.nextObstacleTime = Phaser.Math.Between(4200, 6800);
         } else {
-          this.nextObstacleTime = Phaser.Math.Between(2000, 3000);
+          this.nextObstacleTime = Phaser.Math.Between(1800, 2600);
         }
       }
     }
@@ -312,11 +320,25 @@ export class GameScene extends Phaser.Scene {
     // 2. Resident Spawning
     this.nextResidentTime -= delta;
     if (this.nextResidentTime <= 0 && !this.activeResidentInEncounter) {
-      this.spawnResident();
-      this.nextResidentTime = Phaser.Math.Between(
-        this.currentStreet.residentSpawnRateMin,
-        this.currentStreet.residentSpawnRateMax
-      );
+      const isPortrait = this.scale.height > this.scale.width;
+      const spawnX = this.scale.width + (isPortrait ? 380 : 440);
+      const residentNearby = this.residents.some(r => r.active && Math.abs(r.x - spawnX) < 520);
+
+      if (!residentNearby) {
+        this.spawnResident();
+        this.residentsSpawnedInWard++;
+
+        // Pacing variety: 1 or 2 early near voters, then extended running corridors!
+        if (this.residentsSpawnedInWard === 1) {
+          // Second resident arrives relatively soon
+          this.nextResidentTime = Phaser.Math.Between(2600, 3400);
+        } else {
+          // Extended running stretches between voters
+          this.nextResidentTime = Phaser.Math.Between(5500, 7500);
+        }
+      } else {
+        this.nextResidentTime = Phaser.Math.Between(2200, 3200);
+      }
     }
   }
 
@@ -351,9 +373,9 @@ export class GameScene extends Phaser.Scene {
       car.setOrigin(0.5, 1);
       car.setDepth(4); // Behind residents (6) & player (7), above road (3)
       if (chosenCar === 'vehicle_car_suv') {
-        car.setScale(isPortrait ? 0.72 : 0.85);
+        car.setScale(isPortrait ? 0.68 : 0.82);
       } else {
-        car.setScale(isPortrait ? 0.76 : 0.90);
+        car.setScale(isPortrait ? 0.70 : 0.85);
       }
 
       // Make interactive: click/tap plays authentic supercar rev sound & bounce
@@ -375,7 +397,7 @@ export class GameScene extends Phaser.Scene {
       this.curbsideTaxi = this.add.sprite(spawnX, curbsideY, 'vehicle_taxi_minibus');
       this.curbsideTaxi.setOrigin(0.5, 1);
       this.curbsideTaxi.setDepth(4); // Behind residents (6) & player (7), above road (3)
-      this.curbsideTaxi.setScale(isPortrait ? 0.92 : 1.15);
+      this.curbsideTaxi.setScale(isPortrait ? 0.84 : 1.05);
       this.curbsideTaxi.play('taxi_minibus_anim');
 
       // Make interactive: click/tap plays authentic taxi horn ("pip-pip!")
@@ -419,7 +441,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnObstacle() {
-    const pool = this.currentStreet.obstaclePool.filter(t => t !== 'brokenDrain');
+    const pool = this.currentStreet.obstaclePool.filter(t => (t as string) !== 'brokenDrain');
     if (pool.length === 0) return;
     const type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
     const spawnX = this.scale.width + 100;
@@ -521,8 +543,8 @@ export class GameScene extends Phaser.Scene {
     const playerX = this.player.x;
     const isPortrait = this.scale.height > this.scale.width;
     const screenRightEdgeDist = this.scale.width - playerX;
-    const beaconMaxDist = screenRightEdgeDist + (isPortrait ? 400 : 700);
-    const advanceChoiceDist = isPortrait ? 280 : 420;
+    const beaconMaxDist = screenRightEdgeDist + (isPortrait ? 550 : 700);
+    const advanceChoiceDist = isPortrait ? 480 : 420;
 
     for (let i = this.residents.length - 1; i >= 0; i--) {
       const resident = this.residents[i];
@@ -555,7 +577,7 @@ export class GameScene extends Phaser.Scene {
         resident.triggerAlertSound();
         this.showEncounterChoiceBanner(resident);
         // Controlled approach glide giving the player ample time (2-3s) to decide
-        this.targetSpeed = Math.min(this.targetSpeed, 120);
+        this.targetSpeed = Math.min(this.targetSpeed, isPortrait ? 260 : 120);
       }
 
       // 4. Passed without stopping -> Ignored!
@@ -939,107 +961,93 @@ export class GameScene extends Phaser.Scene {
   }
 
   private triggerStopAndListen(resident: Resident) {
-    if (this.mobileInteractionState === 'CHOOSING_RESPONSE' || this.mobileInteractionState === 'SHOWING_RESULT') return;
+    if (this.mobileInteractionState === 'CHOOSING_RESPONSE' || this.mobileInteractionState === 'SHOWING_RESULT' || this.mobileInteractionState === 'APPROACHING_RESIDENT') return;
 
-    this.isEncounterPaused = true;
-    this.mobileInteractionState = 'TALKING';
     this.hideEncounterChoiceBanner(true);
     this.hideResidentAdvanceBeacon();
     resident.hideAlert();
     resident.hideAngrySpeechBubble();
     resident.hasEncountered = true;
-
-    // Halt movement and enter Talking state
-    this.currentSpeed = 0;
-    this.targetSpeed = 0;
-    this.player.setPlayerState('TALKING');
-    SoundFX.getInstance().duckBGM(0.08);
+    this.activeResidentInEncounter = resident;
 
     const { width, height } = this.scale;
     const isPortrait = height > width;
 
     if (isPortrait) {
-      // ═══════ MOBILE SYNCHRONIZED TALK POSITION & ANIMATION ═══════
-      // 1. Calculate responsive conversation position
+      // ═══════ MOBILE NATURAL RUN-TO-MEET FLOW ═══════
       const normalGroundY = this.getGroundY();
-      const panelH = getMobileDialoguePanelHeight(height);
-      const panelTopY = height - panelH;
-      const charH = 200 * 1.15; // Candidate & resident visual height (~230px)
+      this.isEncounterPaused = true;
+      this.currentSpeed = 0;
+      this.targetSpeed = 0;
 
-      // Target ground position: upper body (head, shoulders, chest, waist) visible above panelTopY
-      let targetGroundY = Math.round(panelTopY + charH * 0.38);
-      targetGroundY = Math.min(normalGroundY - 40, targetGroundY);
+      // Ensure the player continues running motion while smoothly jogging up to the resident
+      this.player.setPlayerState('RUNNING');
+      this.mobileInteractionState = 'APPROACHING_RESIDENT';
+      SoundFX.getInstance().duckBGM(0.08);
 
-      // Symmetrically center candidate and resident in mobile view
-      const centerX = Math.round(width / 2);
-      const playerTargetX = Math.round(centerX - 66);
-      const residentTargetX = Math.round(centerX + 66);
+      // Settle on an organic conversational meeting spot:
+      // Resident stays firmly on normalGroundY on the right side (width * 0.66 to width * 0.76)
+      // and player stops face-to-face with a clean 148px spacing (completely eliminating sprite overlap!).
+      const targetResidentX = Math.round(Phaser.Math.Clamp(resident.x, width * 0.66, width * 0.76));
+      const targetPlayerX = targetResidentX - 148;
 
-      // Position speech bubble directly above characters, with pointer tail to resident
-      const charHeadY = targetGroundY - charH;
-      const textLen = resident.complaint.complaintText.length;
-      const bubbleH = textLen > 85 ? 96 : (textLen > 50 ? 86 : 76);
-      const bubbleBottom = charHeadY - 8;
-      let targetBubbleY = bubbleBottom - bubbleH / 2;
-      // Ensure breathing room below HUD (~138px)
-      const minBubbleY = 138 + bubbleH / 2 + 10;
-      targetBubbleY = Math.max(minBubbleY, targetBubbleY);
+      const dist = Math.max(30, Math.abs(targetPlayerX - this.player.x));
+      const approachDuration = Math.min(460, Math.max(300, Math.round(dist * 1.5)));
 
-      // 2. Synchronized smooth meeting transition in the center of the screen
+      // 1. Player smoothly jogs forward to meet resident, remaining strictly on normalGroundY (no vertical jumping!)
       this.tweens.add({
         targets: this.player,
-        x: playerTargetX,
-        y: targetGroundY,
-        duration: 300,
-        ease: 'Cubic.easeOut'
-      });
+        x: targetPlayerX,
+        y: normalGroundY,
+        duration: approachDuration,
+        ease: 'Cubic.easeOut',
+        onComplete: () => {
+          // Candidate arrives and decelerates to a stop -> enters talking pose
+          this.player.setPlayerState('TALKING');
+          this.mobileInteractionState = 'CHOOSING_RESPONSE';
 
-      this.tweens.add({
-        targets: resident,
-        x: residentTargetX,
-        y: targetGroundY,
-        duration: 300,
-        ease: 'Cubic.easeOut'
-      });
+          // Speech bubble sits comfortably above resident's head with tail pointed at resident
+          const charH = 200 * 1.30;
+          const charHeadY = normalGroundY - charH;
+          const textLen = resident.complaint.complaintText.length;
+          const bubbleH = textLen > 85 ? 106 : (textLen > 55 ? 94 : 84);
+          let targetBubbleY = Math.max(bubbleH / 2 + 65, Math.min(charHeadY - bubbleH / 2 - 10, height * 0.28));
 
-      // 3. Immediately launch DialogueModal: speech bubble and response panel animate together
-      this.mobileInteractionState = 'CHOOSING_RESPONSE';
-      const dialogueModal = new DialogueModal(this, {
-        complaint: resident.complaint,
-        partyId: this.partyId,
-        residentX: residentTargetX,
-        targetBubbleY: targetBubbleY,
-        onChoiceSelected: (choice: ResponseType) => {
-          this.mobileInteractionState = 'SHOWING_RESULT';
-          dialogueModal.destroyModal();
-          this.handleResponseChosen(resident, choice);
-        },
-        onCancel: () => {
-          dialogueModal.destroyModal();
-          const normalPlayerX = 95;
-          // Smoothly translate candidate back to running position and normal ground line
-          this.tweens.add({
-            targets: this.player,
-            x: normalPlayerX,
-            y: normalGroundY,
-            duration: 300,
-            ease: 'Cubic.easeOut',
-            onComplete: () => {
+          // Launch DialogueModal right here with characters on the road!
+          const dialogueModal = new DialogueModal(this, {
+            complaint: resident.complaint,
+            partyId: this.partyId,
+            residentX: targetResidentX,
+            targetBubbleY: targetBubbleY,
+            onChoiceSelected: (choice: ResponseType) => {
+              this.mobileInteractionState = 'SHOWING_RESULT';
+              dialogueModal.destroyModal();
+              this.handleResponseChosen(resident, choice);
+            },
+            onCancel: () => {
+              dialogueModal.destroyModal();
               this.triggerKeepRunning(resident);
             }
           });
-          if (resident && resident.active) {
-            this.tweens.add({
-              targets: resident,
-              y: normalGroundY,
-              duration: 300,
-              ease: 'Cubic.easeOut'
-            });
-          }
         }
+      });
+
+      // 2. Gently ease resident into targetResidentX, strictly on normalGroundY
+      this.tweens.add({
+        targets: resident,
+        x: targetResidentX,
+        y: normalGroundY,
+        duration: approachDuration,
+        ease: 'Cubic.easeOut'
       });
     } else {
       // ═══════ DESKTOP (unchanged) ═══════
+      this.isEncounterPaused = true;
+      this.currentSpeed = 0;
+      this.targetSpeed = 0;
+      this.player.setPlayerState('TALKING');
+      SoundFX.getInstance().duckBGM(0.08);
+
       const residentTargetX = this.player.x + 150;
       this.tweens.add({
         targets: resident,
@@ -1070,11 +1078,30 @@ export class GameScene extends Phaser.Scene {
 
   private triggerKeepRunning(resident: Resident) {
     const isPortrait = this.scale.height > this.scale.width;
+    const normalPlayerX = isPortrait ? 95 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
+    const normalGroundY = this.getGroundY();
+
     this.hideEncounterChoiceBanner(true);
     resident.hasEncountered = true;
+    this.isEncounterPaused = false;
     this.targetSpeed = RUN_SPEED_BASE;
+    this.currentSpeed = RUN_SPEED_BASE;
+    this.player.setPlayerState('RUNNING_AGAIN');
     this.mobileInteractionState = 'RUNNING';
+    SoundFX.getInstance().unduckBGM();
     this.handleResidentPassed(resident);
+
+    this.player.y = normalGroundY;
+    if (resident && resident.active) resident.y = normalGroundY;
+
+    if (Math.abs(this.player.x - normalPlayerX) > 5) {
+      this.tweens.add({
+        targets: this.player,
+        x: normalPlayerX,
+        duration: 400,
+        ease: 'Cubic.easeOut'
+      });
+    }
 
     // Mobile: show "You kept running..." toast
     if (isPortrait) {
@@ -1236,47 +1263,37 @@ export class GameScene extends Phaser.Scene {
     const res = resident || this.activeResidentInEncounter;
     const normalGroundY = this.getGroundY();
     const isPortrait = this.scale.height > this.scale.width;
-
-    const finalizeResume = () => {
-      this.isEncounterPaused = false;
-      this.activeResidentInEncounter = null;
-      this.mobileInteractionState = 'RUNNING';
-      this.player.setPlayerState('RUNNING_AGAIN');
-      this.targetSpeed = RUN_SPEED_BASE;
-      this.currentSpeed = RUN_SPEED_BASE;
-      SoundFX.getInstance().unduckBGM();
-
-      // If mental health dropped to 0 from the encounter, trigger brief burnout recovery!
-      if (this.scoreManager.mentalHealth <= 0) {
-        this.triggerBurnoutRecovery();
-        return;
-      }
-    };
-
     const normalPlayerX = isPortrait ? 95 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
-    if (isPortrait && (Math.abs(this.player.y - normalGroundY) > 5 || Math.abs(this.player.x - normalPlayerX) > 5)) {
-      // Smoothly animate candidate back to normal running lane and road ground line
+
+    // Immediately unpause and start running forward with full momentum
+    this.isEncounterPaused = false;
+    this.activeResidentInEncounter = null;
+    this.mobileInteractionState = 'RUNNING';
+    this.player.setPlayerState('RUNNING_AGAIN');
+    this.targetSpeed = RUN_SPEED_BASE;
+    this.currentSpeed = RUN_SPEED_BASE;
+    SoundFX.getInstance().unduckBGM();
+
+    // Firmly on the road (no vertical hopping or dropping)
+    this.player.y = normalGroundY;
+    if (res && res.active) {
+      res.y = normalGroundY;
+    }
+
+    // While runner accelerates down the street, smoothly ease X back to the running lane
+    if (Math.abs(this.player.x - normalPlayerX) > 5) {
       this.tweens.add({
         targets: this.player,
         x: normalPlayerX,
-        y: normalGroundY,
-        duration: 320,
-        ease: 'Cubic.easeOut',
-        onComplete: finalizeResume
+        duration: 380,
+        ease: 'Cubic.easeOut'
       });
-      if (res && res.active) {
-        this.tweens.add({
-          targets: res,
-          y: normalGroundY,
-          duration: 320,
-          ease: 'Cubic.easeOut'
-        });
-      }
-    } else {
-      this.player.x = normalPlayerX;
-      this.player.y = normalGroundY;
-      if (res && res.active) res.y = normalGroundY;
-      finalizeResume();
+    }
+
+    // If mental health dropped to 0 from the encounter, trigger brief burnout recovery!
+    if (this.scoreManager.mentalHealth <= 0) {
+      this.triggerBurnoutRecovery();
+      return;
     }
   }
 
@@ -1480,7 +1497,7 @@ export class GameScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
 
       const desc = this.add.text(0, -tutH / 2 + 120,
-        `A pothole or drain hazard is blocking your route!\n\n` +
+        `A road pothole is blocking your route!\n\n` +
         `✨ JUMP OVER TO FIX IT: Grants +5s EXTRA TIME ⏱️ to help you win votes for ${party.name}!\n` +
         `⚠️ STUMBLING: Tripping loses -2s and drains morale.`,
         {
@@ -1601,7 +1618,7 @@ export class GameScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
 
       const desc = this.add.text(0, -tutH / 2 + 120, 
-        `A pothole or drain hazard is blocking your campaign route!\n\n` +
+        `A road pothole is blocking your campaign route!\n\n` +
         `✨ JUMP OVER TO FIX IT: Grants +5s EXTRA TIME ⏱️ to help you secure the ${this.currentStreet.targetVotes || 10} votes needed to win this ward!\n` +
         `⚠️ STUMBLING: Tripping loses -2s and drains your mental morale.`,
         {

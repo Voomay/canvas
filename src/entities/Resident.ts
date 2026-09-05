@@ -11,7 +11,7 @@ export class Resident extends Phaser.GameObjects.Container {
   public isApproaching: boolean = false;
   public hasIgnored: boolean = false;
 
-  private sprite: Phaser.GameObjects.Sprite;
+  public sprite: Phaser.GameObjects.Sprite;
   private alertBadge: Phaser.GameObjects.Sprite;
   private alertTween: Phaser.Tweens.Tween | null = null;
   private angryBubbleContainer: Phaser.GameObjects.Container | null = null;
@@ -73,14 +73,14 @@ export class Resident extends Phaser.GameObjects.Container {
       : `resident_${residentSpriteId}`;
     // Scale resident slightly taller/bigger to match candidate on mobile
     const isPortrait = scene.scale.height > scene.scale.width;
-    const residentScale = isPortrait ? 1.15 : 1.05;
+    const residentScale = isPortrait ? 1.30 : 1.05;
     this.sprite = scene.add.sprite(0, 0, initialKey);
     this.sprite.setOrigin(0.5, 1);
     this.sprite.setScale(residentScale);
     this.add(this.sprite);
 
     // Exclamation Alert Badge cleanly floating ABOVE head (clearing high hair buns/caps)
-    const alertY = isPortrait ? -245 : -220;
+    const alertY = isPortrait ? -270 : -220;
     this.alertBadge = scene.add.sprite(0, alertY, 'ui_alert_badge');
     this.alertBadge.setOrigin(0.5, 0.5);
     this.alertBadge.setScale(0.85);
@@ -144,9 +144,10 @@ export class Resident extends Phaser.GameObjects.Container {
     const text = customRemark || Phaser.Utils.Array.GetRandom(ANGRY_REMARKS);
 
     const screenW = this.scene.scale.width;
+    const isPortrait = this.scene.scale.height > this.scene.scale.width;
     const bubbleW = Math.min(Math.max(230, text.length * 7.5 + 45), Math.min(320, screenW - 24));
     const bubbleH = 62;
-    const bubbleY = -230;
+    const bubbleY = isPortrait ? -260 : -230;
 
     // Clamp bubble horizontally so it never bleeds off-screen
     const minBubbleX = bubbleW / 2 + 14;

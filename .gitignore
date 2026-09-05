@@ -8,6 +8,8 @@ dist-ssr/
 # Temp & scratch scripts
 scratch/
 *.log
+*_backup/
+public/assets/*_backup/
 
 # Editor directories and files
 .vscode/*

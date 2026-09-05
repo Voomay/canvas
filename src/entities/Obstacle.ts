@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 export type ObstacleType = 
   | 'potholeSmall' 
   | 'potholeWater' 
-  | 'brokenDrain' 
   | 'openManhole';
 
 export class Obstacle extends Phaser.Physics.Arcade.Sprite {
@@ -20,8 +19,8 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // brokenDrain sits on the sidewalk curb layer (behind curbside vehicles at depth 4)
-    this.setDepth(type === 'brokenDrain' ? 3.8 : 5);
+    // Road surface obstacle depth (below player & residents, above road)
+    this.setDepth(5);
     this.setOrigin(0.5, 1);
     this.setImmovable(true);
 

@@ -512,4 +512,106 @@ export class HUD extends Phaser.GameObjects.Container {
       }
     });
   }
+
+  /**
+   * 10-Second Low-Time Urgency Warning Alert
+   * Urges the player to sprint and jump/fix potholes for +5s bonus time to reach voters!
+   */
+  public showLowTimeUrgencyWarning() {
+    if (!this.scene) return;
+
+    SoundFX.getInstance().playTimerWarning();
+
+    const { width, height } = this.scene.scale;
+    const isPortrait = height > width;
+    const bannerW = Math.min(width - 24, 440);
+    const bannerH = isPortrait ? 66 : 60;
+    const bannerY = isPortrait ? 154 : 126;
+
+    const container = this.scene.add.container(width / 2, bannerY);
+    container.setDepth(155);
+
+    // Glowing drop shadow
+    const shadow = this.scene.add.graphics();
+    shadow.fillStyle(0x000000, 0.6);
+    shadow.fillRoundedRect(-bannerW / 2 + 3, -bannerH / 2 + 4, bannerW, bannerH, 14);
+    container.add(shadow);
+
+    // Alert Card Background
+    const cardBg = this.scene.add.graphics();
+    cardBg.fillStyle(0x0c1524, 0.96);
+    cardBg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 14);
+    cardBg.lineStyle(2.5, 0xef4444, 1);
+    cardBg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 14);
+    container.add(cardBg);
+
+    // Header with warning icons
+    const titleText = this.scene.add.text(0, isPortrait ? -15 : -14, '⚠️ 10 SECONDS LEFT! SPRINT! ⚠️', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '14px' : '15px',
+      color: '#fcb813',
+      fontStyle: '900',
+      stroke: '#000000',
+      strokeThickness: 1
+    }).setOrigin(0.5, 0.5);
+    container.add(titleText);
+
+    // Subtitle explaining the pothole bonus time mechanic
+    const hintText = this.scene.add.text(0, isPortrait ? 13 : 12, 'Fix road potholes (+5s time) to reach more voters!', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: isPortrait ? '12px' : '13px',
+      color: '#ffffff',
+      fontStyle: '800',
+      stroke: '#000000',
+      strokeThickness: 1
+    }).setOrigin(0.5, 0.5);
+    container.add(hintText);
+
+    // Entrance pop tween
+    container.setScale(0.85);
+    container.setAlpha(0);
+    this.scene.tweens.add({
+      targets: container,
+      scaleX: 1,
+      scaleY: 1,
+      alpha: 1,
+      duration: 220,
+      ease: 'Back.easeOut'
+    });
+
+    // Urgent pulsing border
+    let pulseCount = 0;
+    const borderPulseTimer = this.scene.time.addEvent({
+      delay: 260,
+      repeat: 14,
+      callback: () => {
+        pulseCount++;
+        const isRed = pulseCount % 2 === 1;
+        cardBg.clear();
+        cardBg.fillStyle(0x0c1524, 0.96);
+        cardBg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 14);
+        cardBg.lineStyle(2.5, isRed ? 0xef4444 : 0xfcb813, 1);
+        cardBg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 14);
+        titleText.setColor(isRed ? '#ff5555' : '#fcb813');
+      }
+    });
+
+    // Auto-dismiss after 4.2 seconds
+    this.scene.time.delayedCall(4200, () => {
+      if (borderPulseTimer) borderPulseTimer.remove();
+      if (container && container.scene) {
+        this.scene.tweens.add({
+          targets: container,
+          alpha: 0,
+          y: bannerY - 20,
+          duration: 350,
+          ease: 'Quad.easeIn',
+          onComplete: () => container.destroy()
+        });
+      }
+    });
+
+    // Flash timer badge in red
+    this.triggerTimeFlash('loss');
+  }
 }

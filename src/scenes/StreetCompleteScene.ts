@@ -187,6 +187,10 @@ export class StreetCompleteScene extends Phaser.Scene {
 
     // Buttons: Win vs Retry Loop
     const hasMoreStreets = completedStreetIndex < scoreManager.totalStreets;
+    const nextStreetData = hasMoreStreets ? STREETS[completedStreetIndex] : null;
+    const nextWardLocation = nextStreetData?.shortName || 'Next Ward';
+    const nextWardId = nextStreetData?.id || (completedStreetIndex + 1);
+
     const btnY = topOffset + (isPortrait ? 342 : 368);
     const party = PARTIES[this.partyId] || PARTIES.da;
 
@@ -208,7 +212,7 @@ export class StreetCompleteScene extends Phaser.Scene {
 
     if (isWardWon) {
       const btnText = hasMoreStreets 
-        ? `PROCEED TO NEXT WARD ➔` 
+        ? `PROCEED TO WARD ${nextWardId}: ${nextWardLocation.toUpperCase()} ➔` 
         : 'VIEW FINAL RESULTS ➔';
 
       if (isPortrait) {
@@ -221,13 +225,13 @@ export class StreetCompleteScene extends Phaser.Scene {
           }
         }, {
           width: cw - 32,
-          height: 46,
+          height: 48,
           bgColor: 0x1f9137,
           hoverColor: 0x27ab42,
-          fontSize: '15px'
+          fontSize: '14px'
         });
 
-        new Button(this, width / 2, btnY + 52, '📤 SHARE WARD VICTORY 🔗', openShareModal, {
+        new Button(this, width / 2, btnY + 54, '📤 SHARE WARD VICTORY 🔗', openShareModal, {
           width: cw - 32,
           height: 44,
           bgColor: 0x005ba6,
@@ -248,7 +252,7 @@ export class StreetCompleteScene extends Phaser.Scene {
           height: 54,
           bgColor: 0x1f9137,
           hoverColor: 0x27ab42,
-          fontSize: '18px'
+          fontSize: '17px'
         });
 
         new Button(this, width / 2 + halfBtnW / 2 + 8, btnY, '📤 SHARE WARD VICTORY 🔗', openShareModal, {
@@ -260,38 +264,50 @@ export class StreetCompleteScene extends Phaser.Scene {
         });
       }
     } else {
+      const retryAction = () => {
+        this.scene.start('GameScene', { partyId: this.partyId });
+      };
+
+      const continueAction = () => {
+        if (hasMoreStreets) {
+          scoreManager.currentStreetIndex++;
+          this.scene.start('GameScene', { partyId: this.partyId });
+        } else {
+          this.scene.start('ResultsScene', { partyId: this.partyId });
+        }
+      };
+
+      const nextWardBtnTextPortrait = hasMoreStreets
+        ? `TRY WARD ${nextWardId}:\n${nextWardLocation.toUpperCase()} ➔`
+        : 'FINAL RESULTS ➔';
+
+      const nextWardBtnTextLandscape = hasMoreStreets
+        ? `TRY WARD ${nextWardId}: ${nextWardLocation.toUpperCase()} ➔`
+        : 'VIEW FINAL RESULTS ➔';
+
       if (isPortrait) {
         const halfBtnW = (cw - 36) / 2;
-        const btnH = 46;
+        const btnH = 48;
 
-        // Row 1: High-Urgency Retry Button & Continue Button
-        new Button(this, width / 2 - halfBtnW / 2 - 4, btnY, 'RETRY WARD ↺', () => {
-          this.scene.start('GameScene', { partyId: this.partyId });
-        }, {
+        // Row 1: High-Urgency Retry Button & Next Ward / Continue Button
+        new Button(this, width / 2 - halfBtnW / 2 - 4, btnY, 'RETRY WARD ↺', retryAction, {
           width: halfBtnW,
           height: btnH,
           bgColor: 0xdb580a,
           hoverColor: 0xf06a1a,
-          fontSize: '13.5px'
+          fontSize: '13px'
         });
 
-        new Button(this, width / 2 + halfBtnW / 2 + 4, btnY, 'CONTINUE ➔', () => {
-          if (hasMoreStreets) {
-            scoreManager.currentStreetIndex++;
-            this.scene.start('GameScene', { partyId: this.partyId });
-          } else {
-            this.scene.start('ResultsScene', { partyId: this.partyId });
-          }
-        }, {
+        new Button(this, width / 2 + halfBtnW / 2 + 4, btnY, nextWardBtnTextPortrait, continueAction, {
           width: halfBtnW,
           height: btnH,
           bgColor: 0x1f3c6e,
           hoverColor: 0x2b5294,
-          fontSize: '13.5px'
+          fontSize: '11.5px'
         });
 
         // Row 2: Share Ward Results Button
-        new Button(this, width / 2, btnY + 52, '📤 SHARE WARD RESULTS 🔗', openShareModal, {
+        new Button(this, width / 2, btnY + 54, '📤 SHARE WARD RESULTS 🔗', openShareModal, {
           width: cw - 32,
           height: 44,
           bgColor: 0x005ba6,
@@ -302,9 +318,7 @@ export class StreetCompleteScene extends Phaser.Scene {
         const thirdBtnW = Math.min(250, (cw - 64) / 3);
         const btnH = 54;
 
-        new Button(this, width / 2 - thirdBtnW - 12, btnY, '⚡ RETRY WARD (30s) ↺', () => {
-          this.scene.start('GameScene', { partyId: this.partyId });
-        }, {
+        new Button(this, width / 2 - thirdBtnW - 12, btnY, '⚡ RETRY WARD (30s) ↺', retryAction, {
           width: thirdBtnW,
           height: btnH,
           bgColor: 0xdb580a,
@@ -312,19 +326,12 @@ export class StreetCompleteScene extends Phaser.Scene {
           fontSize: '16px'
         });
 
-        new Button(this, width / 2, btnY, 'CONTINUE ANYWAY ➔', () => {
-          if (hasMoreStreets) {
-            scoreManager.currentStreetIndex++;
-            this.scene.start('GameScene', { partyId: this.partyId });
-          } else {
-            this.scene.start('ResultsScene', { partyId: this.partyId });
-          }
-        }, {
+        new Button(this, width / 2, btnY, nextWardBtnTextLandscape, continueAction, {
           width: thirdBtnW,
           height: btnH,
           bgColor: 0x1f3c6e,
           hoverColor: 0x2b5294,
-          fontSize: '16px'
+          fontSize: '14px'
         });
 
         new Button(this, width / 2 + thirdBtnW + 12, btnY, '📤 SHARE RESULTS 🔗', openShareModal, {

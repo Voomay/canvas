@@ -103,11 +103,11 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     }).setOrigin(0.5, 0.5);
     card.add(badgeTxt);
 
-    // Reaction text from resident
+    // Reaction text from resident (enlarged for crisp mobile readability)
     const reactionY = badgeY + 54;
     const reactionTxt = scene.add.text(0, reactionY, outcome.reactionText, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: outcome.reactionText.length > 60 ? '13px' : '15px',
+      fontSize: outcome.reactionText.length > 60 ? '15px' : '16.5px',
       color: '#e2e8f0',
       fontStyle: '600',
       align: 'center',

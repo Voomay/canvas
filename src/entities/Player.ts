@@ -39,7 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     
     // Scale candidate player slightly taller/bigger for mobile readability
     const isPortrait = scene.scale.height > scene.scale.width;
-    const playerScale = isPortrait ? 1.15 : 1.05;
+    const playerScale = isPortrait ? 1.30 : 1.05;
     this.setScale(playerScale);
 
     // Physics body adjustments (for 144x200 sprite frame, origin 0.5, 1)
@@ -50,13 +50,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Floating stress droplets indicator (visible when mental health < 30%)
-    this.stressIndicator = scene.add.text(x + 20, y - 180, '💦', {
+    const stressBaseY = isPortrait ? -205 : -180;
+    this.stressIndicator = scene.add.text(x + 20, y + stressBaseY, '💦', {
       fontSize: '22px'
     }).setOrigin(0.5, 0.5).setDepth(8).setVisible(false);
 
     scene.tweens.add({
       targets: this.stressIndicator,
-      y: y - 195,
+      y: y + stressBaseY - 15,
       duration: 500,
       yoyo: true,
       repeat: -1,
@@ -151,7 +152,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setTint(0xff9977);
 
     // Speech bubble for exhaustion
-    const bubble = this.scene.add.text(this.x, this.y - 180, '😮‍💨 Exhausted! Taking a breath...', {
+    const isPortrait = this.scene.scale.height > this.scene.scale.width;
+    const bubbleY = isPortrait ? -215 : -180;
+    const bubble = this.scene.add.text(this.x, this.y + bubbleY, '😮‍💨 Exhausted! Taking a breath...', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '13px',
       color: '#ffffff',
@@ -197,8 +200,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Synchronize stress droplet position with candidate
     if (this.stressIndicator && this.stressIndicator.visible) {
+      const isPortrait = this.scene.scale.height > this.scene.scale.width;
       this.stressIndicator.x = this.x + 22;
-      this.stressIndicator.y = this.y - 170;
+      this.stressIndicator.y = this.y - (isPortrait ? 195 : 170);
     }
 
     // Check ground collision for jumping
