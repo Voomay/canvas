@@ -246,9 +246,10 @@ async function runTalkTest() {
   await page.evaluate(() => {
     const scene = window.game.scene.getScene('StreetCompleteScene');
     // Click the share button or invoke the share callback directly
-    const shareBtn = scene.children.list.find(c => c.text && c.text.includes('SHARE WARD RESULTS'));
+    const shareBtn = scene.children.list.find(c => c.labelText && c.labelText.text && c.labelText.text.includes('SHARE WARD RESULTS'));
     if (shareBtn && shareBtn.emit) {
       shareBtn.emit('pointerdown');
+      shareBtn.emit('pointerup');
     }
   });
 
