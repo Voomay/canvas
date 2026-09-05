@@ -255,9 +255,10 @@ export class HUD extends Phaser.GameObjects.Container {
       }).setOrigin(0.5, 0.5);
 
       container.add([bg, txt]);
+      const hitPad = 8;
       container.setSize(btnW, btnH);
       container.setInteractive(
-        new Phaser.Geom.Rectangle(-btnW / 2, -btnH / 2, btnW, btnH),
+        new Phaser.Geom.Rectangle(-hitPad, -hitPad, btnW + hitPad * 2, btnH + hitPad * 2),
         Phaser.Geom.Rectangle.Contains
       );
 

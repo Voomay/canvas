@@ -179,7 +179,7 @@ export class PartySelectScene extends Phaser.Scene {
 
     // Interactivity
     container.setSize(w, h);
-    container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
 
     container.on('pointerdown', () => {
       this.selectedPartyId = party.id;

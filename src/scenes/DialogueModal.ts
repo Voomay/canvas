@@ -11,6 +11,47 @@ export interface DialogueModalConfig {
   onCancel?: () => void;
 }
 
+/**
+ * Formats shouting ALL-CAPS strings into clean, readable sentence-case text,
+ * preserving South African acronyms, abbreviations, and currencies.
+ */
+export function formatReadableText(text: string): string {
+  if (!text) return '';
+  const letters = text.replace(/[^a-zA-Z]/g, '');
+  const upperCount = (letters.match(/[A-Z]/g) || []).length;
+  if (letters.length > 6 && upperCount / letters.length > 0.6) {
+    let formatted = text.toLowerCase();
+    // Capitalize first letter of string and every sentence following . ! ?
+    formatted = formatted.replace(/(^\s*|[\.\!\?]\s+)([a-z])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+    // Acronyms to keep uppercase
+    const acronyms = [
+      'SAPS', 'LEAP', 'DA', 'ANC', 'PA', 'EFF', 'ICJ', 'RDP', 'SANDF', 'TRT', 'HAWKS',
+      'CBD', 'TV', 'VIP', 'USA', 'SA', 'C3', 'NGO', 'HIV', 'COVID'
+    ];
+    for (const ac of acronyms) {
+      const regex = new RegExp(`\\b${ac}\\b`, 'gi');
+      formatted = formatted.replace(regex, ac);
+    }
+    // Proper nouns and locations to capitalize
+    const properNouns = [
+      'Palestine', 'Gaza', 'Israel', 'Hague', 'Table Mountain', 'Cape Town', 'Cape Flats',
+      'Hanover Park', 'Mitchells Plain', 'Khayelitsha', 'Johannesburg', 'Joburg', 'Camps Bay',
+      'Athlone', 'Red Cross', 'Shoprite', 'Checkers', 'Nelson Mandela', 'Gayton'
+    ];
+    for (const noun of properNouns) {
+      const regex = new RegExp(`\\b${noun}\\b`, 'gi');
+      formatted = formatted.replace(regex, noun);
+    }
+    // Capitalize currency amounts like r15 -> R15, r500 -> R500
+    formatted = formatted.replace(/\br(\d+)/gi, 'R$1');
+    // Capitalize standalone "I" or "I'm" or "I'll" or "I've"
+    formatted = formatted.replace(/\bi\b/g, 'I');
+    formatted = formatted.replace(/\bi'([a-z]+)/gi, (_, p1) => `I'${p1}`);
+    return formatted;
+  }
+  return text;
+}
+
 export function getMobileDialoguePanelHeight(height: number): number {
   const cardH = height < 680 ? 58 : (height < 800 ? 64 : 68);
   const gap = height < 680 ? 7 : (height < 800 ? 8 : 10);
@@ -147,7 +188,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.fillRect(clampedTailX - tailW / 2 + 2, bubbleH / 2 - 4, tailW + 2, 5);
 
     // "RESIDENT" label badge (Dark navy pill with cyan outline on top-left of bubble)
-    const labelBadgeW = 96;
+    const labelBadgeW = 102;
     const labelBadgeH = 22;
     const labelBadgeX = -bubbleW / 2 + 14;
     const labelBadgeY = -bubbleH / 2 - 10;
@@ -158,21 +199,25 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     labelBg.strokeRoundedRect(labelBadgeX, labelBadgeY, labelBadgeW, labelBadgeH, 6);
 
     const labelTxt = scene.add.text(labelBadgeX + labelBadgeW / 2, labelBadgeY + labelBadgeH / 2, '👤 RESIDENT', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '10.5px',
+      fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
+      fontSize: '11px',
       color: '#38bdf8',
-      fontStyle: '900'
+      fontStyle: '800',
+      resolution: 3
     }).setOrigin(0.5, 0.5);
 
-    // Complaint text
-    const fontSize = text.length > 80 ? '12.5px' : (text.length > 50 ? '13.5px' : '15px');
-    const label = scene.add.text(0, 4, text, {
-      fontFamily: 'Outfit, sans-serif',
+    // Complaint text (Readable Sentence Case with 3x supersampling resolution)
+    const readableText = formatReadableText(text);
+    const fontSize = readableText.length > 85 ? '13px' : (readableText.length > 55 ? '14px' : '15px');
+    const label = scene.add.text(0, 4, readableText, {
+      fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
       fontSize: fontSize,
       color: '#0f172a',
-      fontStyle: '800',
+      fontStyle: '700',
       align: 'center',
-      wordWrap: { width: bubbleW - 32 }
+      lineSpacing: 3,
+      wordWrap: { width: bubbleW - 36 },
+      resolution: 3
     }).setOrigin(0.5, 0.5);
 
     container.add([bg, labelBg, labelTxt, label]);
@@ -314,31 +359,36 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
       // Title Line (TRUTH / ACTION, EXCUSE / BLAME, BOLD LIE, SPIN / DEFLECTION)
       const titleTxt = scene.add.text(textX, -12, resp.title, {
-        fontFamily: 'Outfit, sans-serif',
-        fontSize: '15px',
+        fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
+        fontSize: '14px',
         color: '#ffffff',
-        fontStyle: '900',
-        letterSpacing: 0.6
+        fontStyle: '800',
+        letterSpacing: 0.6,
+        resolution: 3
       }).setOrigin(0, 0.5);
       cardContainer.add(titleTxt);
 
-      // Subtitle Line (Complaint response)
-      const subFontSize = resp.text.length > 55 ? '12px' : '13px';
-      const subTxt = scene.add.text(textX, 13, resp.text, {
-        fontFamily: 'Outfit, sans-serif',
+      // Subtitle Line (Complaint response formatted cleanly with sentence case and 3x supersampling)
+      const readableSub = formatReadableText(resp.text);
+      const subFontSize = readableSub.length > 60 ? '11.5px' : '12.5px';
+      const subTxt = scene.add.text(textX, 13, readableSub, {
+        fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: subFontSize,
         color: resp.subColor,
         fontStyle: '600',
-        wordWrap: { width: textW }
+        lineSpacing: 2,
+        wordWrap: { width: textW },
+        resolution: 3
       }).setOrigin(0, 0.5);
       cardContainer.add(subTxt);
 
       // Right Chevron ( > )
       const chevron = scene.add.text(cardW / 2 - 20, 0, '›', {
-        fontFamily: 'Outfit, sans-serif',
+        fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: '24px',
         color: '#ffffff',
-        fontStyle: '900'
+        fontStyle: '800',
+        resolution: 3
       }).setOrigin(0.5, 0.5);
       cardContainer.add(chevron);
 
@@ -403,10 +453,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     // ═══════ Cancel Button ═══════
     const cancelY = height - bottomMargin - cancelH / 2;
     const cancelTxt = scene.add.text(width / 2, cancelY, 'Cancel', {
-      fontFamily: 'Outfit, sans-serif',
+      fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
       fontSize: '15px',
-      color: '#ffffff',
-      fontStyle: '700'
+      color: '#f8fafc',
+      fontStyle: '700',
+      resolution: 3
     }).setOrigin(0.5, 0.5);
     panel.add(cancelTxt);
 
@@ -494,14 +545,17 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.fillStyle(0xffffff, 1);
     bg.fillRect(tailX + 2, bubbleH / 2 - 4, tailW - 4, 4);
 
-    // Complaint text (Bold, crisp contrast, larger font)
-    const label = scene.add.text(0, 0, text, {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: text.length > 70 ? '14.5px' : (text.length > 45 ? '16px' : (isPortrait ? '17.5px' : '20px')),
+    // Complaint text (Bold, crisp contrast, readable sentence case)
+    const readableText = formatReadableText(text);
+    const label = scene.add.text(0, 0, readableText, {
+      fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
+      fontSize: readableText.length > 70 ? '14.5px' : (readableText.length > 45 ? '16px' : (isPortrait ? '17.5px' : '20px')),
       color: '#0f172a',
-      fontStyle: '900',
+      fontStyle: '800',
       align: 'center',
-      wordWrap: { width: bubbleW - 28 }
+      lineSpacing: 3,
+      wordWrap: { width: bubbleW - 28 },
+      resolution: 3
     }).setOrigin(0.5, 0.5);
 
     container.add([bg, label]);

@@ -105,13 +105,13 @@ export class Button extends Phaser.GameObjects.Container {
       this.add(shortcutText);
     }
 
-    // Interactivity with generous hit area for touch comfort
+    // Interactivity with generous hit area for touch comfort across left, center, and right
     const hitPad = 12;
     this.setSize(this.btnWidth, this.btnHeight);
     this.setInteractive(
       new Phaser.Geom.Rectangle(
-        -this.btnWidth / 2 - hitPad,
-        -this.btnHeight / 2 - hitPad,
+        -hitPad,
+        -hitPad,
         this.btnWidth + hitPad * 2,
         this.btnHeight + hitPad * 2
       ),

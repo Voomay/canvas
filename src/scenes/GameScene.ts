@@ -18,7 +18,6 @@ import {
   RUN_SPEED_BASE, 
   RUN_SPEED_SPRINT,
   RUN_SPEED_SLOW,
-  getDynamicRoadY,
   getDynamicGroundY,
   getCurbsideTaxiY
 } from '../config/constants';
@@ -305,7 +304,7 @@ export class GameScene extends Phaser.Scene {
             this.currentStreet.obstacleSpawnRateMax
           );
         } else {
-          this.nextObstacleTime = 800;
+          this.nextObstacleTime = Phaser.Math.Between(2000, 3000);
         }
       }
     }
@@ -420,24 +419,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnObstacle() {
-    const pool = this.currentStreet.obstaclePool;
-    let type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
+    const pool = this.currentStreet.obstaclePool.filter(t => t !== 'brokenDrain');
+    if (pool.length === 0) return;
+    const type = pool[Phaser.Math.Between(0, pool.length - 1)] as ObstacleType;
     const spawnX = this.scale.width + 100;
-
-    // If curbside taxi is nearby (within 650px), do NOT spawn brokenDrain which sits on the same curb layer!
-    if (type === 'brokenDrain' && this.curbsideTaxi && this.curbsideTaxi.active) {
-      const distToTaxi = Math.abs(this.curbsideTaxi.x - spawnX);
-      if (distToTaxi < 650) {
-        type = 'potholeWater';
-      }
-    }
-
-    // brokenDrain is a curb storm inlet that sits seamlessly embedded IN the sidewalk curb,
-    // while road potholes sit in the runner's lane on the asphalt.
-    const roadY = getDynamicRoadY(this.scale.height, this.scale.width);
-    const isPortrait = this.scale.height > this.scale.width;
-    const roadScale = isPortrait ? (this.scale.height - roadY) / 352 : 1;
-    const spawnY = (type === 'brokenDrain') ? roadY + 42 * roadScale : this.getGroundY();
+    const spawnY = this.getGroundY();
 
     const obstacle = new Obstacle(this, spawnX, spawnY, type);
     this.obstacles.push(obstacle);
@@ -468,18 +454,6 @@ export class GameScene extends Phaser.Scene {
     const playerX = this.player.x;
     const groundY = this.getGroundY();
     const isPortrait = this.scale.height > this.scale.width;
-
-    // Safety: Ensure brokenDrain never overlaps or sits directly beside the curbside taxi
-    if (this.curbsideTaxi && this.curbsideTaxi.active) {
-      const taxiX = this.curbsideTaxi.x;
-      for (let i = this.obstacles.length - 1; i >= 0; i--) {
-        const obs = this.obstacles[i];
-        if (obs.obstacleType === 'brokenDrain' && Math.abs(obs.x - taxiX) < 450) {
-          obs.destroy();
-          this.obstacles.splice(i, 1);
-        }
-      }
-    }
 
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
@@ -996,8 +970,10 @@ export class GameScene extends Phaser.Scene {
       let targetGroundY = Math.round(panelTopY + charH * 0.38);
       targetGroundY = Math.min(normalGroundY - 40, targetGroundY);
 
-      // Horizontal positions remain beside each other
-      const residentTargetX = Math.min(width - 85, this.player.x + 155);
+      // Symmetrically center candidate and resident in mobile view
+      const centerX = Math.round(width / 2);
+      const playerTargetX = Math.round(centerX - 66);
+      const residentTargetX = Math.round(centerX + 66);
 
       // Position speech bubble directly above characters, with pointer tail to resident
       const charHeadY = targetGroundY - charH;
@@ -1009,11 +985,12 @@ export class GameScene extends Phaser.Scene {
       const minBubbleY = 138 + bubbleH / 2 + 10;
       targetBubbleY = Math.max(minBubbleY, targetBubbleY);
 
-      // 2. Synchronized 280ms transition: Candidate and Resident slide upward together
+      // 2. Synchronized smooth meeting transition in the center of the screen
       this.tweens.add({
         targets: this.player,
+        x: playerTargetX,
         y: targetGroundY,
-        duration: 280,
+        duration: 300,
         ease: 'Cubic.easeOut'
       });
 
@@ -1021,7 +998,7 @@ export class GameScene extends Phaser.Scene {
         targets: resident,
         x: residentTargetX,
         y: targetGroundY,
-        duration: 280,
+        duration: 300,
         ease: 'Cubic.easeOut'
       });
 
@@ -1039,9 +1016,11 @@ export class GameScene extends Phaser.Scene {
         },
         onCancel: () => {
           dialogueModal.destroyModal();
-          // Smoothly translate candidate and resident back down to normal ground line
+          const normalPlayerX = 95;
+          // Smoothly translate candidate back to running position and normal ground line
           this.tweens.add({
-            targets: [this.player, resident],
+            targets: this.player,
+            x: normalPlayerX,
             y: normalGroundY,
             duration: 300,
             ease: 'Cubic.easeOut',
@@ -1049,6 +1028,14 @@ export class GameScene extends Phaser.Scene {
               this.triggerKeepRunning(resident);
             }
           });
+          if (resident && resident.active) {
+            this.tweens.add({
+              targets: resident,
+              y: normalGroundY,
+              duration: 300,
+              ease: 'Cubic.easeOut'
+            });
+          }
         }
       });
     } else {
@@ -1266,20 +1253,27 @@ export class GameScene extends Phaser.Scene {
       }
     };
 
-    if (isPortrait && (Math.abs(this.player.y - normalGroundY) > 5)) {
-      // Smoothly animate candidate and resident back down to normal running road line
-      const animTargets: any[] = [this.player];
-      if (res && res.active) {
-        animTargets.push(res);
-      }
+    const normalPlayerX = isPortrait ? 95 : Math.min(380, this.scale.width * PLAYER_X_RATIO);
+    if (isPortrait && (Math.abs(this.player.y - normalGroundY) > 5 || Math.abs(this.player.x - normalPlayerX) > 5)) {
+      // Smoothly animate candidate back to normal running lane and road ground line
       this.tweens.add({
-        targets: animTargets,
+        targets: this.player,
+        x: normalPlayerX,
         y: normalGroundY,
-        duration: 300,
+        duration: 320,
         ease: 'Cubic.easeOut',
         onComplete: finalizeResume
       });
+      if (res && res.active) {
+        this.tweens.add({
+          targets: res,
+          y: normalGroundY,
+          duration: 320,
+          ease: 'Cubic.easeOut'
+        });
+      }
     } else {
+      this.player.x = normalPlayerX;
       this.player.y = normalGroundY;
       if (res && res.active) res.y = normalGroundY;
       finalizeResume();

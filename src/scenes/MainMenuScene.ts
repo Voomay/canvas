@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { Button } from '../ui/Button';
 import { ScoreManager } from '../systems/ScoreManager';
 import { SoundFX } from '../systems/SoundFX';
-import { getCurbsideTaxiY } from '../config/constants';
 
 interface PartyCardItem {
   partyId: 'da' | 'anc' | 'pa';
@@ -237,8 +236,8 @@ export class MainMenuScene extends Phaser.Scene {
       const vehicleX = isPortrait ? width * 0.70 : width * 0.76;
 
       if (loc.isTaxi) {
-        // Minibus Taxi resting firmly in the upper road lane near the curb
-        const vehicleY = isPortrait ? getCurbsideTaxiY(this.scale.height, width) : roadY + 140;
+        // Minibus Taxi resting firmly in the upper road lane next to the sidewalk curb
+        const vehicleY = roadY + (isPortrait ? 132 : 140);
         const taxi = this.add.sprite(vehicleX, vehicleY, loc.vehicleTexture);
         taxi.setOrigin(0.5, 1);
         taxi.setScale(isPortrait ? 0.92 : 1.15);
@@ -248,7 +247,7 @@ export class MainMenuScene extends Phaser.Scene {
         vehicleContainer.add(taxi);
       } else {
         // Luxury Supercar (Yellow Lambo, Red Ferrari) resting near the curb
-        const vehicleY = isPortrait ? getCurbsideTaxiY(this.scale.height, width) : roadY + 138 + (loc.vehicleYOffset || 0);
+        const vehicleY = roadY + (isPortrait ? 130 : 138) + (loc.vehicleYOffset || 0);
         const car = this.add.image(vehicleX, vehicleY, loc.vehicleTexture);
         car.setOrigin(0.5, 1);
         const scale = isPortrait ? 0.62 : (loc.vehicleScale || 0.85);
@@ -1043,9 +1042,9 @@ export class MainMenuScene extends Phaser.Scene {
       fontStyle: '600'
     }).setOrigin(0, 0.5);
 
-    const instBtnW = 82;
-    const instBtnH = 32;
-    const instBtnX = bannerW / 2 - 62;
+    const instBtnW = 88;
+    const instBtnH = 34;
+    const instBtnX = bannerW / 2 - 70;
     const instBg = this.add.graphics();
     instBg.fillStyle(0x1f9137, 1);
     instBg.fillRoundedRect(instBtnX - instBtnW / 2, -instBtnH / 2, instBtnW, instBtnH, 8);
@@ -1059,7 +1058,7 @@ export class MainMenuScene extends Phaser.Scene {
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
 
-    const instZone = this.add.zone(instBtnX, 0, instBtnW, instBtnH).setInteractive({ useHandCursor: true });
+    const instZone = this.add.zone(instBtnX, 0, instBtnW + 6, instBtnH + 6).setInteractive({ useHandCursor: true });
     instZone.on('pointerdown', async () => {
       if (typeof (window as any).promptPwaInstall === 'function') {
         const accepted = await (window as any).promptPwaInstall();
@@ -1071,14 +1070,14 @@ export class MainMenuScene extends Phaser.Scene {
       }
     });
 
-    const closeX = bannerW / 2 - 12;
+    const closeX = bannerW / 2 - 14;
     const closeTxt = this.add.text(closeX, 0, '✕', {
       fontFamily: 'Outfit, sans-serif',
       fontSize: '14px',
       color: '#94a3b8',
       fontStyle: 'bold'
     }).setOrigin(0.5, 0.5);
-    const closeZone = this.add.zone(closeX, 0, 22, 32).setInteractive({ useHandCursor: true });
+    const closeZone = this.add.zone(closeX, 0, 20, 32).setInteractive({ useHandCursor: true });
     closeZone.on('pointerdown', () => {
       sessionStorage.setItem('pwa_prompt_dismissed', 'true');
       banner.destroy();

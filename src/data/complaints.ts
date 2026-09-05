@@ -2,6 +2,7 @@ import { HANOVER_PARK_COMPLAINTS } from './complaints/hanoverPark';
 import { MITCHELLS_PLAIN_COMPLAINTS } from './complaints/mitchellsPlain';
 import { KHAYELITSHA_COMPLAINTS } from './complaints/khayelitsha';
 import { JOBURG_COMPLAINTS } from './complaints/joburg';
+import { CAPE_ISSUES_COMPLAINTS } from './complaints/capeIssues';
 
 export type ResponseType = 'promise' | 'blame' | 'honesty' | 'lie';
 
@@ -49,7 +50,11 @@ export interface ComplaintData {
     | 'joburg_city_power'
     | 'joburg_joburg_water'
     | 'joburg_potholes'
-    | 'joburg_billing_crisis';
+    | 'joburg_billing_crisis'
+    | 'cape_palestine_solidarity'
+    | 'cape_gangsterism_extortion'
+    | 'cape_backyard_dwellers'
+    | 'cape_spaza_inspections';
   targetParty?: 'da' | 'anc' | 'pa' | 'all';
   complaintText: string;
   responses: {
@@ -135,7 +140,11 @@ export function getComplaintChoice(
       joburg_city_power: 'WE HAVE COMMISSIONED A BRAND NEW NUCLEAR-READY POWER SUBSTATION IN BRAAMFONTEIN!',
       joburg_joburg_water: 'WE AIRLIFTED 50 INDUSTRIAL WATER PUMPS FROM SWITZERLAND ARRIVING AT O.R. TAMBO NOW!',
       joburg_potholes: 'EVERY ARTERIAL ROAD IN GAUTENG WAS RE-CARPETED WITH INDESTRUCTIBLE POLYMER LAST NIGHT!',
-      joburg_billing_crisis: 'OUR AUDITORS HAVE REVERSED ALL INCORRECT MUNICIPAL ACCOUNTS TO ZERO BALANCE!'
+      joburg_billing_crisis: 'OUR AUDITORS HAVE REVERSED ALL INCORRECT MUNICIPAL ACCOUNTS TO ZERO BALANCE!',
+      cape_palestine_solidarity: 'WE JUST DECLARED THIS ENTIRE SUBURB A TWIN SANCTUARY CITY THIS MORNING!',
+      cape_gangsterism_extortion: 'HIGH-TECH SKY DRONES WITH THERMAL SENSORS ARE ARRESTING GANG BOSSES RIGHT NOW!',
+      cape_backyard_dwellers: 'BRAND NEW FREE 3-BEDROOM BRICK HOUSES ARE BEING HANDED OVER TOMORROW MORNING!',
+      cape_spaza_inspections: 'OUR RAPID HEALTH SQUAD ALREADY INSPECTED AND SEALED EVERY CORNER TUCKSHOP TODAY!'
     };
     return { text: defaultLies[complaint.category] || 'OUR AUDIT SHOWS THIS WAS ALREADY 100% FIXED YESTERDAY!' };
   }
@@ -1206,6 +1215,7 @@ export const COMPLAINTS: ComplaintData[] = [
   ...HANOVER_PARK_COMPLAINTS,
   ...MITCHELLS_PLAIN_COMPLAINTS,
   ...KHAYELITSHA_COMPLAINTS,
-  ...JOBURG_COMPLAINTS
+  ...JOBURG_COMPLAINTS,
+  ...CAPE_ISSUES_COMPLAINTS
 ];
 

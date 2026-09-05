@@ -19,7 +19,12 @@ async function runTalkTest() {
 
   console.log('1. Loading game on mobile viewport (454x697)...');
   await page.goto('http://localhost:3005/', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(3000);
+  await page.waitForFunction(() => window.game && window.game.scene.isActive('MainMenuScene'), { timeout: 25000 });
+  await page.waitForTimeout(1000);
+
+  // 0. Main menu party select screen - check taxi curbside positioning
+  await page.screenshot({ path: path.join(screenshotsDir, '0_main_menu_taxi.png') });
+  console.log('Saved 0_main_menu_taxi.png');
 
   // Start DA in Area 1 with tutorials cleared
   console.log('2. Starting Area 1 with DA...');
@@ -45,7 +50,7 @@ async function runTalkTest() {
   console.log('Saved 1_normal_running.png');
 
   // Trigger resident approach and Action Bar cleanly
-  console.log('3. Triggering resident approach and Action Bar...');
+  console.log('3. Triggering resident approach with authentic Cape complaint...');
   await page.evaluate(() => {
     const scene = window.game.scene.getScene('GameScene');
     scene.targetSpeed = 0;
@@ -57,6 +62,10 @@ async function runTalkTest() {
       scene.spawnResident();
     }
     const res = scene.residents[0];
+    const capeComplaint = window.COMPLAINTS && window.COMPLAINTS.find(c => c.id === 'cape_palestine_solidarity');
+    if (capeComplaint) {
+      res.complaint = capeComplaint;
+    }
     res.x = scene.player.x + 190;
     res.hasEncountered = false;
     scene.activeResidentInEncounter = res;
@@ -231,6 +240,21 @@ async function runTalkTest() {
   await page.waitForTimeout(600);
   await page.screenshot({ path: path.join(screenshotsDir, '7_ward_complete_defeat.png') });
   console.log('Saved 7_ward_complete_defeat.png');
+
+  // 10. Test Share Modal
+  console.log('10. Opening ShareModal...');
+  await page.evaluate(() => {
+    const scene = window.game.scene.getScene('StreetCompleteScene');
+    // Click the share button or invoke the share callback directly
+    const shareBtn = scene.children.list.find(c => c.text && c.text.includes('SHARE WARD RESULTS'));
+    if (shareBtn && shareBtn.emit) {
+      shareBtn.emit('pointerdown');
+    }
+  });
+
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(screenshotsDir, '8_share_modal.png') });
+  console.log('Saved 8_share_modal.png');
 
   await browser.close();
   console.log('✓ All verification tests finished successfully!');

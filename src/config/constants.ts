@@ -45,13 +45,14 @@ export function getDynamicGroundY(height: number, width: number): number {
 export function getCurbsideTaxiY(height: number, width: number): number {
   const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
-  // Taxi / vehicles positioned right near the upper curb side
-  return isPortrait ? Math.round(roadY + (height - roadY) * 0.20) : roadY + 120;
+  const roadScale = isPortrait ? (height - roadY) / 352 : 1;
+  // Taxi / vehicles positioned firmly on the asphalt road next to the sidewalk curb
+  return isPortrait ? Math.round(roadY + 132 * roadScale) : roadY + 120;
 }
 
-export const RUN_SPEED_BASE = 420;
-export const RUN_SPEED_SPRINT = 640;
-export const RUN_SPEED_SLOW = 240;
+export const RUN_SPEED_BASE = 480;
+export const RUN_SPEED_SPRINT = 700;
+export const RUN_SPEED_SLOW = 280;
 export const JUMP_VELOCITY = -560;
 export const GRAVITY_Y = 1300;
 
@@ -63,7 +64,7 @@ export const PARTY_RUN_FRAME_COUNTS: Record<'da' | 'anc' | 'pa', number> = {
   anc: 31,
   pa: 28 // Exact 28-frame seamless loop from GIF
 };
-export const RUN_FRAME_DURATION = 32; // ~31 FPS smooth animation cycle
+export const RUN_FRAME_DURATION = 28; // ~35.7 FPS smooth animation cycle matching speed
 
 export const COLORS = {
   sky: 0x5da8f0,

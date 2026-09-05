@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_CONFIG } from './config/gameConfig';
 import { getGameDimensions } from './config/constants';
 import { ScoreManager } from './systems/ScoreManager';
+import { COMPLAINTS } from './data/complaints';
 
 // PWA Install Prompt Handler
 let deferredPrompt: any = null;
@@ -100,6 +101,7 @@ async function initGame() {
   (window as any).game = game;
   (window as any).__PHASER_GAME__ = game;
   (window as any).ScoreManager = ScoreManager;
+  (window as any).COMPLAINTS = COMPLAINTS;
   (window as any).startArea = (areaId: number, partyId: 'da' | 'anc' | 'pa' = 'da') => {
     const sm = ScoreManager.getInstance();
     sm.startNewArea(areaId);

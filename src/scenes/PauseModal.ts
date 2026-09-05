@@ -197,8 +197,7 @@ export class PauseModal extends Phaser.GameObjects.Container {
         borderWidth: 2,
         radius: 12,
         fontSize: '15px',
-        textColor: '#ffffff',
-        shortcutKeyText: 'ESC / P'
+        textColor: '#ffffff'
       }
     );
     this.add(resumeBtn);
@@ -284,9 +283,10 @@ export class PauseModal extends Phaser.GameObjects.Container {
     ).setOrigin(0.5, 0.5);
 
     audioPill.add([pillBg, audioLabel]);
+    const pillHitPad = 8;
     audioPill.setSize(pillW, pillH);
     audioPill.setInteractive(
-      new Phaser.Geom.Rectangle(-pillW / 2, -pillH / 2, pillW, pillH),
+      new Phaser.Geom.Rectangle(-pillHitPad, -pillHitPad, pillW + pillHitPad * 2, pillH + pillHitPad * 2),
       Phaser.Geom.Rectangle.Contains
     );
 
