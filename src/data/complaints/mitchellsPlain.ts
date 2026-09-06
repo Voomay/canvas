@@ -5,7 +5,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     id: 'mitchells_plain_town_centre',
     category: 'mitchells_plain_town_centre',
     targetParty: 'all',
-    complaintText: 'METRO POLICE KEEP HARASSING INFORMAL TRADERS OUTSIDE TOWN CENTRE, CONFISCATING SNOEK AND FRUIT CRATES!',
+    complaintText: 'AWE DAARSO! METRO POLICE HOU AAN OM ONS INFORMAL TRADERS TE HARASS BUITE TOWN CENTRE! HULLE CONFISCATE ONS SNOEK EN VRUGTE KRATTE!',
     responses: {
       promise: 'WE ARE DESIGNATING FREE TRADING BAYS WITH CANOPIES AND WATER ACCESS OUTSIDE TOWN CENTRE!',
       blame: 'BLAME UNREGISTERED SYNDICATES ILLEGALLY BLOCKING WHEELCHAIR RAMPS AND FIRE HYDRANTS!',
@@ -38,24 +38,24 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Proper trading bays and water taps?! God bless you! We just want to feed our families honestly!',
-        doubtful: 'Online permits? Most aunties selling koeksisters don’t have smartphones or data!',
-        negative: 'You take our snoek on Friday, then ask for our votes on Saturday?! Get lost!'
+        positive: 'Proper trading bays en water taps?! Duidelik! We just want to feed our families honestly!',
+        doubtful: 'Online permits? Most aunties wat koeksisters verkoop don’t even have data my broer!',
+        negative: 'Djy vat ons snoek op Vrydag, dan soek djy ons vote op Saterdag?! Voetsek man!'
       },
       blame: {
-        positive: 'True, some guys block the entire pram ramp with boxes of counterfeit sunglasses!',
+        positive: 'Dis nou die waarheid, some guys block the entire ramp with boxes of fake sunglasses!',
         doubtful: 'Wheelchair ramps? The police took my banana crates from right in front of my own gate!',
-        negative: 'Don’t call struggling mothers a syndicate! We are working hard to pay school fees!'
+        negative: 'Don’t call struggling mothers a syndicate! Ons werk hard vir ons kinders se skoolgeld!'
       },
       lie: {
         positive: 'Brick kiosks with roller shutters?! Hallelujah! I’m choosing my spot by Shoprite right now!',
-        doubtful: 'Brick kiosks? The council hasn’t even replaced the broken paving stones in ten years!',
-        negative: 'You lie faster than a pickpocket running through Mitchells Plain station!'
+        doubtful: 'Brick kiosks? The council hasn’t even replaced the broken paving stones in ten years, djy lieg!',
+        negative: 'Djy lieg vinniger as ’n pickpocket wat hardloop deur Mitchells Plain station!'
       },
       honesty: {
         positive: 'Hahaha! At least you admit Shoprite is crying! We all knew the big shops were behind it!',
         doubtful: 'Snoek guts or not, taking an honest woman’s stock is taking food from hungry children.',
-        negative: 'Corporate malls tell the city what to do and politicians just jump! Shame on you!'
+        negative: 'Corporate malls tell the city what to do and politicians just jump! Skaam julle!'
       }
     }
   },
@@ -63,7 +63,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     id: 'mitchells_plain_train_line',
     category: 'mitchells_plain_train_line',
     targetParty: 'all',
-    complaintText: 'KAPTEINSKLIP AND MITCHELLS PLAIN TRAIN STATIONS HAVE BEEN DERELICT FOR YEARS! WE SPEND HALF OUR WAGES ON MINIBUS TAXIS!',
+    complaintText: 'DJY PRAAT NOU LEKKER, MAAR KAPTEINSKLIP EN MITCHELLS PLAIN TRAIN STATIONS LÊ AL JARE LANK STUKKEND! ONS SPANDEER AL ONS GELD OP TAXIS!',
     responses: {
       promise: 'WE WILL DEPLOY TACTICAL RAIL INFRASTRUCTURE GUARDS TO RESTORE FULL CENTRAL LINE COMMUTER SERVICE!',
       blame: 'BLAME TRANSNET, PRASA, AND SYNDICATES TARGETING OVERHEAD CATENARY WIRES FOR COPPER EXPORT!',
@@ -96,23 +96,23 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'If the Kapteinsklip line opens again, I save R1,800 a month on taxi fare! Take my vote!',
-        doubtful: 'Every election year you promise the blue trains, and every Monday we queue for hours in the rain.',
-        negative: 'Devolution? Recovery? All we hear is big English words while our pockets are empty!'
+        positive: 'If daai Kapteinsklip line loop weer, I save R1,800 a month on taxi fare! Vat my vote!',
+        doubtful: 'Every election year you promise the blue trains, and every Monday we stand in the rain.',
+        negative: 'Devolution? Recovery? All we hear is big English words while our pockets is leeg!'
       },
       blame: {
-        positive: 'Lock up the illegal scrap metal yards! Everyone knows who is buying the stolen copper!',
-        doubtful: 'PRASA or Transnet, the government is supposed to fix it, not complain like a bystander!',
-        negative: 'Trains too tall for the bridges?! You guys spent billions on toys that can’t fit under a bridge?!'
+        positive: 'Duidelik! Sluit toe daai illegal scrap yards! Everyone knows who buys the stolen copper!',
+        doubtful: 'PRASA or Transnet, the government is supposed to fix it, nie sit en kla soos bystanders nie!',
+        negative: 'Trains too tall for the bridges?! You guys spent billions on trains wat nie eers pas nie?!'
       },
       lie: {
-        positive: 'Bullet trains in 8 minutes?! Yoh, I can wake up at 7:30 and still be at work on time in the CBD!',
-        doubtful: 'Bullet trains in Mitchells Plain? My brother, there is grass growing between the sleepers!',
-        negative: 'Do you take Mitchells Plain people for clowns?! You can’t even run a normal Metrorail coach!'
+        positive: 'Bullet trains in 8 minutes?! Yoh, I can wake up at 7:30 and still be in town on time!',
+        doubtful: 'Bullet trains in Mitchells Plain? My broer, there is grass growing between the tracks!',
+        negative: 'Dink djy mense innie Plain is narre?! You can’t even run a normal Metrorail coach!'
       },
       honesty: {
-        positive: 'Hahaha! You’re right about the scrap yards! At least you don’t pretend the wires stay up on their own!',
-        doubtful: 'Wires stripped every night? Then deploy the army! How can an entire metropolis be held hostage?!',
+        positive: 'Hahaha! You’re right about the scrap yards! At least you don’t pretend the wires stay up!',
+        doubtful: 'Wires stripped every night? Then deploy the army! How can a whole city be held hostage?!',
         negative: 'Stalled relocation?! So you’re telling us the trains will never run in our lifetime?!'
       }
     }
@@ -121,7 +121,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     id: 'mitchells_plain_streetlights',
     category: 'mitchells_plain_streetlights',
     targetParty: 'all',
-    complaintText: 'THE HIGH-MAST LIGHTS ON AZ BERMAN DRIVE ARE BURNING BRIGHT AT MIDDAY, BUT JET BLACK AT NIGHT WHEN GANGS ARE OUT!',
+    complaintText: 'KYKIE, DIE LIGHTS OP AZ BERMAN DRIVE BRAND MIDDAGS INNIE SON, MAAR STIKDONKER INNIE AAND WANNEER DIE SKOLLIES LOOP!',
     responses: {
       promise: 'WE ARE RETROFITTING TAMPER-PROOF SOLAR LED FIXTURES WITH VANDAL-RESISTANT ARMOUR!',
       blame: 'BLAME SYNDICATES SHORT-CIRCUITING CONTROL BOXES TO CONDUCT UNDER-COVER RECONNAISSANCE!',
@@ -155,7 +155,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     reactions: {
       promise: {
         positive: 'Vandal-resistant solar lights?! If you light up AZ Berman, the whole community will vote for you!',
-        doubtful: 'You promised smart sensors last year, and the corner is still dark enough to rob a saint.',
+        doubtful: 'You promised smart sensors last year, and the corner is still dark enough to rob a saint my bru.',
         negative: 'Six weeks backlog while our daughters walk home from work in pitch blackness?! Unacceptable!'
       },
       blame: {
@@ -165,7 +165,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
       },
       lie: {
         positive: 'Certified operational 10 minutes ago?! Let me look up at the pole... wait, it’s still off!',
-        doubtful: 'Military infrared satellites? In Tafelsig? Did you forget what country you are in?',
+        doubtful: 'Military infrared satellites? In Tafelsig? Did you forget what country you are in my broer?',
         negative: 'You lie to our faces while looking at a dead light pole! The nerve of politicians!'
       },
       honesty: {
@@ -179,7 +179,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     id: 'mitchells_plain_backyarders',
     category: 'mitchells_plain_backyarders',
     targetParty: 'all',
-    complaintText: 'OVER 40,000 BACKYARD DWELLERS IN THE PLAIN ARE SHARING ONE OUTSIDE TOILET WITH NO RUNNING WATER OR TITLE DEEDS!',
+    complaintText: 'WAT GAAN NOU AAN MET DIE BACKYARD DWELLERS INNIE PLAIN?! OOR DIE 40,000 MENSE DEEL EEN BUITE TOILET MET GEEN WATER OF TITLE DEEDS NIE!',
     responses: {
       promise: 'WE ARE ACCELERATING BACKYARD DWELLER INFRASTRUCTURE WITH DEDICATED PREPAID SERVICES AND TOILETS!',
       blame: 'BLAME RESTRICTIVE NATIONAL HOUSING LEGISLATION THAT DOES NOT RECOGNIZE BACKYARD TENANCY!',
@@ -212,19 +212,19 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Dedicated water and prepaid electricity for backyard units?! That brings real dignity to our children!',
+        positive: 'Dedicated water and prepaid electricity for backyard units?! Duidelik, that brings real dignity!',
         doubtful: 'You promised concrete ablution blocks three elections ago, and five families still share one bucket.',
-        negative: 'Wendy houses in 40-degree summer heat and freezing winter floods! We want real houses, not promises!'
+        negative: 'Wendy houses in 40-degree summer heat and winter floods! We want real houses, nie praatjies nie!'
       },
       blame: {
-        positive: 'Corrupt councillors selling RDP houses under the table is 100% true! Expose them all!',
+        positive: 'Dis nou waar! Corrupt councillors selling RDP houses under the table is 100% true! Expose them!',
         doubtful: 'Blaming Apartheid spatial planning thirty years later doesn’t put a roof over my grandchildren.',
         negative: 'Treasury cuts or not, politicians never cut their own luxury vehicle allowances, do they?!'
       },
       lie: {
         positive: 'Title deed on your desk right now?! Oh Lord, let me run home and tell my husband we are free!',
-        doubtful: 'Smart city in Swartklip? There’s only sand dunes and stray dogs over there!',
-        negative: 'Lying about a home to desperate families living in backyards? That is evil!'
+        doubtful: 'Smart city in Swartklip? There’s only sand dunes and stray dogs over there my bru!',
+        negative: 'Lying about a home to desperate families living in backyards? That is wicked!'
       },
       honesty: {
         positive: 'Hahaha! Your own auntie in a Wendy house since 1994?! You really are one of us, my brother!',
@@ -237,7 +237,7 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     id: 'mitchells_plain_potholes',
     category: 'mitchells_plain_potholes',
     targetParty: 'all',
-    complaintText: 'THE CRATERS ON SPINE ROAD AND MERRYDALE ALMOST BROKE MY BALL JOINTS AND DESTROYED BOTH FRONT TYRES!',
+    complaintText: 'YIRRE TOG! DIE CRATERS OP SPINE ROAD EN MERRYDALE HET BYNA MY BALL JOINTS GEBREEK EN AL TWEE FRONT TYRES DESTROY!',
     responses: {
       promise: 'OUR RAPID JET-PATCHER VEHICLES WILL RE-SURFACE BOTH LANES WITHIN 48 HOURS!',
       blame: 'BLAME HEAVY OVERLOADED FREIGHT TRUCKS ILLEGALLY CUTTING THROUGH RESIDENTIAL ARTERIALS!',
@@ -270,22 +270,22 @@ export const MITCHELLS_PLAIN_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Re-surfaced in 48 hours?! If you fix that pothole before Monday morning traffic, you have my vote!',
-        doubtful: 'They shovel two scoops of gravel, pat it down with their boots, and next week the hole is twice as deep.',
-        negative: 'Who is paying the R3,500 for my front tyre and rim alignment?! You never answer that!'
+        positive: 'Re-surfaced in 48 hours?! If you fix that pothole before Monday traffic, you have my vote!',
+        doubtful: 'They shovel two scoops of gravel, pat it down with boots, and next week the hole is twice as deep.',
+        negative: 'Who is paying the R3,500 for my front tyre and rim alignment?! You never answer that my bru!'
       },
       blame: {
-        positive: 'True! Why is all the road money spent resurfacing Camps Bay while Mitchells Plain looks like the moon?!',
+        positive: 'Duidelik! Why is all the road money spent resurfacing Camps Bay while Mitchells Plain looks like the moon?!',
         doubtful: 'Heavy trucks or not, road maintenance is basic municipal duty, not rocket science.',
         negative: 'Subsoil water seepage?! Stop using science terms to excuse a three-foot hole in the street!'
       },
       lie: {
-        positive: 'Smoothest highway in the southern hemisphere?! Hahaha, you must be telling jokes!',
+        positive: 'Smoothest highway in the southern hemisphere?! Hahaha, you must be telling jokes my leader!',
         doubtful: 'Re-tarred yesterday? My bumper is literally scraping on the gravel right behind you!',
-        negative: 'Do you think we don’t drive on this road every day?! Shameless liar!'
+        negative: 'Dink djy ons ry nie elke dag op hierdie pad nie?! Shameless liar!'
       },
       honesty: {
-        positive: 'Hahahahaha! Hot coffee all over your pants! Man, at least you are 100% real! You got my vote!',
+        positive: 'Hahahahaha! Hot coffee all over your pants! Man, at least you are 100% real! Take my vote!',
         doubtful: 'Ran out of bitumen at the Ottery plant? How does a world-class city run out of tar?!',
         negative: 'Expired tenders while our cars break down? Total administrative incompetence!'
       }

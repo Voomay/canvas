@@ -68,9 +68,9 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     }
 
     // Bottom-anchored result card: slides up from bottom where answers were, thumb-friendly
-    const cardW = Math.min(width - 20, 480);
-    const cardH = 286;
-    const cardFinalY = height - cardH / 2 - 14;
+    const cardW = Math.min(width - 16, 480);
+    const cardH = 308;
+    const cardFinalY = height - cardH / 2 - 12;
     const cardStartY = height + cardH;
 
     const card = scene.add.container(width / 2, cardStartY);
@@ -87,37 +87,37 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     card.add(bg);
 
     // Outcome header badge
-    const badgeW = 210;
-    const badgeH = 38;
-    const badgeY = -cardH / 2 + 32;
+    const badgeW = 236;
+    const badgeH = 42;
+    const badgeY = -cardH / 2 + 34;
     const badgeBg = scene.add.graphics();
     badgeBg.fillStyle(headerBgColor, 1);
-    badgeBg.fillRoundedRect(-badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 12);
+    badgeBg.fillRoundedRect(-badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 14);
     card.add(badgeBg);
 
     const badgeTxt = scene.add.text(0, badgeY, `${headerEmoji}  ${headerText}`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '17px',
+      fontSize: '19px',
       color: '#ffffff',
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
     card.add(badgeTxt);
 
     // Reaction text from resident (enlarged for crisp mobile readability)
-    const reactionY = badgeY + 54;
+    const reactionY = badgeY + 56;
     const reactionTxt = scene.add.text(0, reactionY, outcome.reactionText, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: outcome.reactionText.length > 60 ? '15px' : '16.5px',
-      color: '#e2e8f0',
-      fontStyle: '600',
+      fontSize: outcome.reactionText.length > 60 ? '16.5px' : '18.5px',
+      color: '#ffffff',
+      fontStyle: '700',
       align: 'center',
-      wordWrap: { width: cardW - 40 },
-      lineSpacing: 3
+      wordWrap: { width: cardW - 36 },
+      lineSpacing: 4
     }).setOrigin(0.5, 0.5);
     card.add(reactionTxt);
 
     // Stats section
-    const statsY = reactionY + 58;
+    const statsY = reactionY + 62;
 
     // Vote result
     const voteText = outcome.voteGained > 0
@@ -125,9 +125,9 @@ export class ReactionModal extends Phaser.GameObjects.Container {
       : (outcome.responseType === 'lie' ? 'CAUGHT LYING! 🤥' : 'NO VOTE ❌');
     const voteColor = outcome.voteGained > 0 ? '#44dd66' : '#ff7777';
 
-    const voteLbl = scene.add.text(-60, statsY, voteText, {
+    const voteLbl = scene.add.text(-68, statsY, voteText, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '16px',
+      fontSize: '18px',
       color: voteColor,
       fontStyle: '900'
     }).setOrigin(0.5, 0.5);
@@ -137,9 +137,9 @@ export class ReactionModal extends Phaser.GameObjects.Container {
     const trustPrefix = outcome.trustChange >= 0 ? '+' : '';
     const trustColor = outcome.trustChange >= 0 ? '#55dd88' : '#ff5555';
 
-    const trustLbl = scene.add.text(70, statsY, `${trustPrefix}${outcome.trustChange}% TRUST`, {
+    const trustLbl = scene.add.text(72, statsY, `${trustPrefix}${outcome.trustChange}% TRUST`, {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '14px',
+      fontSize: '16px',
       color: trustColor,
       fontStyle: '800'
     }).setOrigin(0.5, 0.5);
@@ -147,36 +147,37 @@ export class ReactionModal extends Phaser.GameObjects.Container {
 
     // Mental health change
     if (outcome.mentalHealthChange !== 0) {
-      const mhY = statsY + 24;
+      const mhY = statsY + 26;
       const mhText = outcome.mentalHealthReason || `Morale: ${outcome.mentalHealthChange > 0 ? '+' : ''}${outcome.mentalHealthChange}%`;
       const mhColor = outcome.mentalHealthChange > 0 ? '#44dd66' : '#ff5555';
 
       const mhLbl = scene.add.text(0, mhY, mhText, {
         fontFamily: 'Outfit, sans-serif',
-        fontSize: '12px',
+        fontSize: '13.5px',
         color: mhColor,
-        fontStyle: '700'
+        fontStyle: '800'
       }).setOrigin(0.5, 0.5);
       card.add(mhLbl);
     }
 
     // CONTINUE button (Thumb-friendly bottom position)
-    const continueBtnW = cardW - 36;
-    const continueBtnH = 56;
+    const continueBtnW = cardW - 32;
+    const continueBtnH = 58;
     const continueBtnY = cardH / 2 - continueBtnH / 2 - 16;
 
     const continueBg = scene.add.graphics();
     continueBg.fillStyle(headerBgColor, 1);
     continueBg.fillRoundedRect(-continueBtnW / 2, continueBtnY - continueBtnH / 2, continueBtnW, continueBtnH, 16);
-    continueBg.lineStyle(2, borderColor, 0.9);
+    continueBg.lineStyle(2.5, borderColor, 1);
     continueBg.strokeRoundedRect(-continueBtnW / 2, continueBtnY - continueBtnH / 2, continueBtnW, continueBtnH, 16);
     card.add(continueBg);
 
     const continueTxt = scene.add.text(0, continueBtnY, 'CONTINUE', {
       fontFamily: 'Outfit, sans-serif',
-      fontSize: '19px',
+      fontSize: '21px',
       color: '#ffffff',
-      fontStyle: '900'
+      fontStyle: '900',
+      letterSpacing: 0.5
     }).setOrigin(0.5, 0.5);
     card.add(continueTxt);
 

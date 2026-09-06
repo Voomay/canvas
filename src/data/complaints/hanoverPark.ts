@@ -5,7 +5,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     id: 'hanover_court_sewage',
     category: 'hanover_court_sewage',
     targetParty: 'all',
-    complaintText: 'THE COUNCIL SEWAGE PIPE BEHIND OUR COURT HAS BEEN OVERFLOWING FOR THREE WEEKS! THE KIDS CANNOT EVEN PLAY IN THE SQUARE!',
+    complaintText: 'AWE MY BROER! DIE SEWAGE PIPE AGTER ONS COURT LOOP AL DRIE WEKE OOR! DIE KINDERS KAN NIE EERS INNIE SQUARE SPEEL NIE!',
     responses: {
       promise: 'A HIGH-PRESSURE JET TRUCK IS DISPATCHED AND WILL CLEAR THE DRAIN TODAY!',
       blame: 'BLAME ILLEGAL DUMPING AND FOREIGN OBJECTS FLUSHED DOWN THE MAIN LINE!',
@@ -15,7 +15,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     partyResponses: {
       da: {
-        promise: 'WE HAVE LOGGED C3 NOTIFICATION #88492 FOR PRIORITY JETTING ACTION!',
+        promise: 'WE HAVE LOGGED C3 NOTIFICATION #88492 FOR PRIORITY JETTING ACTION TODAY!',
         blame: 'BLAME NATIONAL WATER DEPT FOR FAILING BULK INFRASTRUCTURE SUBSIDIES!',
         lie: 'A TIER-1 CLEAN AUDIT RAPID REPAIR SQUAD IS ALREADY TURNING THE VALVE!',
         honesty: 'HONESTLY... OUR CALL CENTRE BACKLOG HAS 1,400 OPEN PLUMBING TICKETS!',
@@ -38,24 +38,24 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Thank you! Please make sure the jet truck actually pitches up before sunset!',
-        doubtful: 'You gave us a reference number last election and the water is still bubbling.',
-        negative: 'Reference number?! We are wearing plastic bags over our shoes to buy bread!'
+        positive: 'Awe my bru, dankie! Please make sure daai jet truck actually pitches up before sunset!',
+        doubtful: 'Djy wag... you gave us a reference number laas election and the water is still bubbling!',
+        negative: 'Reference number?! Yirre, we are wearing plastic bags over our shoes net om brood te koop!'
       },
       blame: {
-        positive: 'True, people must stop throwing engine oil and blankets down the manholes!',
-        doubtful: 'Don’t blame the residents! We pay our council rates every single month!',
-        negative: 'Passing the buck while our washing lines smell like a septic tank?! Voetsek!'
+        positive: 'Duidelik! People must stop throwing engine oil and blankets down the manholes!',
+        doubtful: 'Don’t blame die mense! We pay our council rates every single month my broer!',
+        negative: 'Passing the buck while our washing lines smell like a septic tank?! Voetsek man!'
       },
       lie: {
-        positive: 'Sterilized this morning?! Yoh, you guys work fast, take my vote!',
-        doubtful: 'Sterilized?! My slippers are literally soaked in a green puddle right now!',
-        negative: 'You think people in Hanover Park are blind?! Look at the ground in front of you!'
+        positive: 'Sterilized this morning?! Jinne, you guys work fast, take my vote my leader!',
+        doubtful: 'Sterilized?! My slippers are soaked in a green puddle right now, djy lieg mos!',
+        negative: 'Dink djy mense in Hanover Park is mal?! Kyk die gemors reg voor jou!'
       },
       honesty: {
-        positive: 'Hahaha! At least you don’t lie to our faces! Come take a cup of Rooibos tea!',
-        doubtful: 'No diesel?! With the fuel levy we pay?! What kind of governance is that?!',
-        negative: 'No diesel?! Then push the bakkie yourself, you want our votes but no work!'
+        positive: 'Duidelik! At least you don’t lie to our faces! Come take a cup of Rooibos tea inside!',
+        doubtful: 'No diesel?! With the fuel levy we pay?! Watse governance is dit nou?!',
+        negative: 'No diesel?! Dan stoot djy maar self die bakkie, you want our votes but no work!'
       }
     }
   },
@@ -63,7 +63,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     id: 'hanover_flats_paint',
     category: 'hanover_flats_paint',
     targetParty: 'all',
-    complaintText: 'THESE COUNCIL FLATS HAVEN’T SEEN A LICK OF PAINT SINCE 1994! THE BALCONIES ARE CRUMBLING OVER OUR HEADS!',
+    complaintText: 'DJY WAG! THESE COUNCIL FLATS HAVEN’T SEEN A LICK OF PAINT SINCE 1994! DIE BALCONIES CRUMBLE OOR ONS KOPPE!',
     responses: {
       promise: 'WE HAVE EARMARKED R15 MILLION FOR STRUCTURAL REPAIRS AND WATERPROOF COATING!',
       blame: 'BLAME HISTORIC DEBT AND TENANTS NOT CONTRIBUTING TO THE MAINTENANCE LEVY!',
@@ -96,24 +96,24 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Praat jy die waarheid?! If you paint our court, we will vote for you forever!',
+        positive: 'Nou praat djy my taal! If you paint our court, we will vote for you forever!',
         doubtful: 'Every politician promises paint before the ballot, and leaves us peeling concrete.',
-        negative: 'A chunk of balcony fell on Uncle Joey’s Toyota yesterday! We need bricks, not promises!'
+        negative: 'A chunk of balcony fell on Uncle Joey’s Toyota gister! We need bricks, nie praatjies nie!'
       },
       blame: {
-        positive: 'It’s true, some tenants haven’t paid R50 rent in twenty years.',
-        doubtful: 'Blaming poor pensioners who survive on SASSA grants won’t fix crumbling stairs.',
-        negative: 'Don’t come preach about levies when you drive past in a R1.5 million SUV!'
+        positive: 'Dis nou die waarheid, some tenants haven’t paid R50 rent in twenty years.',
+        doubtful: 'Blaming poor pensioners who survive on SASSA grants won’t fix crumbling stairs my broer.',
+        negative: 'Moenie kom preach oor levies when you drive past in a R1.5 million SUV nie!'
       },
       lie: {
-        positive: 'Arriving tomorrow morning?! Praise the Lord! I’m taking down my curtains right now!',
-        doubtful: 'Tomorrow morning? On a Sunday? You really take us for foolish people, hey?',
+        positive: 'Arriving tomorrow morning?! Duidelik! I’m taking down my curtains right now!',
+        doubtful: 'Tomorrow morning? On a Sunday? Djy vat ons vir fools, neh?',
         negative: 'Lies, sweet lies! You couldn’t even fix the broken glass in the foyer!'
       },
       honesty: {
-        positive: 'Hahaha! The heritage committee?! On council flats?! That made my whole day, take my vote!',
+        positive: 'Hahaha! The heritage committee?! On council flats?! That made my day, take my vote!',
         doubtful: 'Frozen tenders don’t stop falling plaster from cracking our heads open.',
-        negative: 'So you came here to tell us you are completely powerless?! Why must we vote for you?!'
+        negative: 'So djy kom sê net vir ons djy’s powerless?! Hoekom moet ons vir jou stem?!'
       }
     }
   },
@@ -121,7 +121,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     id: 'hanover_meter_deductions',
     category: 'hanover_meter_deductions',
     targetParty: 'all',
-    complaintText: 'I BOUGHT R100 PREPAID ELECTRICITY AT THE SPAZA SHOP AND ONLY GOT 18 UNITS AFTER CITY DEDUCTIONS!',
+    complaintText: 'YIRRE TOG! EK HET R100 PREPAID KRAG GEKOOP EN NET 18 UNITS GEKRY NA CITY DEDUCTIONS! WAT GAAN NOU AAN HIERSO?!',
     responses: {
       promise: 'WE ARE RAISING THE FREE BASIC ELECTRICITY THRESHOLD TO 75 UNITS PER MONTH!',
       blame: 'BLAME ESKOM BULK GENERATION HIKES AND THE NATIONAL ENERGY REGULATOR (NERSA)!',
@@ -154,24 +154,24 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Dankie tog! 75 free units means the kettle can boil and the children can do homework!',
+        positive: 'Dankie tog my broer! 75 free units means the kettle can boil and kids can study!',
         doubtful: 'Lifeline tariffs sound fancy, but my box still beeps red on the 10th of every month.',
-        negative: 'Promise, promise! In winter we sit under three blankets because units vanish!'
+        negative: 'Beloftes, beloftes! In winter we sit under three blankets because units vanish!'
       },
       blame: {
-        positive: 'Eskom is the real criminal! R100 for two days of lights is highway robbery!',
-        doubtful: 'Eskom or City, at the end of the day my fridge turns off and milk goes sour.',
+        positive: 'Eskom is die real skelms! R100 for two days of lights is daylight robbery!',
+        doubtful: 'Eskom or City, at the end of the day my fridge turns off and milk goes sour my bru.',
         negative: 'Don’t point fingers at Pretoria when the deduction slip says City of Cape Town!'
       },
       lie: {
-        positive: '200 free units credited today?! Let me go punch the code into the box right now!',
-        doubtful: 'Credited? I just bought units 10 minutes ago and got 14 units on my receipt.',
-        negative: 'Haibo! You lie smoother than a car salesman on Voortrekker Road!'
+        positive: '200 free units credited today?! Awe! Let me go punch the code into the box right now!',
+        doubtful: 'Credited? I just bought units 10 minutes ago and got 14 units on my slip, djy lieg!',
+        negative: 'Yirre! You lie smoother than a car salesman on Voortrekker Road!'
       },
       honesty: {
-        positive: 'Hahaha! Slot machine at Grandwest! You speak our language, take my vote my leader!',
+        positive: 'Hahaha! Slot machine at Grandwest! Nou praat djy my taal, take my vote my leader!',
         doubtful: 'At least you admit it’s an automatic clawback, but it’s starving our families.',
-        negative: 'Taking food money for historical water bills from ten years ago?! Cruel!'
+        negative: 'Taking food money for historical water bills from ten years ago?! Dis darem cruel!'
       }
     }
   },
@@ -179,7 +179,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     id: 'hanover_gang_ceasefire',
     category: 'hanover_gang_ceasefire',
     targetParty: 'all',
-    complaintText: 'WHERE IS THE POLICE VISIBILITY OUTSIDE OUR CORNER SHOPS? ELDERLY RESIDENTS CANNOT SAFELY WALK TO THE CASH DISPENSER!',
+    complaintText: 'AWE DAARSO! WAAR’S DIE POLICE VISIBILITY BUITE ONS CORNER SHOPS? ONS OUMENSE KAN NIE EERS VEILIG CASH TREK NIE!',
     responses: {
       promise: 'WE ARE ESTABLISHING A PERMANENT TACTICAL COMMAND POST RIGHT ON THIS CORNER!',
       blame: 'BLAME GANG SYNDICATES AND A WEAK JUSTICE SYSTEM RELEASING SUSPECTS ON R200 BAIL!',
@@ -212,24 +212,24 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'A permanent command post?! If my granny can walk safely to the corner shop, you have our votes!',
-        doubtful: 'They park the van for 20 minutes, take a selfie for social media, and drive off.',
-        negative: 'Empty promises while mothers cry on the news every single weekend.'
+        positive: 'A permanent command post?! If my granny can walk safely to the shop, you have our votes!',
+        doubtful: 'They park the van for 20 minutes, take a selfie for Facebook, and drive off my bru.',
+        negative: 'Empty promises while mothers cry on the news every single weekend in Hanover Park.'
       },
       blame: {
-        positive: 'True! The magistrate lets them out on R200 bail before the docket is even written!',
+        positive: 'Duidelik! The magistrate lets them out on R200 bail before the docket is even written!',
         doubtful: 'Blaming the court doesn’t stop the bullets hitting our corrugated iron gates.',
-        negative: 'Politicians always blame the police ministry, but nobody ever stops the shooting!'
+        negative: 'Politicians always blame police headquarters, but nobody ever stops the shooting!'
       },
       lie: {
-        positive: 'Ceasefire signed today?! Praise God, may peace finally return to our square!',
-        doubtful: 'Ceasefire? Shots rang out by the terminus less than two hours ago.',
-        negative: 'How dare you make jokes about our safety?! You have no shame!'
+        positive: 'Ceasefire signed today?! Praise God, mag daar vrede wees innie square!',
+        doubtful: 'Ceasefire? Shots rang out by the terminus less than two hours ago, moenie lieg nie!',
+        negative: 'Hoe durf djy jokes maak oor ons safety?! Djy het geen skaamte nie!'
       },
       honesty: {
-        positive: 'Hahaha! Well, at least you are real about how scary it gets. Respect for the truth!',
+        positive: 'Hahaha! Well, at least you are real about how scary it gets. Respect for the truth my bru!',
         doubtful: 'Four bakkies for 60,000 people?! No wonder 10111 rings until the line dies.',
-        negative: 'If the police are waiting for backup, then who is supposed to protect our children?!'
+        negative: 'As die police wait for backup, who is supposed to protect our children?!'
       }
     }
   },
@@ -237,7 +237,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     id: 'hanover_clinic_queue',
     category: 'hanover_clinic_queue',
     targetParty: 'all',
-    complaintText: 'PENSIONERS STAND AT THE DAY HOSPITAL FROM 4 AM IN THE FREEZING RAIN, ONLY TO BE TOLD FILES ARE LOST BY 9 AM!',
+    complaintText: 'JINNE TOG! PENSIONERS STAND BY DIE CLINIC FROM 4 AM INNIE FREEZING RAIN, NET OM TE HOOR DIE FILES IS WEG TEEN 9 AM!',
     responses: {
       promise: 'WE ARE INSTALLING DIGITAL TABLET CHECK-INS AND COVERED HEATED WAITING CANOPIES!',
       blame: 'BLAME CHRONIC SHORTAGES OF PROVINCIAL PHARMACISTS AND UNPRECEDENTED PATIENT INFLUX!',
@@ -270,13 +270,13 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Biometric tablets and heated waiting seats?! My poor arthritis will finally rest! You have my vote!',
+        positive: 'Biometric tablets and heated seats?! My poor arthritis will finally rest! You have my vote!',
         doubtful: 'You promised digital cards three years ago, and Aunty Mary still stands with her paper book.',
-        negative: 'Digital tablets?! The Wi-Fi doesn’t even work at the post office down the street!'
+        negative: 'Digital tablets?! The Wi-Fi doesn’t even work at the post office down the street my bru!'
       },
       blame: {
-        positive: 'Private medical aids take all the young doctors, that part is definitely true!',
-        doubtful: 'Influx or not, our grandmothers cannot sit on cold concrete slabs for six hours.',
+        positive: 'Private medical aids take all the young doctors, that part is definitely true.',
+        doubtful: 'Influx or not, ons oumas cannot sit on cold concrete slabs for six hours.',
         negative: 'Don’t make excuses for lost folders when the clerk is playing Candy Crush on her phone!'
       },
       lie: {
@@ -286,7 +286,7 @@ export const HANOVER_PARK_COMPLAINTS: ComplaintData[] = [
       },
       honesty: {
         positive: 'Hahaha! Your own auntie waited 7 hours?! That’s the most honest thing a politician ever said!',
-        doubtful: 'Hiring freeze?! We pay taxes every day on bread and milk, hire the nurses!',
+        doubtful: 'Hiring freeze?! We pay taxes every day on bread and milk, hire the nurses my broer!',
         negative: 'Paper files from 1982?! No wonder my blood test results ended up in Kimberley!'
       }
     }

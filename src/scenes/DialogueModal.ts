@@ -36,7 +36,10 @@ export function formatReadableText(text: string): string {
     const properNouns = [
       'Palestine', 'Gaza', 'Israel', 'Hague', 'Table Mountain', 'Cape Town', 'Cape Flats',
       'Hanover Park', 'Mitchells Plain', 'Khayelitsha', 'Johannesburg', 'Joburg', 'Camps Bay',
-      'Athlone', 'Red Cross', 'Shoprite', 'Checkers', 'Nelson Mandela', 'Gayton'
+      'Athlone', 'Red Cross', 'Shoprite', 'Checkers', 'Nelson Mandela', 'Gayton',
+      'Site C', 'Lookout Hill', 'Harare', 'Spine Road',
+      'Awe', 'Djy', 'Yirre', 'Jinne', 'Duidelik', 'Molo', 'Tyhini', 'Kunjani', 'Ndiyabulela', 'Kaloku',
+      'Mshengu', 'Izinyoka', 'Sikhathele', 'Gogos'
     ];
     for (const noun of properNouns) {
       const regex = new RegExp(`\\b${noun}\\b`, 'gi');
@@ -53,10 +56,10 @@ export function formatReadableText(text: string): string {
 }
 
 export function getMobileDialoguePanelHeight(height: number): number {
-  const cardH = height < 680 ? 92 : 98;
-  const gapY = 6;
+  const cardH = height < 680 ? 104 : 110;
+  const gapY = 7;
   const totalCardsH = (2 * cardH) + gapY;
-  const cancelH = 26;
+  const cancelH = 28;
   const panelPaddingTop = 8;
   const bottomMargin = 8;
   return totalCardsH + cancelH + panelPaddingTop + bottomMargin + 6;
@@ -143,11 +146,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     targetBubbleY?: number
   ): Phaser.GameObjects.Container {
     const cx = scene.scale.width / 2;
-    const bubbleW = Math.min(scene.scale.width - 20, 460);
+    const bubbleW = Math.min(scene.scale.width - 16, 480);
     const readableText = formatReadableText(text);
-    // Bigger, punchier, high-contrast speech bubble wording for mobile
-    const fontSize = readableText.length > 85 ? '15.5px' : (readableText.length > 55 ? '17px' : '18.5px');
-    const bubbleH = readableText.length > 85 ? 106 : (readableText.length > 55 ? 94 : 84);
+    // Bigger, bolder, high-contrast speech bubble wording for crystal clear mobile reading
+    const fontSize = readableText.length > 90 ? '16.5px' : (readableText.length > 55 ? '18px' : '20.5px');
+    const bubbleH = readableText.length > 90 ? 118 : (readableText.length > 55 ? 106 : 94);
 
     // Position directly above candidate/resident conversation area
     const bubbleY = targetBubbleY !== undefined
@@ -191,10 +194,10 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     bg.fillRect(clampedTailX - tailW / 2 + 2, bubbleH / 2 - 4, tailW + 2, 5);
 
     // "RESIDENT" label badge (Dark navy pill with cyan outline on top-left of bubble)
-    const labelBadgeW = 106;
-    const labelBadgeH = 24;
+    const labelBadgeW = 110;
+    const labelBadgeH = 25;
     const labelBadgeX = -bubbleW / 2 + 14;
-    const labelBadgeY = -bubbleH / 2 - 11;
+    const labelBadgeY = -bubbleH / 2 - 12;
     const labelBg = scene.add.graphics();
     labelBg.fillStyle(0x0f172a, 1);
     labelBg.fillRoundedRect(labelBadgeX, labelBadgeY, labelBadgeW, labelBadgeH, 6);
@@ -203,9 +206,9 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     const labelTxt = scene.add.text(labelBadgeX + labelBadgeW / 2, labelBadgeY + labelBadgeH / 2, '👤 RESIDENT', {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-      fontSize: '12px',
+      fontSize: '12.5px',
       color: '#38bdf8',
-      fontStyle: '800',
+      fontStyle: '900',
       resolution: 3
     }).setOrigin(0.5, 0.5);
 
@@ -213,11 +216,11 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const label = scene.add.text(0, 4, readableText, {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
       fontSize: fontSize,
-      color: '#0f172a',
-      fontStyle: '700',
+      color: '#090d16',
+      fontStyle: '800',
       align: 'center',
-      lineSpacing: 3,
-      wordWrap: { width: bubbleW - 32 },
+      lineSpacing: 4,
+      wordWrap: { width: bubbleW - 28 },
       resolution: 3
     }).setOrigin(0.5, 0.5);
 
@@ -252,8 +255,8 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const gapX = 8;
     const gapY = 6;
     const cardW = Math.floor((gridW - gapX) / 2);
-    const cardH = height < 680 ? 92 : 98;
-    const cancelH = 26;
+    const cardH = height < 680 ? 104 : 110;
+    const cancelH = 28;
     const panelPaddingTop = 8;
     const bottomMargin = 8;
 
@@ -344,17 +347,17 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
       // Header icon + category title
       const iconX = -cardW / 2 + 16;
-      const headerY = -cardH / 2 + 14;
+      const headerY = -cardH / 2 + 15;
 
       if (resp.iconType === 'check') {
         const iconCircle = scene.add.graphics();
         iconCircle.fillStyle(0xffffff, 1);
-        iconCircle.fillCircle(iconX, headerY, 9);
+        iconCircle.fillCircle(iconX, headerY, 9.5);
         iconCircle.lineStyle(2, 0x16a34a, 1);
         iconCircle.beginPath();
-        iconCircle.moveTo(iconX - 4, headerY);
-        iconCircle.lineTo(iconX - 1, headerY + 3);
-        iconCircle.lineTo(iconX + 4.5, headerY - 3);
+        iconCircle.moveTo(iconX - 4.5, headerY);
+        iconCircle.lineTo(iconX - 1, headerY + 3.5);
+        iconCircle.lineTo(iconX + 5, headerY - 3.5);
         iconCircle.stroke();
         cardContainer.add(iconCircle);
       } else {
@@ -366,25 +369,25 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
       const titleTxt = scene.add.text(-cardW / 2 + 30, headerY, resp.title, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-        fontSize: '12px',
+        fontSize: '13px',
         color: '#ffffff',
-        fontStyle: '800',
+        fontStyle: '900',
         letterSpacing: 0.4,
         resolution: 3
       }).setOrigin(0, 0.5);
       cardContainer.add(titleTxt);
 
-      // Response text content: larger wording for crystal clear mobile readability
+      // Response text content: significantly larger wording for effortless mobile readability
       const readableSub = formatReadableText(resp.text);
-      const textW = cardW - 16;
-      const subFontSize = readableSub.length > 85 ? '11.5px' : (readableSub.length > 55 ? '12.5px' : '13.5px');
+      const textW = cardW - 14;
+      const subFontSize = readableSub.length > 85 ? '12.5px' : (readableSub.length > 55 ? '13.5px' : '15px');
 
-      const subTxt = scene.add.text(-cardW / 2 + 8, -cardH / 2 + 28, readableSub, {
+      const subTxt = scene.add.text(-cardW / 2 + 7, -cardH / 2 + 30, readableSub, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: subFontSize,
-        color: resp.subColor,
-        fontStyle: '600',
-        lineSpacing: 2,
+        color: '#ffffff',
+        fontStyle: '700',
+        lineSpacing: 2.5,
         wordWrap: { width: textW },
         resolution: 3
       }).setOrigin(0, 0);
@@ -452,17 +455,17 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const cancelY = height - bottomMargin - cancelH / 2;
     const cancelPill = scene.add.graphics();
     cancelPill.fillStyle(0x1e293b, 0.9);
-    cancelPill.fillRoundedRect(-90, cancelY - cancelH / 2, 180, cancelH, 13);
+    cancelPill.fillRoundedRect(-95, cancelY - cancelH / 2, 190, cancelH, 14);
     cancelPill.lineStyle(1, 0x334155, 1);
-    cancelPill.strokeRoundedRect(-90, cancelY - cancelH / 2, 180, cancelH, 13);
+    cancelPill.strokeRoundedRect(-95, cancelY - cancelH / 2, 190, cancelH, 14);
     cancelPill.setX(width / 2);
     panel.add(cancelPill);
 
     const cancelTxt = scene.add.text(width / 2, cancelY, '🏃 Keep Running (Ignore)', {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-      fontSize: '12px',
+      fontSize: '13px',
       color: '#cbd5e1',
-      fontStyle: '700',
+      fontStyle: '800',
       resolution: 3
     }).setOrigin(0.5, 0.5);
     panel.add(cancelTxt);

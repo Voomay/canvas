@@ -5,7 +5,7 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     id: 'cape_palestine_solidarity',
     category: 'cape_palestine_solidarity',
     targetParty: 'all',
-    complaintText: 'WHY DID THE CITY SEND LAW ENFORCEMENT TO WHITEWASH OUR PALESTINE MURALS IN THE FLATS, WHILE NATIONAL GOVERNMENT WENT TO THE ICJ IN THE HAGUE? WHERE DOES YOUR PARTY STAND?!',
+    complaintText: 'KYKIE! WHY DID THE CITY SEND LAW ENFORCEMENT TO WHITEWASH OUR PALESTINE MURALS INNIE FLATS, WHILE NATIONAL GOVERNMENT WENT TO THE ICJ IN THE HAGUE?! WHERE DOES YOUR PARTY STAND?!',
     responses: {
       promise: 'WE RECOGNIZE FREEDOM OF EXPRESSION AND ARE DESIGNATING LEGAL SANCTIONED HERITAGE MURAL SITES!',
       blame: 'BLAME MUNICIPAL BY-LAW ENFORCEMENT PROTOCOLS THAT TREAT POLITICAL ART AS ADVERTISING GRAFFITI!',
@@ -38,12 +38,12 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Proper legal heritage sites for our murals?! Thank you, our community voice deserves respect!',
+        positive: 'Proper legal heritage sites for our murals?! Duidelik, our community voice deserves respect!',
         doubtful: 'Reviewing by-laws? You said that six months ago while paint rollers were covering our flags.',
-        negative: 'Promises on paper while police vans threaten artists in broad daylight! Double standards!'
+        negative: 'Promises on paper while police vans threaten artists in broad daylight! Double standards my bru!'
       },
       blame: {
-        positive: 'True, municipal by-laws should not be hijacked to silence human rights expressions!',
+        positive: 'Dis waar! Municipal by-laws should not be hijacked to silence human rights expressions!',
         doubtful: 'Passing the buck to national DIRCO when it was City law enforcement holding the grey paint rollers!',
         negative: 'Don’t call international solidarity graffiti! Nelson Mandela taught us better than that!'
       },
@@ -53,7 +53,7 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
         negative: 'Lying about international human suffering just to hustle a vote on the corner?! Disgraceful!'
       },
       honesty: {
-        positive: 'Hahaha! At least you don’t pretend foreign wars are municipal competence! Fix the potholes first!',
+        positive: 'Hahaha! At least you don’t pretend foreign wars are municipal competence! Fix the potholes first my broer!',
         doubtful: 'Honesty is refreshing, but ignoring your voters’ moral outcry leaves a bitter taste in the mouth.',
         negative: 'Focus on services? A leader without a moral backbone has no business canvassing our streets!'
       }
@@ -63,7 +63,7 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     id: 'cape_gangsterism_extortion',
     category: 'cape_gangsterism_extortion',
     targetParty: 'all',
-    complaintText: 'PROTECTION MAFIAS ARE EXTORTING OUR TUCKSHOPS AND SHOOTING ACROSS THE FLATS AND TOWNSHIPS! MOTHERS SLEEP UNDER BEDS! WHAT ARE YOU DOING ABOUT THE GANGS?!',
+    complaintText: 'AWE MY BROER! PROTECTION MAFIAS ARE EXTORTING OUR TUCKSHOPS AND SHOOTING INNIE FLATS! MOTHERS SLEEP UNDER BEDS! WAT GAAN NOU AAN MET DIE GANGS?!',
     responses: {
       promise: 'WE ARE DEPLOYING HEAVY ARMED REACTION UNITS AND INSTALLING REAL-TIME ACOUSTIC GUNFIRE SENSORS!',
       blame: 'BLAME A CRIPPLED NATIONAL JUSTICE SYSTEM THAT RELEASES DANGEROUS GANG LEADERS ON R500 BAIL!',
@@ -96,22 +96,22 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'More tactical boots on the ground and zero bail?! Yes! Our children deserve to walk to school safely!',
-        doubtful: 'LEAP officers patrol during the day, but when gunshots start at 10 PM, the streets are empty.',
+        positive: 'Tactical boots on the ground en zero bail?! Duidelik! Our children deserve to walk to school safely!',
+        doubtful: 'LEAP officers patrol during the day, but when gunshots start at 10 PM, the streets are empty my bru.',
         negative: 'You deploy units whenever an election comes, and pack up as soon as the ballots are counted!'
       },
       blame: {
-        positive: 'True, what is the point of arresting them if corrupt magistrates release them on R500 bail on Monday?!',
+        positive: 'Dis die waarheid, what is the point of arresting them if magistrates release them on R500 bail on Monday?!',
         doubtful: 'Blaming national SAPS doesn’t stop the bullets piercing my corrugated iron kitchen wall right now.',
-        negative: 'Stop the political blame game! DA blames SAPS, SAPS blames City, and innocent people die!'
+        negative: 'Stop the blame game! DA blames SAPS, SAPS blames City, and innocent people die!'
       },
       lie: {
         positive: 'Thermal sky drones overhead right now?! Praise God, let them see who is holding the guns!',
         doubtful: 'Drones? The streetlights have been dead for eight months, a drone can’t even see its own propeller!',
-        negative: 'Lying about gang bullets when we bury our 14-year-old nephew this weekend?! How dare you!'
+        negative: 'Lying about gang bullets when we bury our 14-year-old nephew this weekend?! Hoe durf djy!'
       },
       honesty: {
-        positive: 'Hahaha! At least you speak the raw truth about bail and jobs! No sugar-coating, take my vote!',
+        positive: 'Hahaha! At least you speak the raw truth about bail and jobs! No sugar-coating, take my vote my leader!',
         doubtful: 'Knowing it’s a hard fight is realistic, but my shop was taxed R2,000 yesterday or get petrol bombed.',
         negative: 'Saying enforcement is hard won’t pay the protection mafia fee when they kick my shop door open!'
       }
@@ -121,7 +121,7 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     id: 'cape_backyard_dwellers',
     category: 'cape_backyard_dwellers',
     targetParty: 'all',
-    complaintText: 'THOUSANDS OF US ARE CRAMPED IN BACKYARD WENDY HOUSES SHARING ONE OUTSIDE TOILET WITH 15 PEOPLE AND PAYING DOUBLE FOR SUB-METER POWER! WHERE IS OUR DIGNITY?!',
+    complaintText: 'DJY WAG! THOUSANDS OF ONS ARE CRAMPED IN BACKYARD WENDY HOUSES SHARING ONE OUTSIDE TOILET WITH 15 MENSE! WAAR’S ONS DIGNITY?!',
     responses: {
       promise: 'WE ARE EXPANDING THE BACKYARDER BASIC SERVICES PROGRAMME WITH DEDICATED TAPS AND TOILETS!',
       blame: 'BLAME PRIVATE LANDLORD SUB-LEASING THAT OVERLOADS MUNICIPAL SEWERS BEYOND DESIGN LIMITS!',
@@ -154,18 +154,18 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Dedicated prepaid meter and individual toilet?! That saves my family R800 a month in landlord markups!',
+        positive: 'Dedicated prepaid meter and individual toilet?! Duidelik, that saves my family R800 a month in markups!',
         doubtful: 'Backyarder kits? The city installed blue chemical toilets five years ago and never serviced them.',
-        negative: 'A temporary plastic toilet is not dignity! We have lived in this backyard for 28 years!'
+        negative: 'A temporary plastic toilet is not dignity! We have lived in this backyard for 28 years my bru!'
       },
       blame: {
-        positive: 'True, some greedy landlords build eight Wendy houses on a 200m² plot and charge extortion rents!',
+        positive: 'Dis waar, some greedy landlords build eight Wendy houses on a 200m² plot and charge extortion rents!',
         doubtful: 'Blaming the national ministry? The City budget has billions in unspent surplus every fiscal year!',
         negative: 'Don’t blame the landlord! Where else are poor working families supposed to sleep?!'
       },
       lie: {
         positive: 'Free 3-bedroom brick apartment tomorrow?! Let me start packing the pots and blankets right now!',
-        doubtful: '40,000 homes opening next Tuesday? Not even Chinese 3D-printers can build that fast!',
+        doubtful: '40,000 homes opening next Tuesday? Not even Chinese 3D-printers can build that fast my leader!',
         negative: 'You lie with a straight face while grandmother sleeps on damp linoleum under a leaking tin roof!'
       },
       honesty: {
@@ -179,7 +179,7 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     id: 'cape_spaza_inspections',
     category: 'cape_spaza_inspections',
     targetParty: 'all',
-    complaintText: 'UNREGISTERED SPAZA SHOPS ARE SELLING EXPIRED FOOD AND COUNTERFEIT GOODS TO OUR SCHOOL KIDS WITH ZERO HEALTH CHECKS! WHEN WILL OUR BY-LAWS AND BORDERS BE ENFORCED?!',
+    complaintText: 'YIRRE TOG! UNREGISTERED SPAZA SHOPS ARE SELLING EXPIRED FOOD AND COUNTERFEIT GOODS TO ONS KINDERS WITH ZERO HEALTH CHECKS! WANNEER GAAN DIE BY-LAWS ENFORCED WORD?!',
     responses: {
       promise: 'WE ARE ESCALATING JOINT HEALTH INSPECTOR AND LAW ENFORCEMENT RAIDS TO SEIZE ALL ILLICIT GOODS!',
       blame: 'BLAME CORRUPT WHOLESALE DEPOTS DISTRIBUTING EXPIRED STOCK INTO MARGINALIZED TOWNSHIPS!',
@@ -212,18 +212,18 @@ export const CAPE_ISSUES_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Strict health inspections and closing fake goods?! Yes! Our children’s stomach health comes first!',
+        positive: 'Strict health inspections and closing fake goods?! Duidelik! Our children’s health comes first!',
         doubtful: 'Joint raids happen on TV for one day, and by next week the expired chips and fake cooldrinks are back.',
         negative: 'Inspectors only pitch up after three children end up in Red Cross Children’s Hospital with food poisoning!'
       },
       blame: {
-        positive: 'True, the wholesale warehouses in Epping and industrial areas selling relabeled cans must be raided!',
+        positive: 'Dis waar, the wholesale warehouses in Epping selling relabeled cans must be raided!',
         doubtful: 'Home Affairs or not, municipal health inspectors carry the mandate to check expiry dates on shelves.',
         negative: 'Don’t shift blame while counterfeit paraffin and expired baby milk are sold on our doorstep!'
       },
       lie: {
         positive: 'Mobile forensic food laboratories scanning chip packets?! Fantastic! That will catch the fraudsters!',
-        doubtful: 'Forensic labs? The clinic doesn’t even have clean needles, and you claim high-tech food lasers?!',
+        doubtful: 'Forensic labs? The clinic doesn’t even have clean needles, and you claim high-tech food lasers my bru?!',
         negative: 'Stop making up comic-book fairy tales while children buy chocolates with wiped-off expiry dates!'
       },
       honesty: {

@@ -5,7 +5,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     id: 'khayelitsha_communal_taps',
     category: 'khayelitsha_communal_taps',
     targetParty: 'all',
-    complaintText: 'COMMUNAL WATER TAPS IN SITE C HAVE LOW PRESSURE IN THE MORNINGS, WHILE BURST PIPES FLOOD THE DIRT FOOTPATHS!',
+    complaintText: 'MOLO SANI! COMMUNAL WATER TAPS IN SITE C HAVE ZERO PRESSURE IN THE MORNINGS, WHILE BURST PIPES FLOOD THE FOOTPATHS! YHU HAYI!',
     responses: {
       promise: 'WE ARE INSTALLING HIGH-PRESSURE BOOSTER VALVES AND REPLACING ALL CORRODED FEEDER PIPES!',
       blame: 'BLAME ILLEGAL PRIVATE HOSE CONNECTIONS AND PRESSURE SPIKES FROM DAM SLUICE RE-BALANCING!',
@@ -17,7 +17,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
       da: {
         promise: 'WE ARE REPLACING 18 KILOMETRES OF AGED WATER RETICULATION PIPES WITH REINFORCED POLYMER!',
         blame: 'BLAME UNREGISTERED PRIVATE PLUMBING CONNECTIONS DRAWING DOWN MANIFOLD PRESSURE!',
-        lie: 'EVERY COMMUTAL TAP IN KHAYELITSHA HAS BEEN UPGRADED WITH AN ULTRA-FILTERED DRINKING SPOUT TODAY!',
+        lie: 'EVERY COMMUNAL TAP IN KHAYELITSHA HAS BEEN UPGRADED WITH AN ULTRA-FILTERED DRINKING SPOUT TODAY!',
         honesty: 'HONESTLY... WATER LOSS RATIOS ARE SO HIGH THAT OUR OPERATORS HAVE TO THROTTLE THE PRESSURE!',
         honestyEmoji: '🚰'
       },
@@ -38,24 +38,24 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Dedicated yard taps with good pressure?! My mother won’t have to wake at 4 AM to fetch water! Thank you!',
-        doubtful: 'Booster valves? You said that before the last local election, and the tap still drips like a teardrop.',
-        negative: 'The burst pipe has been running clean drinking water into the mud for two months! Fix that first!'
+        positive: 'Ndiyabulela kakhulu! Dedicated yard taps with good pressure?! Ewe kaloku, you have my vote!',
+        doubtful: 'He banna! Booster valves? You said that before the last local election, and the tap still drips.',
+        negative: 'Hayi suka! The burst pipe has been running clean water into the mud for two months! Fix that first!'
       },
       blame: {
-        positive: 'True, some car washes hook up five illegal hoses to one tap and leave nothing for mothers cooking porridge!',
+        positive: 'Sho bra, true! Some car washes hook up five illegal hoses to one tap and leave nothing for mothers cooking!',
         doubtful: 'Golf courses get green grass, while 50 households stand in line with yellow buckets for one tap.',
-        negative: 'Don’t blame poor people for drinking water when the municipal infrastructure is crumbling!'
+        negative: 'Tyhini! Don’t blame poor people for drinking water when the municipal infrastructure is crumbling!'
       },
       lie: {
         positive: 'Chilled spring water flowing to every house right now?! Let me turn my bucket tap on... wait, nothing!',
         doubtful: 'Stainless steel tankers at Lookout Hill? I just walked down Lookout Hill and saw three goats and a donkey!',
-        negative: 'Lying to thirsty residents about water is the lowest thing a politician can do!'
+        negative: 'Hayi suka! Lying to thirsty residents about water is the lowest thing a politician can do!'
       },
       honesty: {
-        positive: 'Hahaha! Watching gogos carry buckets breaks your heart... you speak the pure truth, take my vote!',
+        positive: 'Ndiyabulela! Watching gogos carry buckets breaks your heart... you speak the pure truth, take my vote!',
         doubtful: 'Throttling the pressure to save pipes means we can’t even fill a kettle before work.',
-        negative: 'Water loss ratios? So you punish innocent paying residents because you can’t fix leaks?!'
+        negative: 'Water loss ratios?! So you punish innocent paying residents because you cannot fix leaks?!'
       }
     }
   },
@@ -63,7 +63,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     id: 'khayelitsha_illegal_connections',
     category: 'khayelitsha_illegal_connections',
     targetParty: 'all',
-    complaintText: 'IZINYOKA DANGEROUS POWER CABLES ARE SPRAWLED OVER OUR ROOFS! THE OVERLOADED TRANSFORMER BLOWS EVERY WINTER!',
+    complaintText: 'TYHINI! IZINYOKA DANGEROUS POWER CABLES ARE SPRAWLED OVER OUR ROOFS! THE OVERLOADED TRANSFORMER BLOWS EVERY WINTER!',
     responses: {
       promise: 'WE WILL FORMALLY ENCLOSE AND ELECTRIFY ALL INFORMAL SECTORS WITH TAMPER-PROOF METERS!',
       blame: 'BLAME SYNDICATES EXPLOITING RESIDENTS BY SELLING RISKY HIGH-VOLTAGE DIRECT JUMPER LINES!',
@@ -96,24 +96,24 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Formal electrification with safe meters?! That saves our children from stepping on live wires! God bless!',
-        doubtful: 'They promise enclosed substations, but when the transformer bangs, we sit in darkness for a week.',
+        positive: 'Ewe kaloku! Formal electrification with safe meters saves our children from live wires! Ndiyabulela!',
+        doubtful: 'He banna! They promise enclosed substations, but when the transformer bangs, we sit in darkness.',
         negative: 'We have been asking for safe legal electricity for 15 years while children get shocked in puddles!'
       },
       blame: {
-        positive: 'Syndicates charge R300 a month to connect you to a streetlight, and then the whole block burns!',
+        positive: 'Sho bra, syndicates charge R300 a month to connect to streetlights, and then the whole block burns!',
         doubtful: 'People hook up wires because they freeze in winter! Give people electricity and nobody will bridge!',
         negative: 'Passing the blame between Eskom and the municipality while our electrical appliances get fried!'
       },
       lie: {
         positive: 'Free solar inverters with lithium batteries at the hall?! I’m running there right now with my wheelbarrow!',
-        doubtful: '500-ton transformer from Europe? On Spine Road? Why do you think we are fools?',
-        negative: 'Stop lying! The transformer literally exploded with green sparks twenty minutes ago!'
+        doubtful: '500-ton transformer from Europe on Spine Road? Why do you think we are fools, mhlekazi?',
+        negative: 'Hayi suka! Stop lying! The transformer literally exploded with green sparks twenty minutes ago!'
       },
       honesty: {
         positive: 'Hahaha! Reconnected within 45 minutes! You know the real township hustle, my leader! Take my vote!',
         doubtful: 'Six months for a transformer? So we must spend another whole winter with candles and paraffin?!',
-        negative: 'A miracle nobody dies?! Children DO get hurt, and you talk about it like a joke?!'
+        negative: 'Tyhini! A miracle nobody dies?! Children DO get hurt, and you talk about it like a joke?!'
       }
     }
   },
@@ -121,7 +121,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     id: 'khayelitsha_sanitation',
     category: 'khayelitsha_sanitation',
     targetParty: 'all',
-    complaintText: 'CHEMICAL PORTABLE TOILETS ARE OVERFLOWING BECAUSE CONTRACTORS DON’T PUMP THEM OUT! THE SMELL IS UNBEARABLE!',
+    complaintText: 'HE BANNA! LOOK AT THE MSHENGU CHEMICAL TOILETS! CONTRACTORS DON’T PUMP THEM OUT AND THE SMELL IS UNBEARABLE!',
     responses: {
       promise: 'WE ARE PENALIZING DEFAULTING SANITATION CONTRACTORS AND DEPLOYING CITY RELIEF VACUUM TRUCKS!',
       blame: 'BLAME ILLEGAL ACCESS BARRICADES AND EXTORTION SYNDICATES DEMANDING PROTECTION FEES FROM DRIVERS!',
@@ -154,17 +154,17 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'GPS tracking on the pump trucks?! If they actually pump twice a week as promised, you have my vote!',
-        doubtful: 'Every year you audit the contractors, and every week we hold our noses when walking past.',
-        negative: 'Penalties don’t clean the maggots crawling out of the plastic drum outside my window!'
+        positive: 'GPS tracking on pump trucks?! Ewe kaloku! If they pump twice a week as promised, you have my vote!',
+        doubtful: 'He banna! Every year you audit the contractors, and every week we hold our noses when walking past.',
+        negative: 'Hayi suka! Penalties don’t clean the maggots crawling out of the plastic drum outside my window!'
       },
       blame: {
-        positive: 'Those extortion syndicates demand protection money from everybody, even bread delivery vans!',
+        positive: 'Sho bra, those extortion syndicates demand protection money from everybody, even bread delivery vans!',
         doubtful: 'Extortion syndicates or not, the government has the police! Why must the poor suffer the smell?!',
-        negative: 'Don’t make excuses about tenders! Mothers and children deserve clean, flushing toilets!'
+        negative: 'Tyhini! Don’t make excuses about tenders! Mothers and children deserve clean, flushing toilets!'
       },
       lie: {
-        positive: 'Flush waterborne drainage connected today?! Oh hallelujah, my prayer has been answered!',
+        positive: 'Flush waterborne drainage connected today?! Ndiyabulela, my prayer has been answered!',
         doubtful: '80 German vacuum trucks? The only truck I saw today was an old bakkie selling scrap mattresses.',
         negative: 'You lie with a straight face while the toilet is overflowing right next to your expensive shoes!'
       },
@@ -179,7 +179,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     id: 'khayelitsha_emergency_escort',
     category: 'khayelitsha_emergency_escort',
     targetParty: 'all',
-    complaintText: 'PARAMEDICS AND FIRE TRUCKS REFUSE TO ENTER OUR SECTION WITHOUT POLICE ESCORTS! PATIENTS WAIT FOR HOURS IN AGONY!',
+    complaintText: 'SHO BRA, PARAMEDICS AND FIRE TRUCKS REFUSE TO ENTER OUR SECTION WITHOUT POLICE ESCORTS! KUNJANI KANTI?! SICK GOGOS WAIT IN AGONY!',
     responses: {
       promise: 'WE ARE ESTABLISHING A DEDICATED METRO POLICE EMERGENCY RED-ZONE RAPID ESCORT FLEET!',
       blame: 'BLAME COWARDLY CRIMINAL GANGS TARGETING AMBULANCES AND ROBBING FIRST RESPONDERS OF MEDICINE!',
@@ -212,23 +212,23 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Dedicated police escorts for ambulances?! If my sick uncle can get help in time, you have our entire family’s votes!',
-        doubtful: 'You promised safe corridors last year, and the ambulance still stops on the main road two kilometres away.',
-        negative: 'While you hold meetings about corridors, people are dying on kitchen floors waiting for oxygen!'
+        positive: 'Dedicated police escorts for ambulances?! Ewe kaloku! If my sick uncle gets help in time, take our votes!',
+        doubtful: 'He banna! You promised safe corridors last year, and the ambulance still stops on the main road.',
+        negative: 'Hayi suka! While you hold meetings about corridors, people are dying on kitchen floors waiting for oxygen!'
       },
       blame: {
-        positive: 'It is true! What kind of animal robs a paramedic who came to deliver a premature baby?! Pure evil!',
+        positive: 'Sho bra, it is true! What kind of animal robs a paramedic who came to deliver a premature baby?!',
         doubtful: 'Blaming the criminals doesn’t solve the problem. The state must provide safety for emergency workers!',
-        negative: 'Don’t call desperate youth an excuse! Protect the nurses so our people don’t die in wheelbarrows!'
+        negative: 'Tyhini! Don’t call desperate youth an excuse! Protect the nurses so our people don’t die in wheelbarrows!'
       },
       lie: {
         positive: 'Bulletproof armoured ambulances dedicated to Khayelitsha?! Wow, that sounds like a movie!',
-        doubtful: 'Medical airlift helicopters? Where are they going to land between the washing lines and television antennas?',
+        doubtful: 'Medical airlift helicopters? Where are they going to land between the washing lines and antennas?',
         negative: 'Lying about emergency ambulances while people lose their loved ones? You have no conscience!'
       },
       honesty: {
-        positive: 'Pushing a gogo in a wheelbarrow to Spine Road... you really saw what we go through. Respect for your heart!',
-        doubtful: 'Waiting three hours for an escort car? That is a death sentence for a heart attack or a stroke patient.',
+        positive: 'Pushing a gogo in a wheelbarrow to Spine Road... you really saw what we go through. Ndiyabulela!',
+        doubtful: 'Waiting three hours for an escort car? That is a death sentence for a heart attack or stroke patient.',
         negative: 'Not enough running patrol cars?! Then where did the billions for the blue-light VIP convoys come from?!'
       }
     }
@@ -237,7 +237,7 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     id: 'khayelitsha_shack_fires',
     category: 'khayelitsha_shack_fires',
     targetParty: 'all',
-    complaintText: 'AFTER WINTER RAINS AND SHACK FIRES DESTROY HOMES, THE CITY ONLY GIVES ONE PIECE OF THIN PLASTIC SHEETING!',
+    complaintText: 'YHU HAYI! AFTER WINTER RAINS AND SHACK FIRES DESTROY HOMES, THE CITY ONLY GIVES ONE PIECE OF THIN PLASTIC SHEETING! SIKHATHELE!',
     responses: {
       promise: 'WE ARE RE-ENGINEERING EMERGENCY RELIEF KITS WITH FIRE-RETARDANT PANELS, CORRUGATED SHEETS, AND TIMBER!',
       blame: 'BLAME NATIONAL DISASTER REGULATIONS RECLASSIFYING URBAN FIRES TO ELIMINATE REBUILDING SUBSIDY KITS!',
@@ -270,22 +270,22 @@ export const KHAYELITSHA_COMPLAINTS: ComplaintData[] = [
     },
     reactions: {
       promise: {
-        positive: 'Fire-retardant sheets and real zinc roofing?! That will keep our babies dry when the winter storms hit!',
-        doubtful: 'Smoke alarms? When the whole row of shacks catches fire in two minutes, an alarm just screams at the smoke.',
-        negative: 'You come with plastic rolls that tear on the nails! We need brick houses that don’t wash away!'
+        positive: 'Fire-retardant sheets and real zinc roofing?! Ndiyabulela! That will keep our babies dry when storms hit!',
+        doubtful: 'He banna! Smoke alarms? When a whole row of shacks catches fire in two minutes, an alarm just screams at smoke.',
+        negative: 'Hayi suka! You come with plastic rolls that tear on nails! We need brick houses that don’t wash away!'
       },
       blame: {
-        positive: 'Exactly! Bureaucrats with underfloor heating don’t care if our mattresses are floating in brown water!',
-        doubtful: 'National or Provincial, when the fire happens at 2 AM, it is our neighbours who pull us out, not your decrees.',
-        negative: 'Don’t tell us about regulations! How can a rich government give a human being plastic to live in?!'
+        positive: 'Sho bra, exactly! Bureaucrats with underfloor heating don’t care if our mattresses float in brown water!',
+        doubtful: 'National or Provincial, when the fire happens at 2 AM, it is our neighbours who pull us out.',
+        negative: 'Tyhini! Don’t tell us about regulations! How can a rich government give human beings plastic to live in?!'
       },
       lie: {
         positive: 'R30,000 building vouchers for every family?! Hallelujah! I am going to buy cement blocks right now!',
         doubtful: '50 trucks unloading right now? I only see the municipal bakkie driving away with two rolls of plastic.',
-        negative: 'Playing with people who just lost all their clothes and IDs in a fire?! Have some respect!'
+        negative: 'Playing with people who just lost all their clothes and IDs in a fire?! Have some respect, mhlekazi!'
       },
       honesty: {
-        positive: 'Hahaha! Plastic blows away in five minutes flat! You are the only one speaking plain truth, my brother!',
+        positive: 'Hahaha! Plastic blows away in five minutes flat! You are the only one speaking plain truth, take my vote!',
         doubtful: 'Warehouses ran dry? Then replenish them before the winter rains! That is what emergency budgets are for!',
         negative: 'Cannot afford zinc for 5,000 homes?! But you can afford R20 million for fireworks at the Waterfront?!'
       }
