@@ -189,14 +189,18 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Mobile / Touch Controls (Tap to Jump, Hold to Sprint)
-    this.input.on('pointerdown', (_pointer: Phaser.Input.Pointer) => {
-      if (this.isGamePaused) return;
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, currentlyOver?: Phaser.GameObjects.GameObject[]) => {
+      if (this.isGamePaused || this.isEncounterPaused) return;
+      // Do not trigger jump/sprint if tapping on an interactive element (button, zone, HUD, modal, etc.)
+      if (currentlyOver && currentlyOver.length > 0) return;
+      // Do not trigger jump/sprint if in an encounter choice or dialogue interaction
+      if (this.mobileInteractionState !== 'RUNNING') return;
+      if (this.encounterChoiceBanner || this.encounterChoiceBannerAnimating) return;
+      // If tapping in bottom action banner region during pending encounter, ignore
+      if (this.activeResidentInEncounter && pointer.y > this.scale.height - 200) return;
 
-      // If running, tapping triggers jump and holding triggers sprint
-      if (!this.isEncounterPaused) {
-        this.player.jump();
-        this.isSprinting = true;
-      }
+      this.player.jump();
+      this.isSprinting = true;
     });
 
     this.input.on('pointerup', () => {
@@ -221,7 +225,9 @@ export class GameScene extends Phaser.Scene {
       (this.cursors?.up && Phaser.Input.Keyboard.JustDown(this.cursors.up)) ||
       (this.keyW && Phaser.Input.Keyboard.JustDown(this.keyW))
     ) {
-      this.player.jump();
+      if (this.mobileInteractionState === 'RUNNING' && !this.encounterChoiceBanner && !this.encounterChoiceBannerAnimating) {
+        this.player.jump();
+      }
     }
 
     // Check keyboard sprint (Shift or Right arrow)
@@ -738,16 +744,15 @@ export class GameScene extends Phaser.Scene {
 
       const talkZone = this.add.zone(leftX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
       talkZone.on('pointerdown', () => {
+        this.isSprinting = false;
         this.tweens.add({
           targets: talkContainer,
           scaleX: 0.95,
           scaleY: 0.95,
-          duration: 70,
-          yoyo: true,
-          onComplete: () => {
-            this.triggerStopAndListen(resident);
-          }
+          duration: 60,
+          yoyo: true
         });
+        this.triggerStopAndListen(resident);
       });
 
       // 🏃 RUN Button (Bolder, Bigger, Vibrant Orange)
@@ -773,16 +778,15 @@ export class GameScene extends Phaser.Scene {
 
       const runZone = this.add.zone(rightX, btnY, btnW, btnH).setInteractive({ useHandCursor: true });
       runZone.on('pointerdown', () => {
+        this.isSprinting = false;
         this.tweens.add({
           targets: runContainer,
           scaleX: 0.95,
           scaleY: 0.95,
-          duration: 70,
-          yoyo: true,
-          onComplete: () => {
-            this.triggerKeepRunning(resident);
-          }
+          duration: 60,
+          yoyo: true
         });
+        this.triggerKeepRunning(resident);
       });
 
       banner.add([bg, personIcon, title, subtitle, talkContainer, talkZone, runContainer, runZone]);
@@ -974,71 +978,61 @@ export class GameScene extends Phaser.Scene {
     const isPortrait = height > width;
 
     if (isPortrait) {
-      // ═══════ MOBILE NATURAL RUN-TO-MEET FLOW ═══════
+      // ═══════ MOBILE: Candidate immediately STOPS to talk (strictly grounded, zero jumping) ═══════
       const normalGroundY = this.getGroundY();
       this.isEncounterPaused = true;
+      this.isSprinting = false;
       this.currentSpeed = 0;
       this.targetSpeed = 0;
 
-      // Ensure the player continues running motion while smoothly jogging up to the resident
-      this.player.setPlayerState('RUNNING');
-      this.mobileInteractionState = 'APPROACHING_RESIDENT';
+      // Cancel any upward jump momentum and ground candidate firmly
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      if (body) {
+        body.setVelocity(0, 0);
+        body.setAcceleration(0, 0);
+        body.allowGravity = false;
+      }
+      this.player.y = normalGroundY;
+      this.player.setPlayerState('TALKING');
       SoundFX.getInstance().duckBGM(0.08);
 
-      // Settle on an organic conversational meeting spot:
-      // Resident stays firmly on normalGroundY on the right side (width * 0.66 to width * 0.76)
-      // and player stops face-to-face with a clean 148px spacing (completely eliminating sprite overlap!).
-      const targetResidentX = Math.round(Phaser.Math.Clamp(resident.x, width * 0.66, width * 0.76));
-      const targetPlayerX = targetResidentX - 148;
+      // Conversational placement: Player stops right where they are!
+      // Resident smoothly steps into conversational distance (148px gap, zero sprite overlap)
+      const targetResidentX = Math.round(Phaser.Math.Clamp(this.player.x + 148, this.player.x + 110, width - 60));
 
-      const dist = Math.max(30, Math.abs(targetPlayerX - this.player.x));
-      const approachDuration = Math.min(460, Math.max(300, Math.round(dist * 1.5)));
-
-      // 1. Player smoothly jogs forward to meet resident, remaining strictly on normalGroundY (no vertical jumping!)
-      this.tweens.add({
-        targets: this.player,
-        x: targetPlayerX,
-        y: normalGroundY,
-        duration: approachDuration,
-        ease: 'Cubic.easeOut',
-        onComplete: () => {
-          // Candidate arrives and decelerates to a stop -> enters talking pose
-          this.player.setPlayerState('TALKING');
-          this.mobileInteractionState = 'CHOOSING_RESPONSE';
-
-          // Speech bubble sits comfortably above resident's head with tail pointed at resident
-          const charH = 200 * 1.30;
-          const charHeadY = normalGroundY - charH;
-          const textLen = resident.complaint.complaintText.length;
-          const bubbleH = textLen > 85 ? 106 : (textLen > 55 ? 94 : 84);
-          let targetBubbleY = Math.max(bubbleH / 2 + 65, Math.min(charHeadY - bubbleH / 2 - 10, height * 0.28));
-
-          // Launch DialogueModal right here with characters on the road!
-          const dialogueModal = new DialogueModal(this, {
-            complaint: resident.complaint,
-            partyId: this.partyId,
-            residentX: targetResidentX,
-            targetBubbleY: targetBubbleY,
-            onChoiceSelected: (choice: ResponseType) => {
-              this.mobileInteractionState = 'SHOWING_RESULT';
-              dialogueModal.destroyModal();
-              this.handleResponseChosen(resident, choice);
-            },
-            onCancel: () => {
-              dialogueModal.destroyModal();
-              this.triggerKeepRunning(resident);
-            }
-          });
-        }
-      });
-
-      // 2. Gently ease resident into targetResidentX, strictly on normalGroundY
+      // Ease resident into conversational distance in front of candidate
       this.tweens.add({
         targets: resident,
         x: targetResidentX,
         y: normalGroundY,
-        duration: approachDuration,
-        ease: 'Cubic.easeOut'
+        duration: 220,
+        ease: 'Power2.easeOut'
+      });
+
+      this.mobileInteractionState = 'CHOOSING_RESPONSE';
+
+      // Speech bubble sits comfortably above resident's head with tail pointed at resident
+      const charH = 200 * 1.30;
+      const charHeadY = normalGroundY - charH;
+      const textLen = resident.complaint.complaintText.length;
+      const bubbleH = textLen > 85 ? 106 : (textLen > 55 ? 94 : 84);
+      let targetBubbleY = Math.max(bubbleH / 2 + 65, Math.min(charHeadY - bubbleH / 2 - 10, height * 0.28));
+
+      // Launch DialogueModal right here with characters on the road!
+      const dialogueModal = new DialogueModal(this, {
+        complaint: resident.complaint,
+        partyId: this.partyId,
+        residentX: targetResidentX,
+        targetBubbleY: targetBubbleY,
+        onChoiceSelected: (choice: ResponseType) => {
+          this.mobileInteractionState = 'SHOWING_RESULT';
+          dialogueModal.destroyModal();
+          this.handleResponseChosen(resident, choice);
+        },
+        onCancel: () => {
+          dialogueModal.destroyModal();
+          this.triggerKeepRunning(resident);
+        }
       });
     } else {
       // ═══════ DESKTOP (unchanged) ═══════
