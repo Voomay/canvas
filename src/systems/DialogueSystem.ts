@@ -20,7 +20,8 @@ export class DialogueSystem {
     complaint: ComplaintData,
     responseType: ResponseType,
     personalityType: PersonalityType,
-    partyId: 'da' | 'anc' | 'pa'
+    partyId: 'da' | 'anc' | 'pa',
+    residentId?: string
   ): DialogueOutcome {
     const personality = PERSONALITIES[personalityType];
     let positiveRate = 0.5;
@@ -169,7 +170,21 @@ export class DialogueSystem {
     }
 
     // Extract reaction text
-    const reactionText = getComplaintReaction(complaint, responseType, outcome, partyId, personalityType);
+    let reactionText = getComplaintReaction(complaint, responseType, outcome, partyId, personalityType);
+
+    if (residentId === '6') {
+      // Resident 6 is the Muslim resident wearing a hijab: infuse authentic Cape Muslim reactions
+      if (outcome === 'positive') {
+        const cleaned = reactionText.replace(/^(Ndiyabulela kakhulu[\!\,\.]*|Ndiyabulela[\!\,\.]*|Awe my broer[\!\,\.]*|Duidelik[\!\,\.]*|Sho bra[\!\,\.]*|Hahaha[\!\,\.]*|Ewe kaloku[\!\,\.]*|Dis waar[\!\,\.]*)\s*/i, '');
+        reactionText = `Slamat! Shukran kakhulu! ${cleaned}`;
+      } else if (outcome === 'doubtful') {
+        const cleaned = reactionText.replace(/^(He banna[\!\,\.]*|Tyhini[\!\,\.]*|Yirre tog[\!\,\.]*|Yirre[\!\,\.]*|Kykie[\!\,\.]*)\s*/i, '');
+        reactionText = `Slamat, but ${cleaned.charAt(0).toLowerCase() + cleaned.slice(1)}`;
+      } else {
+        const cleaned = reactionText.replace(/^(Hayi suka[\!\,\.]*|Tyhini[\!\,\.]*|Hoe durf djy[\!\,\.]*|Yirre[\!\,\.]*)\s*/i, '');
+        reactionText = `Astaghfirullah! ${cleaned}`;
+      }
+    }
 
     return {
       responseType,

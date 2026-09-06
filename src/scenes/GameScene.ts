@@ -1202,7 +1202,8 @@ export class GameScene extends Phaser.Scene {
       resident.complaint,
       choice,
       resident.personality,
-      this.partyId
+      this.partyId,
+      resident.residentId
     );
 
     // Switch resident sprite to their specific emotional reaction pose!

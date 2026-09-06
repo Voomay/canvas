@@ -39,7 +39,8 @@ export function formatReadableText(text: string): string {
       'Athlone', 'Red Cross', 'Shoprite', 'Checkers', 'Nelson Mandela', 'Gayton',
       'Site C', 'Lookout Hill', 'Harare', 'Spine Road',
       'Awe', 'Djy', 'Yirre', 'Jinne', 'Duidelik', 'Molo', 'Tyhini', 'Kunjani', 'Ndiyabulela', 'Kaloku',
-      'Mshengu', 'Izinyoka', 'Sikhathele', 'Gogos'
+      'Mshengu', 'Izinyoka', 'Sikhathele', 'Gogos',
+      'Slamat', 'Shukran', 'Astaghfirullah', 'Alhamdulillah', 'Barakah'
     ];
     for (const noun of properNouns) {
       const regex = new RegExp(`\\b${noun}\\b`, 'gi');
@@ -56,10 +57,10 @@ export function formatReadableText(text: string): string {
 }
 
 export function getMobileDialoguePanelHeight(height: number): number {
-  const cardH = height < 680 ? 104 : 110;
+  const cardH = height < 680 ? 122 : 128;
   const gapY = 7;
   const totalCardsH = (2 * cardH) + gapY;
-  const cancelH = 28;
+  const cancelH = 30;
   const panelPaddingTop = 8;
   const bottomMargin = 8;
   return totalCardsH + cancelH + panelPaddingTop + bottomMargin + 6;
@@ -251,12 +252,12 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const honestyChoice = getComplaintChoice(complaint, 'honesty', partyId);
 
     const panelH = getMobileDialoguePanelHeight(height);
-    const gridW = Math.min(width - 16, 480);
-    const gapX = 8;
-    const gapY = 6;
+    const gridW = Math.min(width - 12, 480);
+    const gapX = 7;
+    const gapY = 7;
     const cardW = Math.floor((gridW - gapX) / 2);
-    const cardH = height < 680 ? 104 : 110;
-    const cancelH = 28;
+    const cardH = height < 680 ? 122 : 128;
+    const cancelH = 30;
     const panelPaddingTop = 8;
     const bottomMargin = 8;
 
@@ -346,33 +347,33 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       cardContainer.add(cardBg);
 
       // Header icon + category title
-      const iconX = -cardW / 2 + 16;
-      const headerY = -cardH / 2 + 15;
+      const iconX = -cardW / 2 + 18;
+      const headerY = -cardH / 2 + 18;
 
       if (resp.iconType === 'check') {
         const iconCircle = scene.add.graphics();
         iconCircle.fillStyle(0xffffff, 1);
-        iconCircle.fillCircle(iconX, headerY, 9.5);
-        iconCircle.lineStyle(2, 0x16a34a, 1);
+        iconCircle.fillCircle(iconX, headerY, 10);
+        iconCircle.lineStyle(2.2, 0x16a34a, 1);
         iconCircle.beginPath();
-        iconCircle.moveTo(iconX - 4.5, headerY);
-        iconCircle.lineTo(iconX - 1, headerY + 3.5);
-        iconCircle.lineTo(iconX + 5, headerY - 3.5);
+        iconCircle.moveTo(iconX - 5, headerY);
+        iconCircle.lineTo(iconX - 1, headerY + 4);
+        iconCircle.lineTo(iconX + 5.5, headerY - 4);
         iconCircle.stroke();
         cardContainer.add(iconCircle);
       } else {
         const iconTxt = scene.add.text(iconX, headerY, resp.icon, {
-          fontSize: '18px'
+          fontSize: '20px'
         }).setOrigin(0.5, 0.5);
         cardContainer.add(iconTxt);
       }
 
-      const titleTxt = scene.add.text(-cardW / 2 + 30, headerY, resp.title, {
+      const titleTxt = scene.add.text(-cardW / 2 + 34, headerY, resp.title, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '15px',
         color: '#ffffff',
         fontStyle: '900',
-        letterSpacing: 0.4,
+        letterSpacing: 0.5,
         resolution: 3
       }).setOrigin(0, 0.5);
       cardContainer.add(titleTxt);
@@ -380,14 +381,14 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       // Response text content: significantly larger wording for effortless mobile readability
       const readableSub = formatReadableText(resp.text);
       const textW = cardW - 14;
-      const subFontSize = readableSub.length > 85 ? '12.5px' : (readableSub.length > 55 ? '13.5px' : '15px');
+      const subFontSize = readableSub.length > 85 ? '13.5px' : (readableSub.length > 55 ? '15px' : '16.5px');
 
-      const subTxt = scene.add.text(-cardW / 2 + 7, -cardH / 2 + 30, readableSub, {
+      const subTxt = scene.add.text(-cardW / 2 + 7, -cardH / 2 + 36, readableSub, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: subFontSize,
         color: '#ffffff',
-        fontStyle: '700',
-        lineSpacing: 2.5,
+        fontStyle: '800',
+        lineSpacing: 3,
         wordWrap: { width: textW },
         resolution: 3
       }).setOrigin(0, 0);
@@ -456,21 +457,21 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     const cancelPill = scene.add.graphics();
     cancelPill.fillStyle(0x1e293b, 0.9);
     cancelPill.fillRoundedRect(-95, cancelY - cancelH / 2, 190, cancelH, 14);
-    cancelPill.lineStyle(1, 0x334155, 1);
-    cancelPill.strokeRoundedRect(-95, cancelY - cancelH / 2, 190, cancelH, 14);
+    cancelPill.lineStyle(1.2, 0x475569, 0.85);
+    cancelPill.strokeRoundedRect(-105, cancelY - cancelH / 2, 210, cancelH, 15);
     cancelPill.setX(width / 2);
     panel.add(cancelPill);
 
     const cancelTxt = scene.add.text(width / 2, cancelY, '🏃 Keep Running (Ignore)', {
       fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
-      fontSize: '13px',
+      fontSize: '14px',
       color: '#cbd5e1',
       fontStyle: '800',
       resolution: 3
     }).setOrigin(0.5, 0.5);
     panel.add(cancelTxt);
 
-    const cancelZone = scene.add.zone(width / 2, cancelY, 190, cancelH + 8).setInteractive({ useHandCursor: true });
+    const cancelZone = scene.add.zone(width / 2, cancelY, 210, cancelH + 8).setInteractive({ useHandCursor: true });
     cancelZone.on('pointerover', () => cancelTxt.setColor('#ffffff'));
     cancelZone.on('pointerout', () => cancelTxt.setColor('#cbd5e1'));
     cancelZone.on('pointerdown', () => {

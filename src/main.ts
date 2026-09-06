@@ -5,7 +5,7 @@ import { ScoreManager } from './systems/ScoreManager';
 import { COMPLAINTS } from './data/complaints';
 import { inject } from '@vercel/analytics';
 
-import { Resident } from './entities/Resident';
+import { Resident, formatMuslimResidentComplaint } from './entities/Resident';
 
 // Initialize Vercel Web Analytics
 inject();
@@ -125,6 +125,7 @@ async function initGame() {
   (window as any).ScoreManager = ScoreManager;
   (window as any).COMPLAINTS = COMPLAINTS;
   (window as any).Resident = Resident;
+  (window as any).formatMuslimResidentComplaint = formatMuslimResidentComplaint;
   (window as any).startArea = (areaId: number, partyId: 'da' | 'anc' | 'pa' = 'da') => {
     const sm = ScoreManager.getInstance();
     sm.startNewArea(areaId);

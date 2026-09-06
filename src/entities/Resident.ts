@@ -17,6 +17,7 @@ export class Resident extends Phaser.GameObjects.Container {
   private angryBubbleContainer: Phaser.GameObjects.Container | null = null;
   private soundFX: SoundFX;
   private static recentComplaintIds: string[] = [];
+  private static recentSpriteIds: string[] = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -32,11 +33,23 @@ export class Resident extends Phaser.GameObjects.Container {
     const isCampsBay = locationKey === 'campsbay' || (allowedCategories && allowedCategories.some(cat => cat.startsWith('campsbay')));
     if (isCampsBay) {
       // In Camps Bay & Clifton: spawn the stylish Atlantic Seaboard residents (13 to 17)
-      residentSpriteId = Phaser.Math.Between(13, 17).toString();
+      const pool = ['13', '14', '15', '16', '17'];
+      const available = pool.filter(id => !Resident.recentSpriteIds.includes(id));
+      const poolToUse = available.length > 0 ? available : pool;
+      residentSpriteId = poolToUse[Phaser.Math.Between(0, poolToUse.length - 1)];
     } else {
       // In other areas: spawn from general diverse pool (residents 1 to 12)
-      residentSpriteId = Phaser.Math.Between(1, 12).toString();
+      const pool = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+      const available = pool.filter(id => !Resident.recentSpriteIds.includes(id));
+      const poolToUse = available.length > 0 ? available : pool;
+      residentSpriteId = poolToUse[Phaser.Math.Between(0, poolToUse.length - 1)];
     }
+
+    Resident.recentSpriteIds.push(residentSpriteId);
+    if (Resident.recentSpriteIds.length > 6) {
+      Resident.recentSpriteIds.shift();
+    }
+
     this.residentId = residentSpriteId;
     this.soundFX = SoundFX.getInstance();
 
@@ -65,7 +78,15 @@ export class Resident extends Phaser.GameObjects.Container {
       Resident.recentComplaintIds.shift();
     }
 
-    this.complaint = chosenComplaint;
+    // If resident 6 (Muslim resident wearing hijab), greet with authentic "Slamat!"
+    if (residentSpriteId === '6') {
+      this.complaint = {
+        ...chosenComplaint,
+        complaintText: formatMuslimResidentComplaint(chosenComplaint.complaintText)
+      };
+    } else {
+      this.complaint = chosenComplaint;
+    }
 
     // Resident starts in DOUBTFUL pose (skeptical of approaching politician!)
     const initialKey = scene.textures.exists(`resident_${residentSpriteId}_doubtful`) 
@@ -254,4 +275,14 @@ export class Resident extends Phaser.GameObjects.Container {
     // Do NOT destroy angryBubbleContainer here! Allow it to finish its 2.6s reading display
     super.destroy(fromScene);
   }
+}
+
+/**
+ * Strips any general opening greeting and replaces it with the authentic Cape Muslim greeting "SLAMAT!"
+ */
+export function formatMuslimResidentComplaint(text: string): string {
+  const trimmed = text.trim();
+  const greetingRegex = /^(AWE\s+MY\s+BROER[\!\,\.\s]*|AWE\s+BROER[\!\,\.\s]*|AWE[\!\,\.\s]*|MOLO\s+SANI[\!\,\.\s]*|MOLO[\!\,\.\s]*|DJY\s+WAG[\!\,\.\s]*|KYKIE\s+HIER[\!\,\.\s]*|KYKIE[\!\,\.\s]*|YIRRE\s+TOG[\!\,\.\s]*|YIRRE[\!\,\.\s]*|HE\s+BANNA[\!\,\.\s]*|SHO\s+BRA[\!\,\.\s]*|TYHINI[\!\,\.\s]*|YHU\s+HAYI[\!\,\.\s]*|WAT\s+GAAN\s+NOU\s+AAN\s+HIERSO[\!\,\.\s]*|ONS\s+IS\s+GATVOL[\!\,\.\s]*)/i;
+  const stripped = trimmed.replace(greetingRegex, '').trim();
+  return `SLAMAT! ${stripped}`;
 }
