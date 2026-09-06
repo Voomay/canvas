@@ -57,8 +57,8 @@ export function formatReadableText(text: string): string {
 }
 
 export function getMobileDialoguePanelHeight(height: number): number {
-  const cardH = height < 680 ? 122 : 128;
-  const gapY = 7;
+  const cardH = height < 680 ? 124 : 132;
+  const gapY = 8;
   const totalCardsH = (2 * cardH) + gapY;
   const cancelH = 30;
   const panelPaddingTop = 8;
@@ -156,7 +156,7 @@ export class DialogueModal extends Phaser.GameObjects.Container {
     // Position directly above candidate/resident conversation area
     const bubbleY = targetBubbleY !== undefined
       ? targetBubbleY
-      : Math.max(bubbleH / 2 + 70, Math.min(210, Math.round(scene.scale.height * 0.26)));
+      : Math.max(bubbleH / 2 + 75, Math.round(scene.scale.height * 0.42));
     const container = scene.add.container(cx, bubbleY);
     container.setDepth(151);
 
@@ -253,10 +253,10 @@ export class DialogueModal extends Phaser.GameObjects.Container {
 
     const panelH = getMobileDialoguePanelHeight(height);
     const gridW = Math.min(width - 12, 480);
-    const gapX = 7;
-    const gapY = 7;
+    const gapX = 8;
+    const gapY = 8;
     const cardW = Math.floor((gridW - gapX) / 2);
-    const cardH = height < 680 ? 122 : 128;
+    const cardH = height < 680 ? 124 : 132;
     const cancelH = 30;
     const panelPaddingTop = 8;
     const bottomMargin = 8;
@@ -378,19 +378,27 @@ export class DialogueModal extends Phaser.GameObjects.Container {
       }).setOrigin(0, 0.5);
       cardContainer.add(titleTxt);
 
-      // Response text content: significantly larger wording for effortless mobile readability
+      // Response text content: larger, bolder wording filling card nicely for effortless mobile reading
       const readableSub = formatReadableText(resp.text);
-      const textW = cardW - 14;
-      const subFontSize = readableSub.length > 85 ? '13.5px' : (readableSub.length > 55 ? '15px' : '16.5px');
+      const textW = cardW - 16;
+      const subFontSize = readableSub.length > 85 ? '15px' : (readableSub.length > 55 ? '16.5px' : '18px');
+      const lineSpacing = readableSub.length > 85 ? 3.5 : 4;
 
-      const subTxt = scene.add.text(-cardW / 2 + 7, -cardH / 2 + 36, readableSub, {
+      const subTxt = scene.add.text(-cardW / 2 + 8, -cardH / 2 + 35, readableSub, {
         fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
         fontSize: subFontSize,
         color: '#ffffff',
         fontStyle: '800',
-        lineSpacing: 3,
+        lineSpacing: lineSpacing,
         wordWrap: { width: textW },
-        resolution: 3
+        resolution: 3,
+        shadow: {
+          offsetX: 0,
+          offsetY: 1,
+          color: 'rgba(0, 0, 0, 0.45)',
+          blur: 2,
+          fill: true
+        }
       }).setOrigin(0, 0);
       cardContainer.add(subTxt);
 

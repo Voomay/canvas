@@ -1023,8 +1023,9 @@ export class GameScene extends Phaser.Scene {
       const charH = 200 * 1.30;
       const charHeadY = normalGroundY - charH;
       const textLen = resident.complaint.complaintText.length;
-      const bubbleH = textLen > 85 ? 106 : (textLen > 55 ? 94 : 84);
-      let targetBubbleY = Math.max(bubbleH / 2 + 65, Math.min(charHeadY - bubbleH / 2 - 10, height * 0.28));
+      const bubbleH = textLen > 90 ? 118 : (textLen > 55 ? 106 : 94);
+      const minBubbleY = bubbleH / 2 + 75;
+      let targetBubbleY = Math.max(minBubbleY, charHeadY - bubbleH / 2 - 18);
 
       // Launch DialogueModal right here with characters on the road!
       const dialogueModal = new DialogueModal(this, {
@@ -1043,27 +1044,36 @@ export class GameScene extends Phaser.Scene {
         }
       });
     } else {
-      // ═══════ DESKTOP (unchanged) ═══════
+      // ═══════ DESKTOP: Candidate smoothly jogs up to resident (no resident sliding) ═══════
       this.isEncounterPaused = true;
       this.currentSpeed = 0;
       this.targetSpeed = 0;
-      this.player.setPlayerState('TALKING');
-      SoundFX.getInstance().duckBGM(0.08);
 
-      const residentTargetX = this.player.x + 150;
-      this.tweens.add({
-        targets: resident,
-        x: residentTargetX,
-        duration: 250,
-        ease: 'Power2.easeOut'
-      });
+      const normalGroundY = this.getGroundY();
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      if (body) {
+        body.setVelocity(0, 0);
+        body.setAcceleration(0, 0);
+        body.allowGravity = false;
+      }
+      this.player.y = normalGroundY;
 
-      this.time.delayedCall(150, () => {
+      const targetGap = 148;
+      // Keep resident stable where they stand (safely clamped within visible roadway)
+      const targetResidentX = Math.round(Phaser.Math.Clamp(resident.x, 320, width - 120));
+      // Candidate jogs forward to conversational distance in front of resident
+      const targetPlayerX = targetResidentX - targetGap;
+      const jogDistance = targetPlayerX - this.player.x;
+
+      const startDesktopDialogue = () => {
+        this.player.setPlayerState('TALKING');
+        SoundFX.getInstance().duckBGM(0.08);
         this.mobileInteractionState = 'CHOOSING_RESPONSE';
+
         const dialogueModal = new DialogueModal(this, {
           complaint: resident.complaint,
           partyId: this.partyId,
-          residentX: resident.x,
+          residentX: targetResidentX,
           onChoiceSelected: (choice: ResponseType) => {
             this.mobileInteractionState = 'SHOWING_RESULT';
             dialogueModal.destroyModal();
@@ -1074,7 +1084,38 @@ export class GameScene extends Phaser.Scene {
             this.triggerKeepRunning(resident);
           }
         });
-      });
+      };
+
+      if (jogDistance > 25) {
+        // Runner actively jogs forward to meet the citizen
+        this.player.setPlayerState('RUNNING');
+        const duration = Math.min(380, Math.max(160, Math.round((jogDistance / 520) * 1000)));
+
+        this.tweens.add({
+          targets: this.player,
+          x: targetPlayerX,
+          y: normalGroundY,
+          duration: duration,
+          ease: 'Power2.easeOut',
+          onComplete: () => {
+            startDesktopDialogue();
+          }
+        });
+
+        // Resident stays stable in place (only subtle micro-adjustment if clamped)
+        if (Math.abs(resident.x - targetResidentX) > 2) {
+          this.tweens.add({
+            targets: resident,
+            x: targetResidentX,
+            y: normalGroundY,
+            duration: duration,
+            ease: 'Power2.easeOut'
+          });
+        }
+      } else {
+        // Already at conversational distance: stop immediately and converse
+        startDesktopDialogue();
+      }
     }
   }
 
