@@ -41,7 +41,7 @@ export class ShareModal {
       : `🗳️ WARD VICTORY IN CANVASSING SA! 🇿🇦\n` +
         `I just led ${data.partyFullName} (${data.partyName}) to victory in ${cleanWardName} (${data.suburb})!\n\n` +
         `🏆 Ward Achievements:\n` +
-        `• 🗳️ Votes Secured: ${data.votesSecured}/${data.targetVotes} in 30s\n` +
+        `• 🗳️ Votes Secured: ${data.votesSecured}/${data.targetVotes} in 20s\n` +
         `• 🤝 Community Trust: ${Math.round(data.trustPercent)}%\n` +
         `• 🛠️ Infrastructure Fixed: ${data.obstaclesCleared} Potholes & Hazards\n` +
         `• 🗣️ Residents Convinced: ${data.residentsApproached}\n\n` +

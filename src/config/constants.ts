@@ -93,10 +93,10 @@ export const COLORS = {
 export const INITIAL_VALUES = {
   votes: 0,
   trust: 45, // Starts at 45% per user request
-  timeSeconds: 30, // 30 seconds sprint per ward
+  timeSeconds: 20, // 20 seconds sprint per ward
   streetCount: 5,
   areaCount: 5,
-  streetDurationSeconds: 30, // 30s ward sprint
-  wardTargetVotes: 10 // Need 10 votes in 30s to win ward
+  streetDurationSeconds: 20, // 20s ward sprint
+  wardTargetVotes: 10 // Need 10 votes in 20s to win ward
 };
 

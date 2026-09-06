@@ -78,8 +78,8 @@ export class StreetCompleteScene extends Phaser.Scene {
     const headerTitle = isWardWon ? `🎉 SELECTED FOR WARD ${completedStreetIndex}!` : `❌ WARD ${completedStreetIndex} NOT WON`;
     const headerColor = isWardWon ? '#2ecc71' : '#ff5555';
     const subMsg = isWardWon
-      ? `🏆 VICTORY! You secured ${scoreManager.votes}/${targetVotes} votes in 30s and won this Ward election!`
-      : `⚠️ You got ${scoreManager.votes}/${targetVotes} votes. You needed at least ${targetVotes} votes in 30s to win this Ward!`;
+      ? `🏆 VICTORY! You secured ${scoreManager.votes}/${targetVotes} votes in ${currentStreetData?.durationSeconds || 20}s and won this Ward election!`
+      : `⚠️ You got ${scoreManager.votes}/${targetVotes} votes. You needed at least ${targetVotes} votes in ${currentStreetData?.durationSeconds || 20}s to win this Ward!`;
 
     const topOffset = height / 2 - ch / 2;
 
@@ -318,7 +318,7 @@ export class StreetCompleteScene extends Phaser.Scene {
         const thirdBtnW = Math.min(250, (cw - 64) / 3);
         const btnH = 54;
 
-        new Button(this, width / 2 - thirdBtnW - 12, btnY, '⚡ RETRY WARD (30s) ↺', retryAction, {
+        new Button(this, width / 2 - thirdBtnW - 12, btnY, `⚡ RETRY WARD (${currentStreetData?.durationSeconds || 20}s) ↺`, retryAction, {
           width: thirdBtnW,
           height: btnH,
           bgColor: 0xdb580a,

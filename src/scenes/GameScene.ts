@@ -117,7 +117,7 @@ export class GameScene extends Phaser.Scene {
     this.nextCurbsideVehicleTimer = 0;
     this.hasShownLowTimeWarning = false;
     this.residentsSpawnedInWard = 0;
-    this.nextObstacleTime = 3800; // Open clear running road before first pothole
+    this.nextObstacleTime = 5500; // Open clear running road before first pothole
     this.nextResidentTime = 1600; // Early first voter encounter to get the campaign rolling quickly!
 
     // 1. Create Parallax Background (Cape Town / Hanover Park vs Johannesburg)
@@ -254,7 +254,7 @@ export class GameScene extends Phaser.Scene {
     // Update Parallax Background
     this.parallaxBg.update(this.currentSpeed, delta);
 
-    // Update Distance & Timers (30-second sprint per Area)
+    // Update Distance & Timers (20-second sprint per Area)
     const deltaSeconds = delta / 1000;
     this.streetDistanceCovered += this.currentSpeed * deltaSeconds;
     this.streetTimer -= deltaSeconds;
@@ -262,8 +262,8 @@ export class GameScene extends Phaser.Scene {
 
     this.hud.updateValues();
 
-    // 10-Second Low-Time Urgency Warning Alert
-    if (this.streetTimer <= 10 && this.streetTimer > 0 && !this.hasShownLowTimeWarning) {
+    // 7-Second Low-Time Urgency Warning Alert
+    if (this.streetTimer <= 7 && this.streetTimer > 0 && !this.hasShownLowTimeWarning) {
       this.hasShownLowTimeWarning = true;
       this.hud.showLowTimeUrgencyWarning();
     }
@@ -311,14 +311,18 @@ export class GameScene extends Phaser.Scene {
         const spawnX = this.scale.width + 120;
         
         // Prevent obstacle from spawning directly on top of or near a resident or another obstacle
-        const residentNearby = this.residents.some(r => r.active && Math.abs(r.x - spawnX) < 280);
-        const obstacleNearby = this.obstacles.some(o => o.active && Math.abs(o.x - spawnX) < 380);
+        // Generous spacing: at least 450px clearance from residents, and 850px clearance from any active obstacle
+        const residentNearby = this.residents.some(r => r.active && Math.abs(r.x - spawnX) < 450);
+        const obstacleNearby = this.obstacles.some(o => o.active && Math.abs(o.x - spawnX) < 850);
 
         if (!residentNearby && !obstacleNearby) {
           this.spawnObstacle();
-          this.nextObstacleTime = Phaser.Math.Between(4200, 6800);
+          const minRate = this.currentStreet.obstacleSpawnRateMin || 7000;
+          const maxRate = this.currentStreet.obstacleSpawnRateMax || 10000;
+          this.nextObstacleTime = Phaser.Math.Between(minRate, maxRate);
         } else {
-          this.nextObstacleTime = Phaser.Math.Between(1800, 2600);
+          // If ground is not clear, wait before retrying so obstacles never cluster
+          this.nextObstacleTime = Phaser.Math.Between(3000, 4500);
         }
       }
     }
@@ -465,7 +469,7 @@ export class GameScene extends Phaser.Scene {
     const resident = new Resident(this, spawnX, spawnY, this.currentStreet.allowedComplaintCategories, this.partyId, this.currentStreet.locationKey);
     resident.setDepth(6);
     this.residents.push(resident);
-    this.clearObstaclesBetween(spawnX - 180, spawnX + 180);
+    this.clearObstaclesBetween(spawnX - 350, spawnX + 350);
   }
 
   private clearObstaclesBetween(minX: number, maxX: number) {
@@ -516,6 +520,8 @@ export class GameScene extends Phaser.Scene {
             this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
             SoundFX.getInstance().playObstacleFixed();
             this.addTimeBonus(5, '✨ FIXED! +5s ⏱️');
+            // Ensure generous spacing before the next obstacle spawns
+            this.nextObstacleTime = Math.max(this.nextObstacleTime, 6000);
           } else if (this.player.y >= groundY - 20 && this.player.playerState !== 'JUMPING') {
             // Player on ground collided with it -> IGNORED & STUMBLED! (-2s penalty)
             obs.resolveStumbled();
@@ -526,6 +532,8 @@ export class GameScene extends Phaser.Scene {
               this.player.updateMentalHealthVisuals(this.scoreManager.mentalHealth);
               this.hud.triggerMentalHealthFlash(-4, '⚠️ -4% Morale: Tripped on hazard!');
               this.addTimeBonus(-2, '⚠️ HIT! -2s ⏱️');
+              // Ensure player has recovery space before another obstacle spawns
+              this.nextObstacleTime = Math.max(this.nextObstacleTime, 5000);
 
               if (this.scoreManager.mentalHealth <= 0) {
                 this.triggerBurnoutRecovery();
