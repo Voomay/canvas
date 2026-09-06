@@ -42,8 +42,8 @@ window.addEventListener('appinstalled', () => {
   return choice.outcome === 'accepted';
 };
 
-// Service Worker handling:
-// On localhost, aggressively unregister any service worker to prevent stale cache lockups and freezes
+// Service Worker handling & Cache Purge:
+// On localhost, aggressively unregister dev workers and purge all caches
 if ('serviceWorker' in navigator) {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     navigator.serviceWorker.getRegistrations().then(registrations => {
@@ -57,10 +57,26 @@ if ('serviceWorker' in navigator) {
   } else if (window.location.protocol === 'https:') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('[PWA] ServiceWorker registered with scope:', reg.scope))
+        .then(reg => {
+          console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+          // Check for worker updates immediately on page load
+          reg.update();
+        })
         .catch(err => console.warn('[PWA] ServiceWorker registration failed:', err));
     });
   }
+}
+
+// Universal client-side cache cleanup:
+// Purge any legacy cache partitions (e.g. campaign-trail-v1.0, v1.1, v1.2) to ensure fresh delivery
+if ('caches' in window) {
+  caches.keys().then(keys => {
+    keys.forEach(key => {
+      if (key !== 'canvassing-sa-v2.1') {
+        caches.delete(key).then(() => console.log('[Cache] Purged outdated cache partition:', key));
+      }
+    });
+  });
 }
 
 // Global High-Resolution Text Pipeline:

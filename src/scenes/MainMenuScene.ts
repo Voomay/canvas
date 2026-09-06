@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Button } from '../ui/Button';
 import { ScoreManager } from '../systems/ScoreManager';
 import { SoundFX } from '../systems/SoundFX';
+import { TermsModal } from '../ui/TermsModal';
 
 interface PartyCardItem {
   partyId: 'da' | 'anc' | 'pa';
@@ -178,6 +179,13 @@ export class MainMenuScene extends Phaser.Scene {
     } else {
       this.createLandscapeLayout(width, height, partyList);
       this.updateSelection();
+    }
+
+    // Auto-display Terms & Conditions / Disclaimer on launch if not yet accepted
+    if (!TermsModal.isAccepted()) {
+      this.time.delayedCall(300, () => {
+        TermsModal.open();
+      });
     }
   }
 
@@ -403,8 +411,9 @@ export class MainMenuScene extends Phaser.Scene {
     });
     startBtn.setDepth(100);
 
-    // Music button
+    // Music & Terms buttons
     this.createMusicButton(width - 120, 28).setDepth(110);
+    this.createTermsButton(width - 225, 28).setDepth(110);
   }
 
   // ----------------------------------------------------
@@ -518,8 +527,9 @@ export class MainMenuScene extends Phaser.Scene {
     // 6. PWA Install Prompt (only when sufficient vertical headroom exists below start button)
     this.showPwaInstallPrompt(width, height, btnY, btnH);
 
-    // 7. Top music button
+    // 7. Top music & terms buttons
     this.createMusicButton(width - 48, 26).setDepth(110);
+    this.createTermsButton(54, 26).setDepth(110);
   }
 
   // ----------------------------------------------------
@@ -960,8 +970,12 @@ export class MainMenuScene extends Phaser.Scene {
       fontStyle: '800'
     }).setOrigin(0.5, 0.5);
 
-    const zone = this.add.zone(0, 0, 76, 28).setInteractive({ useHandCursor: true });
-    zone.on('pointerdown', () => {
+    musicBtn.setName('musicButton');
+    musicBtn.add([musicBg, musicTxt]);
+    musicBtn.setSize(76, 28);
+    musicBtn.setInteractive(new Phaser.Geom.Rectangle(-38, -14, 76, 28), Phaser.Geom.Rectangle.Contains);
+
+    musicBtn.on('pointerdown', () => {
       const muted = soundFX.toggleMusicMute();
       musicTxt.setText(muted ? '🔇 MUTE' : '🎵 MUSIC');
       musicTxt.setColor(muted ? '#94a3b8' : '#fcb813');
@@ -975,8 +989,65 @@ export class MainMenuScene extends Phaser.Scene {
       });
     });
 
-    musicBtn.add([musicBg, musicTxt, zone]);
     return musicBtn;
+  }
+
+  // ----------------------------------------------------
+  // TERMS & DISCLAIMER BUTTON
+  // ----------------------------------------------------
+  private createTermsButton(x: number, y: number): Phaser.GameObjects.Container {
+    const termsBtn = this.add.container(x, y);
+    termsBtn.setName('termsButton');
+    const termsBg = this.add.graphics();
+    termsBg.fillStyle(0x0c1524, 0.94);
+    termsBg.fillRoundedRect(-44, -14, 88, 28, 14);
+    termsBg.lineStyle(1.5, 0x1f3c6e, 1);
+    termsBg.strokeRoundedRect(-44, -14, 88, 28, 14);
+
+    const termsTxt = this.add.text(0, 0, '⚖️ TERMS', {
+      fontFamily: 'Outfit, sans-serif',
+      fontSize: '11px',
+      color: '#cbd5e1',
+      fontStyle: '800'
+    }).setOrigin(0.5, 0.5);
+
+    termsBtn.add([termsBg, termsTxt]);
+    termsBtn.setSize(88, 28);
+    termsBtn.setInteractive(new Phaser.Geom.Rectangle(-44, -14, 88, 28), Phaser.Geom.Rectangle.Contains);
+
+    termsBtn.on('pointerover', () => {
+      termsTxt.setColor('#fcb813');
+      termsBg.clear();
+      termsBg.fillStyle(0x132238, 0.98);
+      termsBg.fillRoundedRect(-44, -14, 88, 28, 14);
+      termsBg.lineStyle(1.5, 0xfcb813, 1);
+      termsBg.strokeRoundedRect(-44, -14, 88, 28, 14);
+    });
+
+    termsBtn.on('pointerout', () => {
+      termsTxt.setColor('#cbd5e1');
+      termsBg.clear();
+      termsBg.fillStyle(0x0c1524, 0.94);
+      termsBg.fillRoundedRect(-44, -14, 88, 28, 14);
+      termsBg.lineStyle(1.5, 0x1f3c6e, 1);
+      termsBg.strokeRoundedRect(-44, -14, 88, 28, 14);
+    });
+
+    termsBtn.on('pointerdown', () => {
+      this.tweens.add({
+        targets: termsBtn,
+        scaleX: 0.92,
+        scaleY: 0.92,
+        duration: 80,
+        yoyo: true,
+        ease: 'Quad.easeInOut',
+        onComplete: () => {
+          TermsModal.open();
+        }
+      });
+    });
+
+    return termsBtn;
   }
 
   // ----------------------------------------------------

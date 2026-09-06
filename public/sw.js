@@ -1,4 +1,4 @@
-const CACHE_NAME = 'campaign-trail-v1.2';
+const CACHE_NAME = 'canvassing-sa-v2.1';
 
 const STATIC_PRECACHE = [
   '/',
@@ -18,7 +18,7 @@ const STATIC_PRECACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Pre-caching core game assets');
+      console.log('[SW] Pre-caching core game assets for', CACHE_NAME);
       return cache.addAll(STATIC_PRECACHE).catch(err => {
         console.warn('[SW] Pre-cache partial warning:', err);
       });
@@ -32,7 +32,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         keys.map(key => {
           if (key !== CACHE_NAME) {
-            console.log('[SW] Clearing old cache:', key);
+            console.log('[SW] Purging old cache partition:', key);
             return caches.delete(key);
           }
         })
@@ -47,7 +47,7 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(event.request.url);
 
-  // For HTML documents, use network-first with cache fallback
+  // 1. For HTML navigation and entry documents: Network-First with cache fallback
   if (event.request.headers.get('accept')?.includes('text/html') || event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -63,24 +63,37 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // For static assets (images, audio, js, fonts), use cache-first
+  // 2. For scripts and styles (.js, .css): Network-First to guarantee immediate updates on new builds
+  const isCode = url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.includes('/assets/');
+  if (isCode && (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. For media assets (images, audio, fonts): Cache-first with network fallback
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
 
       return fetch(event.request)
         .then(response => {
-          // Cache successful responses for our domain
           if (response.status === 200 && (url.origin === self.location.origin || url.hostname.includes('fonts.'))) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           }
           return response;
         })
-        .catch(err => {
-          // Fallback if needed
-          return cached;
-        });
+        .catch(() => cached);
     })
   );
 });
