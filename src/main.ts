@@ -3,8 +3,12 @@ import { GAME_CONFIG } from './config/gameConfig';
 import { getGameDimensions } from './config/constants';
 import { ScoreManager } from './systems/ScoreManager';
 import { COMPLAINTS } from './data/complaints';
+import { inject } from '@vercel/analytics';
 
 import { Resident } from './entities/Resident';
+
+// Initialize Vercel Web Analytics
+inject();
 
 // PWA Install Prompt Handler
 let deferredPrompt: any = null;
