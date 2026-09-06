@@ -39,7 +39,8 @@ export function getDynamicGroundY(height: number, width: number): number {
   const isPortrait = height > width;
   const roadY = getDynamicRoadY(height, width);
   // Characters (politician & residents) and potholes positioned in the lower driving lane, centered away from bottom curb
-  return isPortrait ? Math.round(roadY + (height - roadY) * 0.59) : 628;
+  // Desktop: elevated from 628 to 585 so characters & obstacles sit naturally in the road lane above the curb
+  return isPortrait ? Math.round(roadY + (height - roadY) * 0.59) : 585;
 }
 
 export function getCurbsideTaxiY(height: number, width: number): number {
