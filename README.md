@@ -27,7 +27,7 @@ A 3D Neighbourhood Arcade Game built with Three.js exploring South African commu
    ```
 
 3. Open in your browser:
-   [http://localhost:3000](http://localhost:3000)
+   [http://localhost:3003](http://localhost:3003)
 
 ## Tech Stack
 - **Three.js** - 3D Graphics & Canvas rendering

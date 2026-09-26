@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = parseInt(process.env.PORT, 10) || 3000;
+const PORT = parseInt(process.env.PORT || process.argv[2] || '3003', 10);
 const HOST = '0.0.0.0';
 const DIST_DIR = path.resolve(__dirname, 'dist');
 
@@ -55,16 +55,23 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (fs.existsSync(safePath) && fs.statSync(safePath).isDirectory()) {
+    const indexPath = path.join(safePath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      safePath = indexPath;
+    } else if (fs.existsSync(safePath + '.html')) {
+      safePath = safePath + '.html';
+    }
+  } else if (!fs.existsSync(safePath) && fs.existsSync(safePath + '.html')) {
+    safePath = safePath + '.html';
+  }
+
   fs.stat(safePath, (err, stats) => {
     if (err) {
       // If file not found, try fallback or 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('404 Not Found');
       return;
-    }
-
-    if (stats.isDirectory()) {
-      safePath = path.join(safePath, 'index.html');
     }
 
     fs.readFile(safePath, (readErr, data) => {
