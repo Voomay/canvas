@@ -225,6 +225,33 @@
 #confetti[hidden] {
   display: none !important;
 }
+.modal-party-badge {
+  width: 68px !important;
+  height: 68px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 3.5px solid var(--party-win, #65f395) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 16px var(--party-win, rgba(101, 243, 149, 0.45)) !important;
+  margin: 0 auto 12px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 4px !important;
+  animation: badge-pop 0.3s cubic-bezier(0.18, 1, 0.32, 1) !important;
+}
+.modal-party-badge[hidden] {
+  display: none !important;
+}
+.modal-party-logo {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+}
+@keyframes badge-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .modal {
   z-index: 101 !important;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
@@ -357,7 +384,7 @@
   left: 50% !important;
   right: auto !important;
   transform: translateX(-50%) translateY(-12px) !important;
-  width: min(340px, 92vw) !important;
+  width: min(356px, 94vw) !important;
   padding: 8px 12px !important;
   border-radius: 999px !important;
   border: 1.5px solid var(--rival, #ffda70) !important;
@@ -408,12 +435,9 @@
   margin-bottom: 2px !important;
 }
 .alert-title {
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   font-weight: 700 !important;
   color: #fff !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
   line-height: 1.2 !important;
 }
 .alert-action-btn {

@@ -13,7 +13,7 @@ let ward=50;
 const WARDS={50:{name:'Spaza Quarter',x:0,z:7},60:{name:'Fieldside',x:0,z:-48},54:{name:'Camps Bay',x:-24,z:7}};
 let selected='PA',state='start',remaining=180,elapsed=0,rallyUntil=0,rallyCooldown=0,lastTime=0,uiTime=0,sound=true,audioCtx,player,scene,renderer,camera,shadowLight;
 let pointerTarget=null,dragging=false,stickInput={x:0,y:0},frame=0;
-const MOBILE=innerWidth<=900||(typeof navigator!=='undefined'&&navigator.maxTouchPoints>1);let pixelBudget=MOBILE?1:1.5,slowFrames=0,renderClock=0;const crowdBatches=[];let crowdColorsDirty=true;
+const MOBILE=innerWidth<=900||(typeof navigator!=='undefined'&&navigator.maxTouchPoints>1);let pixelBudget=Math.min(typeof window!=='undefined'?(window.devicePixelRatio||1):1, 2.0),slowFrames=0,renderClock=0;const crowdBatches=[];let crowdColorsDirty=true;
 const speechBubbles=[],worldAnims=[];
 let bubbleClock=0;
 const holeUniform={value:Array.from({length:4},()=>new THREE.Vector3(1000,1000,1.075))};
@@ -305,42 +305,52 @@ function refreshTactics(counts){
  }
  $('#map-leader').textContent=ranks.leader?ranks.leader+' leads · '+counts[ranks.leader]+' voters':'Ward tied · '+Math.max(...activeKeys.map(p=>counts[p]))+' voters';
  $('.neighbourhood-map').style.setProperty('--leader',ranks.leader?PARTIES[ranks.leader].hex:'#b8cdca');
- $('#hole-level').textContent=player.mode!=='active'?'RESPAWNING · 0 VOTERS':(elapsed<player.shieldUntil?'SHIELD '+Math.ceil(player.shieldUntil-elapsed)+'s · ':'')+'HOLE '+player.capacity+' · '+player.capacity+' AT ONCE'+(player.capacity<3?' · NEXT '+(player.capacity===1?12:18):'');
+ $('#hole-level').textContent=player.mode!=='active'?'REGROUPING · 0 VOTERS':(elapsed<player.shieldUntil?'SHIELD '+Math.ceil(player.shieldUntil-elapsed)+'s · ':'')+'CAMPAIGN LEVEL '+player.capacity+' · '+player.capacity+' AT ONCE'+(player.capacity<3?' · NEXT '+(player.capacity===1?12:18):'');
  return ranks;
 }
 function huntRival(){if(state!=='playing'||player.mode!=='active'||!threatParty)return;const target=nearestSupporter(people,threatParty,player.g.position);if(!target){toast('No available '+threatParty+' supporters nearby. Look for neutral voters.');return}pointerTarget=target.g.position.clone();player.route=routeBetween(player.g.position,nearestRoad(pointerTarget.x,pointerTarget.z,player.radius+.12));toast('Follow the gold route to '+threatParty+' voters.');drawMap();$('#rival-alert').classList.remove('visible');setTimeout(()=>{$('#rival-alert').hidden=true},250);}
-function mapPoint(x,z){return {x:18+(x+49)*2.6,y:20+(z+83)*1.72}}
+function mapPoint(x,z){
+ const cx = ward === 54 ? -10 : 0, cz = -22, scale = 1.75;
+ return { x: 128 + (x - cx) * scale, y: 128 + (z - cz) * scale };
+}
 function drawMap(){
  const c=$('#map'),ctx=c.getContext('2d'),counts=scores(),ranks=standings(counts,activeKeys,selected),leader=ranks.leader;
  if(!mapBase||mapWard!==ward||mapLeader!==leader){
-   mapBase=document.createElement('canvas');mapBase.width=256;mapBase.height=272;const b=mapBase.getContext('2d');
-   b.fillStyle='#10171a';b.fillRect(0,0,256,272);
-   b.strokeStyle='rgba(255,255,255,0.06)';b.lineWidth=1.5;
-   b.beginPath();b.arc(128,136,55,0,TAU);b.stroke();
-   b.beginPath();b.arc(128,136,100,0,TAU);b.stroke();
-   const rect=(x,z,w,d,color)=>{const p=mapPoint(x,z);b.fillStyle=color;b.fillRect(p.x,p.y,w*2.6,d*1.72)};
-   if(ward===54){rect(-56,-89,9,150,'#16445c');rect(-47,-82,17,135,'#c4a66e')}
-   for(const x of [-34,-12,12,34])for(const z of [-76,-50,-24,1,26,50]){if(ward===54&&x===-34)continue;if(x===12&&z===-50)continue;rect(x-3,z-4,6,8,'#1c282e')}
+   mapBase=document.createElement('canvas');mapBase.width=256;mapBase.height=256;const b=mapBase.getContext('2d');
+   b.fillStyle='#10171a';b.fillRect(0,0,256,256);
+   b.strokeStyle='rgba(255,255,255,0.07)';b.lineWidth=1.5;
+   b.beginPath();b.arc(128,128,60,0,TAU);b.stroke();
+   b.beginPath();b.arc(128,128,105,0,TAU);b.stroke();
+   const rect=(x,z,w,d,color)=>{const p=mapPoint(x,z);b.fillStyle=color;b.fillRect(p.x,p.y,w*1.75,d*1.75)};
+   if(ward===54){
+     rect(-54,-85,12,140,'#15465e');
+     rect(-42,-80,12,130,'#c8a86c');
+   }
+   for(const x of [-34,-12,12,34])for(const z of [-76,-50,-24,1,26,50]){
+     if(ward===54&&x===-34)continue;
+     if(x===12&&z===-50)continue;
+     rect(x-3,z-4,6,8,'#1c2930');
+   }
    b.lineCap='round';b.lineJoin='round';
-   b.strokeStyle='#070c0e';b.lineWidth=13;
-   for(const x of VERTICAL){const a=mapPoint(x,-82),e=mapPoint(x,52);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
-   for(const z of HORIZONTAL){const a=mapPoint(-31,z),e=mapPoint(31,z);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
-   b.strokeStyle='#d5dedf';b.lineWidth=8;
-   for(const x of VERTICAL){const a=mapPoint(x,-82),e=mapPoint(x,52);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
-   for(const z of HORIZONTAL){const a=mapPoint(-31,z),e=mapPoint(31,z);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
-   rect(4,-59,16,15,'#204d36');b.fillStyle='#eaf6e8';b.font='bold 11px Arial';b.fillText('FIELD',mapPoint(5,-50).x,mapPoint(5,-50).y);
-   rect(6,-5,5,5,'#8a5223');b.fillStyle='#fef3dc';b.font='10px Arial';b.fillText('SPAZA',mapPoint(8,4).x,mapPoint(8,4).y);
-   b.fillStyle='#ff3838';b.beginPath();b.moveTo(226,11);b.lineTo(231,21);b.lineTo(221,21);b.closePath();b.fill();
+   b.strokeStyle='#070c0f';b.lineWidth=13;
+   for(const x of VERTICAL){const a=mapPoint(x,-82),e=mapPoint(x,48);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
+   for(const z of HORIZONTAL){const a=mapPoint(ward===54?-40:-31,z),e=mapPoint(31,z);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
+   b.strokeStyle='#d8e1e2';b.lineWidth=8;
+   for(const x of VERTICAL){const a=mapPoint(x,-82),e=mapPoint(x,48);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
+   for(const z of HORIZONTAL){const a=mapPoint(ward===54?-40:-31,z),e=mapPoint(31,z);b.beginPath();b.moveTo(a.x,a.y);b.lineTo(e.x,e.y);b.stroke()}
+   rect(4,-58,16,14,'#225038');b.fillStyle='#eaf6e8';b.font='bold 11px Arial';b.fillText('FIELD',mapPoint(5,-50).x,mapPoint(5,-50).y);
+   rect(6,-5,5,5,'#8c5324');b.fillStyle='#fef3dc';b.font='10px Arial';b.fillText('SPAZA',mapPoint(8,4).x,mapPoint(8,4).y);
+   b.fillStyle='#ff3b30';b.beginPath();b.moveTo(226,11);b.lineTo(231,21);b.lineTo(221,21);b.closePath();b.fill();
    b.fillStyle='#ffffff';b.font='bold 11px Arial';b.fillText('N',222.5,33);
    mapWard=ward;mapLeader=leader;
  }
- ctx.clearRect(0,0,256,272);ctx.drawImage(mapBase,0,0);
+ ctx.clearRect(0,0,256,256);ctx.drawImage(mapBase,0,0);
  if(player.route?.length){
    ctx.strokeStyle='#ffd700';ctx.lineWidth=4;ctx.setLineDash([5,4]);ctx.beginPath();let p=mapPoint(player.g.position.x,player.g.position.z);ctx.moveTo(p.x,p.y);for(const n of player.route){p=mapPoint(n.x,n.z);ctx.lineTo(p.x,p.y)}ctx.stroke();ctx.setLineDash([]);
  }
  for(const p of people){
    if(p.state==='hidden'||p.state==='fall')continue;const xy=mapPoint(p.g.position.x,p.g.position.z);
-   ctx.fillStyle=p.party?PARTIES[p.party].hex:'#edf2f0';ctx.beginPath();ctx.arc(xy.x,xy.y,p.party===threatParty?2.6:1.5,0,TAU);ctx.fill();
+   ctx.fillStyle=p.party?PARTIES[p.party].hex:'#edf2f0';ctx.beginPath();ctx.arc(xy.x,xy.y,p.party===threatParty?2.8:1.5,0,TAU);ctx.fill();
  }
  for(const h of holes){
    if(h.mode!=='active'||h.isPlayer)continue;const p=mapPoint(h.g.position.x,h.g.position.z);
@@ -359,13 +369,21 @@ function drawMap(){
  $('#street-name').textContent=ward===54?(player.g.position.x<-28?'Beach promenade':'Camps Bay'):streetName(player.g.position.x,player.g.position.z);
  c.setAttribute('aria-label','Ward '+ward+'. '+(leader?leader+' leads.':'Tied standings.')+' White arrow: you. Coloured dots: voters. Gold line: route.');
 }
-function mapNavigate(e){if(state!=='playing'||player.mode!=='active')return;const r=$('#map').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*256,z=(e.clientY-r.top)/r.height*272;pointerTarget=new THREE.Vector3((x-18)/2.6-49,0,(z-20)/1.72-83);player.route=routeBetween(player.g.position,nearestRoad(pointerTarget.x,pointerTarget.z,player.radius+.12));drawMap()}
+function mapNavigate(e){
+ if(state!=='playing'||player.mode!=='active')return;
+ const r=$('#map').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*256,y=(e.clientY-r.top)/r.height*256;
+ const cx=ward===54?-10:0,cz=-22,scale=1.75;
+ pointerTarget=new THREE.Vector3((x-128)/scale+cx,0,(y-128)/scale+cz);
+ player.route=routeBetween(player.g.position,nearestRoad(pointerTarget.x,pointerTarget.z,player.radius+.12));
+ drawMap();
+}
 function start(){
- music.enable(sound);stopConfetti();$('#next-ward').hidden=true;$('#retry-ward').hidden=true;resetWorld();state='playing';$('#game').classList.add('playing');$('#start').hidden=true;$('#location').hidden=true;$('#hud').hidden=false;$('#pause').hidden=false;$('#sound').hidden=true;$('#modal').hidden=true;$('#your-party').textContent='YOU · '+selected;$('#status').textContent=ward===54?'Explore the beach and promenade. Caps mean loyal.':'Caps mean loyal. Explore the side streets.';updateUI();drawMap();toast('Explore the junctions. Caps mark loyal supporters.');beep(360);
+ music.enable(sound);stopConfetti();if($('#end-party-badge'))$('#end-party-badge').hidden=true;$('#next-ward').hidden=true;$('#retry-ward').hidden=true;resetWorld();state='playing';$('#game').classList.add('playing');$('#start').hidden=true;$('#location').hidden=true;$('#hud').hidden=false;$('#pause').hidden=false;$('#sound').hidden=true;$('#modal').hidden=true;$('#your-party').textContent='YOU · '+selected;$('#status').textContent=ward===54?'Explore the beach and promenade. Caps mean loyal.':'Caps mean loyal. Explore the side streets.';updateUI();drawMap();toast('Explore the junctions. Caps mark loyal supporters.');beep(360);
 }
 function finish(winner){
  const tally=scores();if(!winner){const high=Math.max(...Object.values(tally)),leaders=keys.filter(p=>tally[p]===high);winner=leaders.length===1?leaders[0]:null}
  state='ended';$('#game').classList.remove('playing');$('#hud').hidden=true;$('#pause').hidden=true;$('#sound').hidden=true;$('#modal').hidden=false;$('#resume').hidden=true;speechBubbles.forEach(b=>b.el.remove());speechBubbles.length=0;
+ if(winner&&logoFiles[winner]){if($('#end-party-badge')){$('#end-party-badge').hidden=false;$('#end-party-logo').src=logoFiles[winner];$('#end-party-badge').style.setProperty('--party-win',PARTIES[winner]?.hex||'#65f395');}}else{if($('#end-party-badge'))$('#end-party-badge').hidden=true;}
  canAdvance=winner===selected;
  if(canAdvance){
    wardWins[ward]=selected;
@@ -395,7 +413,7 @@ function finish(winner){
  $('#restart').textContent='Choose party or ward';
 }
 function pause(){
- if(state!=='playing')return;$('#next-ward').hidden=true;$('#retry-ward').hidden=true;state='paused';pressed.clear();stickInput={x:0,y:0};$('#stick').style.transform='';pointerTarget=null;$('#hud').hidden=true;$('#sound').hidden=false;$('#modal').hidden=false;$('#end-eyebrow').textContent='TAKE A BREATHER';$('#end-title').textContent='Street on pause.';$('#end-copy').textContent='Your neighbours will be right here.';$('#end-score').innerHTML='';$('#resume').hidden=false;$('#restart').textContent='Choose a party';
+ if(state!=='playing')return;$('#next-ward').hidden=true;$('#retry-ward').hidden=true;state='paused';pressed.clear();stickInput={x:0,y:0};$('#stick').style.transform='';pointerTarget=null;$('#hud').hidden=true;$('#sound').hidden=false;$('#modal').hidden=false;if($('#end-party-badge'))$('#end-party-badge').hidden=true;$('#end-eyebrow').textContent='TAKE A BREATHER';$('#end-title').textContent='Street on pause.';$('#end-copy').textContent='Your neighbours will be right here.';$('#end-score').innerHTML='';$('#resume').hidden=false;$('#restart').textContent='Choose a party';
 }
 function resumeGame(){
  if(state!=='paused')return;state='playing';$('#game').classList.add('playing');$('#hud').hidden=false;$('#modal').hidden=true;$('#sound').hidden=true;lastTime=performance.now();
@@ -437,15 +455,15 @@ function resetSupporters(h){
 function swallowHole(winner,loser){
  if(!canSwallowHole(winner,loser,elapsed))return false;
  loser.mode='swallowing';loser.eatenBy=winner;loser.defeatTime=0;loser.defeatFrom=loser.g.position.clone();resetSupporters(loser);
- if(loser.isPlayer){pointerTarget=null;player.route=[];$('#status').textContent=winner.party+' swallowed you! Rebuilding from 0 voters.';toast(winner.party+' swallowed your hole. You’ll respawn shortly.');music.cue('lose')}
- else if(winner.isPlayer){toast('You swallowed '+loser.party+'! Their voters reset to 0.');music.cue('win')}
+ if(loser.isPlayer){pointerTarget=null;player.route=[];$('#status').textContent=winner.party+' out-rallied your campaign! Rebuilding from 0 voters.';toast(winner.party+' out-rallied your campaign. Regrouping shortly…');music.cue('lose')}
+ else if(winner.isPlayer){toast('You out-rallied '+loser.party+'! Their voters reset to 0.');music.cue('win')}
  burst(loser.g.position.x,loser.g.position.z,PARTIES[winner.party].color);updateUI();return true;
 }
 function respawnHole(h){
  const spots=VERTICAL.flatMap(x=>[-74,-45,-20,8,43].map(z=>({x,z})));const active=holes.filter(other=>other!==h&&other.mode==='active');
  const clearance=p=>active.length?Math.min(...active.map(other=>Math.hypot(p.x-other.g.position.x,p.z-other.g.position.z))):100;
  spots.sort((a,b)=>clearance(b)-clearance(a));const spot=spots[0];h.g.position.set(spot.x,.062,spot.z);h.g.scale.setScalar(1);h.g.visible=true;h.mode='active';h.radius=holeLevel(0).radius;h.capacity=1;h.capturing=0;h.busy=false;h.shieldUntil=elapsed+5;h.repath=0;h.wait=0;h.eatenBy=null;h.target=null;h.route=[];
- if(h.isPlayer){pointerTarget=null;$('#status').textContent='Back in! 5-second shield. Build your votes again.';toast('Fresh start · 5 seconds of protection')}
+ if(h.isPlayer){pointerTarget=null;$('#status').textContent='Back in! 5-second shield. Build your votes again.';toast('Fresh rally · 5 seconds of protection')}
 }
 function updateHoleBattles(dt){
  for(const h of holes){if(h.mode==='active')continue;h.defeatTime+=dt;if(h.defeatTime<.7){const a=h.defeatTime/.7;h.g.position.lerpVectors(h.defeatFrom,h.eatenBy.g.position,a);h.g.scale.setScalar(Math.max(.015,1-a));h.g.position.y=.062-.45*a}else{h.mode='respawning';h.g.visible=false}if(h.defeatTime>=2.2)respawnHole(h)}
@@ -465,10 +483,10 @@ function moveHoles(dt){
  }updateHoleBattles(dt);syncHoles();
 }
 
-function resize(){frameMountain();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,pixelBudget));camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<701?50:47;camera.updateProjectionMatrix()}
+function resize(){frameMountain();renderer.setSize(innerWidth,innerHeight);const dpr=Math.min(window.devicePixelRatio||1,2.0);renderer.setPixelRatio(dpr);camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<701?50:47;camera.updateProjectionMatrix()}
 const cameraTarget=new THREE.Vector3();
 function updateCamera(dt){const mobile=innerWidth<701;const z=state==='start'?WARDS[ward].z-3:player.g.position.z,x=state==='start'?WARDS[ward].x+(mobile?0:-3):player.g.position.x;cameraTarget.lerp(new THREE.Vector3(x,0,z),Math.min(1,dt*3));camera.position.set(cameraTarget.x+(mobile?5:9),12.5,cameraTarget.z+(mobile?24:26));camera.lookAt(cameraTarget.x,1,cameraTarget.z-10);camera.updateMatrixWorld();shadowLight.position.set(cameraTarget.x-24,34,cameraTarget.z+18);shadowLight.target.position.set(cameraTarget.x,0,cameraTarget.z-5);shadowLight.target.updateMatrixWorld()}
-function animate(ms){requestAnimationFrame(animate);if(document.hidden)return;if((state==='paused'||state==='ended')&&ms-renderClock<150)return;renderClock=ms;const raw=(ms-lastTime)/1000,dt=Math.min(raw,.05)||.016;lastTime=ms;frame++;if(MOBILE&&state==='playing'){slowFrames=raw>.028?slowFrames+1:Math.max(0,slowFrames-1);if(slowFrames>90&&pixelBudget>.7){pixelBudget=Math.max(.7,pixelBudget-.15);renderer.setPixelRatio(Math.min(devicePixelRatio,pixelBudget));slowFrames=0}}
+function animate(ms){requestAnimationFrame(animate);if(document.hidden)return;if((state==='paused'||state==='ended')&&ms-renderClock<150)return;renderClock=ms;const raw=(ms-lastTime)/1000,dt=Math.min(raw,.05)||.016;lastTime=ms;frame++;if(MOBILE&&state==='playing'){slowFrames=raw>.028?slowFrames+1:Math.max(0,slowFrames-1);if(slowFrames>180&&pixelBudget>1.5){pixelBudget=Math.max(1.5,pixelBudget-.1);renderer.setPixelRatio(Math.min(devicePixelRatio,pixelBudget));slowFrames=0}}
  music.tick(state==='playing',ward);if(state!=='paused')for(const item of surf){item.wave.position.x=item.x+Math.sin(ms*.0007+item.phase)*1.1;item.wave.material.opacity=.32+Math.sin(ms*.0007+item.phase)*.2}
  if(state==='playing'){remaining=Math.max(0,remaining-Math.min(raw||dt,.5));elapsed+=dt;moveHoles(dt);updatePeople(dt,ms/1000,true);uiTime+=dt;if(uiTime>.2){uiTime=0;updateUI();drawMap()}}
  else if(state==='start')updatePeople(dt,ms/1000,false);
@@ -487,7 +505,7 @@ $('#toggle-map')?.addEventListener('click',e=>{e.stopPropagation();const m=$('.n
 $('.neighbourhood-map')?.addEventListener('click',()=>{const m=$('.neighbourhood-map');if(m.classList.contains('collapsed')){m.classList.remove('collapsed');$('#toggle-map').textContent='▾'}});
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' '].includes(k)&&state==='playing'){e.preventDefault();pressed.add(k);if(k===' ')rally()}if(k==='escape'){if(state==='playing')pause();else if(state==='paused')$('#resume').click()}});window.addEventListener('keyup',e=>pressed.delete(e.key.toLowerCase()));window.addEventListener('blur',pause);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 const joy=$('#joystick');let joyId=null;function stickMove(e){if(e.pointerId!==joyId)return;const r=joy.getBoundingClientRect(),max=r.width*.3;let x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,d=Math.hypot(x,y);if(d>max){x=x/d*max;y=y/d*max}stickInput={x:x/max,y:y/max};$('#stick').style.transform=`translate(${x}px,${y}px)`;pointerTarget=null}joy.addEventListener('pointerdown',e=>{if(state!=='playing')return;joyId=e.pointerId;joy.setPointerCapture(joyId);stickMove(e)});joy.addEventListener('pointermove',stickMove);function stickEnd(){joyId=null;stickInput={x:0,y:0};$('#stick').style.transform=''}joy.addEventListener('pointerup',stickEnd);joy.addEventListener('pointercancel',stickEnd);
-try{scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,400);renderer=new THREE.WebGLRenderer({canvas:$('#scene'),antialias:!MOBILE,powerPreference:'high-performance'});renderer.shadowMap.enabled=!MOBILE;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;resetWorld();resize();cameraTarget.set(0,0,1);updateCamera(1);$('#play').disabled=false;$('#play').textContent='Let’s hit the street  →';requestAnimationFrame(animate);renderer.domElement.addEventListener('pointerdown',e=>{if(state!=='playing')return;dragging=true;renderer.domElement.setPointerCapture(e.pointerId);pointFromEvent(e)});renderer.domElement.addEventListener('pointermove',e=>{if(dragging&&state==='playing')pointFromEvent(e)});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);window.addEventListener('resize',resize);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();$('#error').hidden=false;$('#error').textContent='The 3D view was interrupted. Reload this page to return to the street.'});
+try{scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,400);renderer=new THREE.WebGLRenderer({canvas:$('#scene'),antialias:true,powerPreference:'high-performance'});renderer.shadowMap.enabled=!MOBILE;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;resetWorld();resize();cameraTarget.set(0,0,1);updateCamera(1);$('#play').disabled=false;$('#play').textContent='Let’s hit the street  →';requestAnimationFrame(animate);renderer.domElement.addEventListener('pointerdown',e=>{if(state!=='playing')return;dragging=true;renderer.domElement.setPointerCapture(e.pointerId);pointFromEvent(e)});renderer.domElement.addEventListener('pointermove',e=>{if(dragging&&state==='playing')pointFromEvent(e)});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);window.addEventListener('resize',resize);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();$('#error').hidden=false;$('#error').textContent='The 3D view was interrupted. Reload this page to return to the street.'});
  // A read-only snapshot helps verify the actual game state in browser QA.
  window.finish=finish;window.start=start;window.pause=pause;window.resumeGame=resumeGame;window.fireConfetti=fireConfetti;
   window.voterStreetSnapshot=()=>({state,ward,selected,activeKeys,wardWins,sound,remaining,elapsed,scores:scores(),player:{x:player.g.position.x,z:player.g.position.z,radius:player.radius,capacity:player.capacity,capturing:player.capturing,mode:player.mode,shieldUntil:player.shieldUntil},street:streetName(player.g.position.x,player.g.position.z),people:people.map(p=>({party:p.party,loyal:p.loyal,state:p.state,x:p.g.position.x,z:p.g.position.z})),drawCalls:renderer.info.render.calls});
