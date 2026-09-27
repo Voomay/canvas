@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Voter Street 3D Neighbourhood Arcade Game",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "serve": "node server.js",
