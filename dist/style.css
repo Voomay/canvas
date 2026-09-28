@@ -58,19 +58,16 @@
 /* Mobile-first controls, legible tactical map and low-cost compositing. */
 #game{min-height:0}.neighbourhood-map{width:186px;pointer-events:auto;border-color:var(--leader,#b8cdca);transition:border-color .3s}.neighbourhood-map canvas{width:166px;height:176px;border-radius:9px;touch-action:none;cursor:crosshair}.map-head{font-size:12px;gap:4px}.map-head>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#map-leader{display:block;font-size:12px;color:var(--leader,#d4e1df);margin-top:6px}.neighbourhood-map small{display:block;font-size:8px;letter-spacing:.2px;margin-top:4px}.neighbourhood-map.collapsed #map-leader{display:none}.pill-toggle{min-width:30px;min-height:30px;font-size:16px;flex-shrink:0}.hole-level{font-size:10px;text-align:center;letter-spacing:.4px;color:var(--accent);margin-bottom:5px}.rival-alert{position:absolute;right:34px;top:360px;width:205px;padding:12px;border-radius:13px;border-left:4px solid var(--rival,#ffda70);z-index:12}.rival-alert>span{display:block;font-size:13px;line-height:1.4}.rival-alert button{margin-top:8px;width:100%;min-height:40px;border:1px solid #ffdc7480;background:#ffdc741c;border-radius:8px;font-size:12px;font-weight:700;color:#ffe39d}.rival-alert.urgent{border-color:#ffb27b}.party strong{font-family:Arial,sans-serif}.party.selected{border-color:var(--p,var(--accent))}.timer strong,.mission strong,.brand,.start-panel h1{font-family:'Arial Narrow',Impact,Arial,sans-serif}.top-actions{margin-left:auto}#toast{z-index:20}.neighbourhood-map.collapsed{width:auto}.score-row em{font-size:9px}
 @media(max-width:900px),(pointer:coarse){
- .glass,#joystick{backdrop-filter:none}.glass{background:#163338ed;box-shadow:0 3px 12px #08243220}.topbar{inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) auto max(12px,env(safe-area-inset-left));z-index:15}.icon-button{width:42px;height:42px}.start-panel{max-height:calc(100dvh - 82px);overscroll-behavior:contain}.party{min-height:62px}.party>span{font-size:11px}.ward-select button{min-height:48px}.ward-select small{font-size:10px}.mission{top:61px;left:50%;padding:5px 10px;min-width:0}.mission strong{font-size:15px}.timer{left:12px;top:13px;min-width:0;padding:6px 10px;display:flex;gap:5px;align-items:center}.timer strong{font-size:24px}.timer small{font-size:8px}.neighbourhood-map{left:12px;top:100px;width:128px;padding:6px}.neighbourhood-map canvas{width:114px;height:121px}.map-head{font-size:10px}#map-leader{font-size:10px}.neighbourhood-map small{font-size:7px}.leaderboard{right:12px;top:100px;width:133px;padding:7px}.board-title{font-size:9px;letter-spacing:0;align-items:center;padding-bottom:4px;gap:4px}.board-title>span{font-size:8px}.score-row{padding:5px;gap:5px}.score-row b{font-size:11px}.score-row strong{font-size:16px}.score-logo{width:18px;height:18px}.score-row em{font-size:7px}.rival-alert{right:12px;top:306px;width:156px;padding:9px}.rival-alert>span{font-size:11px}.rival-alert button{font-size:11px;min-height:40px}.bottom-progress{bottom:max(12px,env(safe-area-inset-bottom));width:198px;padding:10px 12px}.bottom-progress small{font-size:9px}.hole-level{font-size:9px}#joystick{left:max(16px,env(safe-area-inset-left));bottom:calc(122px + env(safe-area-inset-bottom));width:110px;height:110px}#stick{left:29px;top:29px;width:48px;height:48px}.north,.south{left:46px}.west,.east{top:40px}#boost{right:max(18px,env(safe-area-inset-right));bottom:calc(130px + env(safe-area-inset-bottom));width:90px;height:90px}.controls-hint{display:none}#toast{top:44%;font-size:12px;max-width:85%;white-space:normal}.resident-tip{display:block;font-size:11px}.map-head .pill-toggle{min-width:28px}.start-panel h1{font-size:32px}.start-panel .eyebrow{display:none}#game.playing .brand{display:none}.mission small{display:none}
+ .glass,#joystick{backdrop-filter:none}.glass{background:#163338ed;box-shadow:0 3px 12px #08243220}.topbar{inset:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) auto max(10px,env(safe-area-inset-left));z-index:15}.icon-button{width:40px;height:40px}.start-panel{max-height:calc(100dvh - 82px);overscroll-behavior:contain}.party{min-height:62px}.party>span{font-size:11px}.ward-select button{min-height:48px}.ward-select small{font-size:10px}.mission{top:8px;left:50%;transform:translateX(-50%);padding:4px 10px;min-width:0;z-index:12}.mission strong{font-size:13.5px}.timer{left:10px;top:8px;min-width:0;padding:4px 8px;display:flex;gap:4px;align-items:center;z-index:12}.timer strong{font-size:20px}.timer small{font-size:7.5px}.neighbourhood-map{right:10px;bottom:120px;left:auto;top:auto;width:110px;padding:5px}.neighbourhood-map canvas{width:100px;height:106px}.map-head{font-size:9.5px}#map-leader{font-size:9.5px}.neighbourhood-map small{display:none}.leaderboard{right:10px;top:60px;width:125px;padding:6px;z-index:12}.board-title{font-size:8.5px;letter-spacing:0;align-items:center;padding-bottom:3px;gap:3px}.board-title>span{font-size:8px}.score-row{padding:4px 5px;gap:4px}.score-row b{font-size:11px}.score-row strong{font-size:15px}.score-logo{width:16px;height:16px}.score-row em{font-size:7px}.bottom-progress{bottom:max(10px,env(safe-area-inset-bottom));width:198px;padding:8px 10px}.bottom-progress small{font-size:9px}.hole-level{font-size:9px}#joystick{left:max(14px,env(safe-area-inset-left));bottom:calc(110px + env(safe-area-inset-bottom));width:108px;height:108px}#stick{left:29px;top:29px;width:48px;height:48px}.north,.south{left:46px}.west,.east{top:40px}#boost{right:max(14px,env(safe-area-inset-right));bottom:calc(116px + env(safe-area-inset-bottom));width:86px;height:86px}.controls-hint{display:none}#toast{top:42%;font-size:11.5px;max-width:85%;white-space:normal}.resident-tip{display:block;font-size:11px}.map-head .pill-toggle{min-width:26px}.start-panel h1{font-size:32px}.start-panel .eyebrow{display:none}#game.playing .brand{display:none}.mission small{display:none}
 }
 @media(max-height:600px) and (orientation:landscape){
- .start-panel{left:16px;top:65px;bottom:10px;width:390px;transform:none;padding:15px;max-height:calc(100dvh - 75px)}.start-panel h1{font-size:28px;margin:7px 0}.party-grid{max-height:145px}.start-panel p{font-size:12px;margin-bottom:5px}.timer{top:12px}.mission{top:15px}.neighbourhood-map{top:65px;width:120px}.neighbourhood-map canvas{width:106px;height:113px}.leaderboard{top:65px}.rival-alert{top:65px;right:158px;width:158px}.bottom-progress{bottom:10px;width:230px}#joystick{bottom:15px;left:18px;width:100px;height:100px}#stick{left:24px;top:24px}.north,.south{left:41px}.west,.east{top:35px}#boost{bottom:22px;right:22px;width:82px;height:82px}.neighbourhood-map small{display:none}#toast{top:50%}
+ .start-panel{left:16px;top:65px;bottom:10px;width:390px;transform:none;padding:15px;max-height:calc(100dvh - 75px)}.start-panel h1{font-size:28px;margin:7px 0}.party-grid{max-height:145px}.start-panel p{font-size:12px;margin-bottom:5px}.timer{top:10px}.mission{top:10px}.neighbourhood-map{top:55px;width:110px}.neighbourhood-map canvas{width:98px;height:104px}.leaderboard{top:55px;width:120px}.bottom-progress{bottom:8px;width:220px}#joystick{bottom:12px;left:14px;width:90px;height:90px}#stick{left:22px;top:22px}.north,.south{left:37px}.west,.east{top:31px}#boost{bottom:16px;right:16px;width:76px;height:76px}.neighbourhood-map small{display:none}#toast{top:48%}
 }
-@media(max-width:360px){.rival-alert{top:302px;width:143px}.neighbourhood-map{width:120px}.neighbourhood-map canvas{width:106px;height:113px}.leaderboard{width:126px}.bottom-progress{width:190px}.mission strong{font-size:13px}}
-
-@media(max-height:740px) and (orientation:portrait){
- #hud:has(#rival-alert:not([hidden])) .mission{visibility:hidden}
+@media(max-width:360px){
+ .neighbourhood-map{width:100px}.neighbourhood-map canvas{width:90px;height:96px}.leaderboard{width:115px}.bottom-progress{width:180px}.mission strong{font-size:12px}
 }
- .rival-alert{top:59px;left:12px;right:12px;width:auto;display:flex;align-items:center;gap:9px;padding:7px 9px}
- .rival-alert>span{flex:1;font-size:11px}.rival-alert button{width:108px;flex-shrink:0;margin:0;min-height:38px}
- .neighbourhood-map,.leaderboard{top:121px}.neighbourhood-map{width:116px}.neighbourhood-map canvas{width:102px;height:108px}.neighbourhood-map small{display:none}
+#hud:has(.rival-alert.visible) .crisis-hud {
+ display: none !important;
 }
 
 /* A compact, opaque opening card keeps the landscape crisp. */
@@ -510,26 +507,27 @@
   z-index: 12 !important;
 }
 
-/* Centered Top Rival Alert Banner - Placed cleanly BELOW the mission hud */
+/* Top Rival Alert Banner - Clean, spacious, mobile-friendly notification card */
 .rival-alert {
   position: absolute !important;
-  top: 88px !important;
+  top: 50px !important;
   left: 50% !important;
   right: auto !important;
-  transform: translateX(-50%) translateY(-14px) !important;
-  width: min(440px, 94vw) !important;
-  padding: 10px 16px !important;
-  border-radius: 999px !important;
+  transform: translateX(-50%) translateY(-12px) !important;
+  width: min(440px, calc(100vw - 20px)) !important;
+  padding: 8px 12px !important;
+  border-radius: 14px !important;
   border: 2px solid var(--rival, #ffda70) !important;
-  background: rgba(10, 26, 32, 0.97) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(10, 26, 32, 0.96) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 18px rgba(0, 0, 0, 0.4) !important;
   display: flex !important;
   align-items: center !important;
-  gap: 14px !important;
-  z-index: 30 !important;
+  gap: 10px !important;
+  z-index: 35 !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 0.25s ease, transform 0.25s ease !important;
+  backdrop-filter: blur(12px) !important;
 }
 .rival-alert.visible {
   opacity: 1 !important;
@@ -537,15 +535,15 @@
   pointer-events: auto !important;
 }
 .alert-icon-wrap {
-  width: 48px !important;
-  height: 48px !important;
+  width: 36px !important;
+  height: 36px !important;
   border-radius: 50% !important;
   background: #ffffff !important;
   display: grid !important;
   place-items: center !important;
   flex-shrink: 0 !important;
-  padding: 4px !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4) !important;
+  padding: 3px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 .alert-party-logo {
   width: 100% !important;
@@ -554,15 +552,15 @@
   border-radius: 50% !important;
 }
 .alert-body {
-  flex: 1 !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
   text-align: left !important;
 }
 .alert-tag {
   font-family: 'Barlow Condensed', Impact, sans-serif !important;
-  font-size: 10px !important;
+  font-size: 9.5px !important;
   font-weight: 800 !important;
-  letter-spacing: 1px !important;
+  letter-spacing: 0.8px !important;
   color: var(--rival, #ffda70) !important;
   text-transform: uppercase !important;
   line-height: 1 !important;
@@ -572,35 +570,57 @@
   font-size: 13px !important;
   font-weight: 700 !important;
   color: #fff !important;
-  line-height: 1.35 !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
 }
-.alert-action-btn {
-  border: 1.5px solid rgba(255, 220, 116, 0.7) !important;
+.alert-title b {
+  color: var(--rival, #ffda70) !important;
+  font-weight: 800 !important;
+}
+.alert-title em {
+  font-style: normal !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-size: 11.5px !important;
+  margin-left: 2px !important;
+}
+.alert-action-btn,
+.rival-alert button.alert-action-btn,
+.rival-alert #hunt-rival {
+  width: auto !important;
+  margin: 0 !important;
+  min-height: 32px !important;
+  border: 1.5px solid rgba(255, 220, 116, 0.8) !important;
   background: rgba(255, 220, 116, 0.25) !important;
   color: #fff3be !important;
   border-radius: 999px !important;
-  padding: 8px 16px !important;
-  font-size: 12px !important;
+  padding: 6px 12px !important;
+  font-size: 11px !important;
   font-weight: 900 !important;
   letter-spacing: 0.5px !important;
   flex-shrink: 0 !important;
   cursor: pointer !important;
+  white-space: nowrap !important;
   transition: all 0.15s ease !important;
 }
 .alert-action-btn:hover {
   background: rgba(255, 220, 116, 0.45) !important;
-  transform: scale(1.05) !important;
+  transform: scale(1.04) !important;
 }
 .alert-action-btn:active {
   transform: scale(0.96) !important;
 }
-.alert-close {
+.alert-close,
+.rival-alert button.alert-close,
+.rival-alert #close-rival-alert {
+  width: auto !important;
+  margin: 0 0 0 2px !important;
+  min-height: auto !important;
   background: none !important;
   border: none !important;
   color: #9cb2b0 !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   cursor: pointer !important;
-  padding: 4px 8px !important;
+  padding: 3px 6px !important;
   line-height: 1 !important;
   flex-shrink: 0 !important;
 }
@@ -609,20 +629,36 @@
 }
 @media (max-width: 700px) {
   .rival-alert {
-    top: 96px !important;
-    padding: 8px 12px !important;
-    gap: 10px !important;
+    top: 48px !important;
+    width: calc(100vw - 18px) !important;
+    max-width: 370px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
   }
   .alert-icon-wrap {
-    width: 42px !important;
-    height: 42px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .alert-tag {
+    font-size: 8.5px !important;
   }
   .alert-title {
-    font-size: 11.5px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
   }
   .alert-action-btn {
-    padding: 6px 12px !important;
-    font-size: 11px !important;
+    padding: 5px 9px !important;
+    font-size: 10.5px !important;
+  }
+  .alert-close {
+    padding: 2px 4px !important;
+    font-size: 14px !important;
+  }
+  .crisis-hud {
+    top: 44px !important;
+    font-size: 11.5px !important;
+    padding: 3px 10px !important;
   }
 }
 
