@@ -1,0 +1,546 @@
+/* Canvassing SA: Centered Arcade Start Screen & Dynamic Interactive Controls */
+#game:not(.playing) .topbar {
+  position: absolute !important;
+  inset: 18px auto auto 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  pointer-events: none !important;
+  z-index: 25 !important;
+}
+
+#game .arcade-wordmark {
+  font: 900 italic clamp(26px, 3.8vw, 50px)/0.95 Arial, sans-serif !important;
+  color: #ffda22 !important;
+  letter-spacing: -1.5px !important;
+  text-shadow: 2px 3px 0 #a15f03, -2px -2px 0 #072544, 3px -2px 0 #072544, -3px 3px 0 #072544, 4px 5px 0 #072544, 0 7px 18px #001b43 !important;
+  text-align: center !important;
+}
+
+#game .arcade-wordmark em {
+  font-style: normal !important;
+  color: #4be275 !important;
+  font-size: 1.15em !important;
+  -webkit-text-stroke: 1px #fff !important;
+}
+
+#game .arcade-wordmark small {
+  font: 800 11px/1.4 Arial, sans-serif !important;
+  letter-spacing: 2.5px !important;
+  text-shadow: none !important;
+  display: block !important;
+  text-align: center !important;
+  background: #082a54 !important;
+  color: white !important;
+  border: 1px solid #61cfff !important;
+  border-radius: 8px !important;
+  padding: 3px 14px !important;
+  margin: 6px auto 0 !important;
+  width: fit-content !important;
+}
+
+/* Centered Start Panel Modal */
+#start[hidden],
+#start.start-panel[hidden],
+#game.playing #start,
+#game.playing .start-panel {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+#start.start-panel {
+  position: absolute !important;
+  left: 50% !important;
+  top: 53% !important;
+  bottom: auto !important;
+  right: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(600px, 94vw) !important;
+  max-height: min(85vh, 760px) !important;
+  margin: 0 !important;
+  padding: 18px 22px 16px !important;
+  border: 2px solid #42c5ff !important;
+  border-radius: 24px !important;
+  background: linear-gradient(155deg, rgba(6, 42, 84, 0.96), rgba(3, 20, 48, 0.98)) !important;
+  box-shadow: inset 0 0 20px rgba(0, 136, 221, 0.4), 0 0 0 4px rgba(0, 36, 87, 0.7), 0 16px 45px rgba(0, 0, 0, 0.7), 0 0 32px rgba(30, 188, 255, 0.3) !important;
+  backdrop-filter: blur(14px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #28aeed #061e40 !important;
+  z-index: 20 !important;
+}
+
+#start h1, #start .party-heading {
+  font: 900 clamp(18px, 2.2vw, 24px)/1.1 Arial, sans-serif !important;
+  letter-spacing: -0.5px !important;
+  color: #fff !important;
+  margin: 0 0 8px !important;
+  text-shadow: 0 2px 4px #001f49 !important;
+  flex: none !important;
+  text-align: left !important;
+}
+
+#start h1 span, #start .party-heading span {
+  color: #ffe340 !important;
+}
+
+#start .party-heading {
+  margin: 12px 0 8px !important;
+}
+
+/* Wards Grid (10 Wards, Scrollable, Pop Animation) */
+#start #ward-select {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  padding: 2px 6px 2px 2px !important;
+  max-height: none !important;
+  height: 180px !important;
+  min-height: 130px !important;
+  flex: 1 1 180px !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #38b6f4 #06264f !important;
+}
+
+#start .level-card {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  text-align: left !important;
+  padding: 8px 10px !important;
+  min-height: 80px !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  border: 1.5px solid #36b7ff !important;
+  border-radius: 12px !important;
+  background: #063970 !important;
+  box-shadow: inset 0 -30px 25px #001831 !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, box-shadow 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+#start .level-card:hover {
+  transform: translateY(-3px) scale(1.025) !important;
+  border-color: #ffe340 !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 16px rgba(54, 183, 255, 0.5) !important;
+  z-index: 2 !important;
+}
+
+#start .level-card:active {
+  transform: scale(0.97) !important;
+}
+
+#start .ward-thumb {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  z-index: -2 !important;
+  opacity: 0.55 !important;
+}
+
+#start .level-card:before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(0deg, #00204bf5 20%, #00345b20 100%) !important;
+  z-index: -1 !important;
+}
+
+#start .level-card strong {
+  font: 900 13.5px/1.1 Arial, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.2px !important;
+  text-shadow: 0 2px 3px #00152d !important;
+  color: #fff !important;
+}
+
+#start .level-card small {
+  font: 500 11px/1.25 Arial, sans-serif !important;
+  opacity: 1 !important;
+  color: #dfedff !important;
+  margin-top: 2px !important;
+}
+
+#start .level-card .lvl-badge {
+  position: absolute !important;
+  top: 5px !important;
+  left: 6px !important;
+  font: 800 9px/1.2 Arial, sans-serif !important;
+  padding: 2px 5px !important;
+  background: #06488f !important;
+  color: white !important;
+  border: 1px solid #90dfff !important;
+  border-radius: 4px !important;
+}
+
+#start .level-card[aria-pressed="true"] {
+  border: 2px solid #ffe441 !important;
+  box-shadow: 0 0 12px rgba(255, 213, 44, 0.7), inset 0 0 14px rgba(255, 243, 108, 0.3) !important;
+  background: #075b48 !important;
+  animation: select-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+#start .level-card[aria-pressed="true"]:after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 4px !important;
+  right: 5px !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #138b3a !important;
+  color: white !important;
+  border: 2px solid #ffe35b !important;
+  border-radius: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+
+/* Party Select: All 10 Parties Visible (5 columns x 2 rows) */
+#start #party-select {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 6px !important;
+  max-height: none !important;
+  height: auto !important;
+  padding: 2px 4px !important;
+  margin: 0 !important;
+  flex: none !important;
+}
+
+#start .party {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 56px !important;
+  padding: 6px 3px !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p) 45%, #00192e), #00273f) !important;
+  border: 1.5px solid var(--p) !important;
+  border-radius: 11px !important;
+  position: relative !important;
+  text-align: center !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+#start .party:hover {
+  transform: translateY(-3px) scale(1.06) !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 12px var(--p) !important;
+  z-index: 2 !important;
+}
+
+#start .party:active {
+  transform: scale(0.95) !important;
+}
+
+#start .party .party-logo {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: contain !important;
+  background: #fff !important;
+  border-radius: 50% !important;
+  padding: 1px !important;
+  margin: 0 !important;
+  flex: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+#start .party[data-party="ActionSA"] .party-logo {
+  background: #ffffff !important;
+  border: 1px solid #00a651 !important;
+}
+
+#start .party[data-party="EFF"] .party-logo {
+  background: #dc1420 !important;
+  border: 1px solid #ff4545 !important;
+}
+
+#start .party[data-party="NCC"] .party-logo {
+  background: #0b0d0e !important;
+  border: 1px solid #e02227 !important;
+}
+
+#start .party strong {
+  font: 900 12px/1 Arial, sans-serif !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+}
+
+#start .party > span {
+  display: none !important;
+}
+
+#start .party.selected {
+  border: 2px solid #ffdc2b !important;
+  box-shadow: 0 0 12px rgba(255, 228, 57, 0.65), inset 0 0 8px rgba(255, 228, 57, 0.2) !important;
+  animation: select-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+#start .party.selected:after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 2px !important;
+  right: 3px !important;
+  font-size: 11px !important;
+  color: #ffeb38 !important;
+  font-weight: 900 !important;
+}
+
+/* Campaign Brief Row */
+#start .campaign-brief {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  font-size: 11px !important;
+  color: #a8cff5 !important;
+  margin: 10px 4px 6px !important;
+  flex: none !important;
+}
+
+#start .campaign-brief b {
+  color: #ffe73e !important;
+  font-size: 13px !important;
+}
+
+#start #start-diff-tag {
+  display: inline-block !important;
+  padding: 2px 7px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: #ffe73e !important;
+}
+
+/* Play Button */
+#start #play {
+  position: static !important;
+  flex: none !important;
+  margin: 10px 0 0 !important;
+  padding: 12px 14px !important;
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  border: 2px solid #fff694 !important;
+  background: linear-gradient(#fff44d, #ffd218 60%, #ffb600) !important;
+  box-shadow: 0 3px 0 #a96907, 0 0 16px rgba(255, 218, 48, 0.45) !important;
+  color: #041d46 !important;
+  font: 900 clamp(16px, 2vw, 22px)/1.1 Arial, sans-serif !important;
+  letter-spacing: -0.4px !important;
+  cursor: pointer !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease, box-shadow 0.2s ease !important;
+}
+
+#start #play:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  filter: brightness(1.08) !important;
+  box-shadow: 0 5px 0 #a96907, 0 0 24px rgba(255, 218, 48, 0.75) !important;
+}
+
+#start #play:not(:disabled):active {
+  transform: translateY(2px) scale(0.98) !important;
+  box-shadow: 0 1px 0 #a96907 !important;
+}
+
+/* Arcade Perks Row */
+#start .arcade-perks {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  margin: 10px 0 0 !important;
+  flex: none !important;
+}
+
+#start .arcade-perks span {
+  font-size: 10px !important;
+  padding: 5px 6px !important;
+  background: #062752 !important;
+  color: #ddebff !important;
+  border: 1px solid #278bd0 !important;
+  border-radius: 7px !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+#start .fiction-note {
+  font-size: 10px !important;
+  margin: 8px 0 0 !important;
+  color: #9ab7da !important;
+  text-align: center !important;
+  flex: none !important;
+}
+
+#start a {
+  color: #b5dfff !important;
+}
+
+#game:not(.playing) #location {
+  display: none !important;
+}
+
+/* Pop Animation Keyframe */
+@keyframes select-pop {
+  0% { transform: scale(0.93); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Responsive Media Queries */
+@media (max-width: 650px) {
+  #start.start-panel {
+    width: 95vw !important;
+    max-height: calc(100dvh - 28px) !important;
+    padding: 14px 14px 12px !important;
+    top: 52% !important;
+  }
+  #start h1, #start .party-heading {
+    font-size: 19px !important;
+    margin-bottom: 6px !important;
+  }
+  #start #ward-select {
+    height: 155px !important;
+    flex: 1 1 155px !important;
+    min-height: 120px !important;
+  }
+  #start .level-card {
+    min-height: 72px !important;
+    padding: 6px 8px !important;
+  }
+  #start .level-card strong {
+    font-size: 12.5px !important;
+  }
+  #start .level-card small {
+    font-size: 10px !important;
+  }
+  #start #party-select {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 4px !important;
+  }
+  #start .party {
+    min-height: 50px !important;
+    padding: 4px 2px !important;
+  }
+  #start .party .party-logo {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  #start .party strong {
+    font-size: 10.5px !important;
+  }
+  #start #play {
+    font-size: 18px !important;
+    min-height: 44px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-height: 680px) {
+  #start.start-panel {
+    top: 52% !important;
+    padding: 12px 16px !important;
+    max-height: calc(100dvh - 20px) !important;
+  }
+  #start #ward-select {
+    height: 130px !important;
+    flex: 1 1 130px !important;
+  }
+  #start .arcade-perks {
+    display: none !important;
+  }
+  #start .fiction-note {
+    margin-top: 5px !important;
+  }
+}
+
+#rival-alert[hidden] {
+  display: none !important;
+}
+
+/* Survival Warning Card */
+.swallow-warning-card {
+  margin: 10px 0 6px !important;
+  padding: 8px 12px !important;
+  background: linear-gradient(135deg, rgba(220, 20, 32, 0.18) 0%, rgba(245, 158, 11, 0.12) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  text-align: left !important;
+  flex: none !important;
+}
+
+.swallow-warning-card .warning-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  color: #ffc837 !important;
+  text-transform: uppercase !important;
+  margin-bottom: 3px !important;
+}
+
+.swallow-warning-card .warning-pulse {
+  display: inline-block !important;
+  animation: pulse-warn 1.5s infinite ease-in-out !important;
+}
+
+@keyframes pulse-warn {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.swallow-warning-card p {
+  margin: 0 0 4px !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  color: #f3f4f6 !important;
+}
+
+.swallow-warning-card p b {
+  color: #ff6b6b !important;
+}
+
+.swallow-warning-card .warning-action {
+  font-size: 10.5px !important;
+  line-height: 1.3 !important;
+  color: #6ee7b7 !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  padding: 3px 6px !important;
+  border-radius: 6px !important;
+  border-left: 3px solid #10b981 !important;
+}
+
+.swallow-warning-card .warning-action b {
+  color: #a7f3d0 !important;
+}
+
+@media (max-width: 650px) {
+  .swallow-warning-card {
+    padding: 6px 8px !important;
+    margin: 6px 0 4px !important;
+  }
+  .swallow-warning-card .warning-title {
+    font-size: 10px !important;
+  }
+  .swallow-warning-card p {
+    font-size: 9.5px !important;
+  }
+  .swallow-warning-card .warning-action {
+    font-size: 9px !important;
+  }
+}

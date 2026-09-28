@@ -1,4 +1,5 @@
 import * as THREE from './three.module.js';
+import { logoFiles } from './party-logos.js';
 
 // Cache for geometries and materials to ensure optimal WebGL performance
 const geoCache = new Map();
@@ -44,21 +45,51 @@ function createMesh(geo, mat, parent, x = 0, y = 0, z = 0) {
   return m;
 }
 
-// Canvas-rendered graphics
-function createShirtLogoTexture(text = 'DA', bgColor = '#2462db', textColor = '#ffffff') {
+// Canvas-rendered graphics with authentic South African party logo graphics
+function createShirtLogoTexture(party = 'DA', bgColor = '#2462db', textColor = '#ffffff') {
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
+  canvas.width = 256;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = textColor;
-  ctx.font = 'bold 58px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 64, 64);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+
+  function render(img = null) {
+    ctx.clearRect(0, 0, 256, 256);
+    // Crisp white badge disk with accent party border
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(128, 128, 122, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = bgColor || '#2462db';
+    ctx.stroke();
+
+    if (img && img.complete && img.naturalWidth) {
+      const pad = 38;
+      const fit = Math.min((256 - pad * 2) / img.naturalWidth, (256 - pad * 2) / img.naturalHeight);
+      const w = img.naturalWidth * fit;
+      const h = img.naturalHeight * fit;
+      ctx.drawImage(img, (256 - w) / 2, (256 - h) / 2, w, h);
+    } else {
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 84px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(party || '•', 128, 128);
+    }
+    texture.needsUpdate = true;
+  }
+
+  render();
+  const file = logoFiles && logoFiles[party];
+  if (file) {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => render(image);
+    image.onerror = () => render(null);
+    image.src = file;
+  }
   return texture;
 }
 

@@ -3,3 +3,4 @@ outputs/
 .sites-runtime/
 node_modules/
 .openai/
+scratch/
