@@ -24,7 +24,7 @@ const WARDS={
   54:{name:'Camps Bay & Sea Point',short:'Camps Bay & Coast',level:10,diff:'EXPERT',target:25,sub:'Camps Bay & Atlantic Seaboard · Opposition stronghold',x:-24,z:7,crises:5}
 };
 const WARD_ORDER=[79,18,82,87,44,42,116,57,115,54];
-let selected='PA',state='start',remaining=180,elapsed=0,rallyUntil=0,rallyCooldown=0,lastTime=0,uiTime=0,sound=true,audioCtx,player,scene,renderer,camera,shadowLight;
+let selected='PA',state='start',remaining=60,elapsed=0,rallyUntil=0,rallyCooldown=0,lastTime=0,uiTime=0,sound=true,audioCtx,player,scene,renderer,camera,shadowLight;
 let pointerTarget=null,dragging=false,stickInput={x:0,y:0},frame=0;
 const MOBILE=innerWidth<=900||(typeof navigator!=='undefined'&&navigator.maxTouchPoints>1);let pixelBudget=MOBILE?1.2:1.75,slowFrames=0,renderClock=0;const crowdBatches=[];let crowdColorsDirty=true;
 const speechBubbles=[],worldAnims=[];
@@ -381,8 +381,7 @@ function advanceWard(){
   if(!canAdvance)return;
   ward=nextWard();
   document.querySelectorAll('[data-ward]').forEach(btn=>btn.setAttribute('aria-pressed',String(Number(btn.dataset.ward)===ward)));
-  const tgt=wardTarget(ward);
-  if($('#start-target-label'))$('#start-target-label').innerHTML='<b>'+tgt+'</b> to win';
+  if($('#start-target-label'))$('#start-target-label').innerHTML='<b>1:00</b> ROUND';
   const wInfo=WARDS[ward];
   if($('#start-diff-tag'))$('#start-diff-tag').innerHTML='<b>'+(wInfo?wInfo.diff:'EASY')+'</b>';
   start();
@@ -427,6 +426,15 @@ function uiSelectSound(){if(!sound)return;try{audioCtx??=new(window.AudioContext
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>$('#toast').classList.remove('visible'),2400)}
 function floatText(p){const pos=new THREE.Vector3(p.g.position.x,2.7,p.g.position.z).project(camera),el=document.createElement('div');el.className='floater';el.textContent='+1 VOTER';el.style.left=(pos.x*.5+.5)*innerWidth+'px';el.style.top=(-pos.y*.5+.5)*innerHeight+'px';$('#floating').append(el);setTimeout(()=>el.remove(),1400)}
 function wardTarget(w = ward){return WARDS[w]?.target || 25;}
+function getWardDifficulty(w = ward){
+  const lvl = WARDS[w]?.level || 1;
+  return {
+    level: lvl,
+    canvassSpeed: 0.90 + (lvl - 1) * 0.16,
+    repathInterval: Math.max(0.24, 0.85 - (lvl - 1) * 0.065),
+    chaseMult: 0.95 + (lvl - 1) * 0.13
+  };
+}
 let confettiRaf=null,confettiParticles=[];
 function fireConfetti(){
  const canvas=$('#confetti');if(!canvas)return;
@@ -483,19 +491,20 @@ function updateUI(){
   const wInfo=WARDS[ward]||{name:'Ward '+ward,short:'Ward '+ward,diff:'CAMPAIGN',level:1};
   $('#ward-label').textContent=`LVL ${wInfo.level} · ${wInfo.diff} · WARD ${ward}`;
   $('#count').textContent=counts[selected];
-  const targetScore=wardTarget(ward);
-  $('#progress').style.width=Math.min(100,counts[selected]/targetScore*100)+'%';
+  const leadScore=Math.max(1,...activeKeys.map(p=>counts[p]));
+  $('#progress').style.width=Math.min(100,(counts[selected]/Math.max(leadScore,15))*100)+'%';
   const scoreHTML=activeKeys.slice().sort((a,b)=>counts[b]-counts[a]).map(p=>`<div class="score-row ${p===selected?'you':''}" style="--p:${PARTIES[p].hex}"><img class="score-logo" src="${logoFiles[p]}" alt=""><b>${p}</b>${p===selected?'<em>YOU</em>':''}<strong>${counts[p]}</strong></div>`).join('');
   if(scoreHTML!==lastScoreHTML){$('#scores').innerHTML=scoreHTML;lastScoreHTML=scoreHTML}
   const secs=Math.max(0,Math.ceil(remaining));
   $('#timer').textContent=`${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`;
-  $('.timer').classList.toggle('urgent',secs<=20);
+  $('.timer').classList.toggle('urgent',secs<=15);
   $('#boost').disabled=elapsed<rallyCooldown;
   $('#boost-label').textContent=elapsed<rallyCooldown?Math.ceil(rallyCooldown-elapsed)+'s':'RALLY';
-  if(state==='playing'){
-    const winner=keys.find(p=>counts[p]>=targetScore&&!holes.find(h=>h.party===p)?.busy);
-    if(winner)finish(winner);
-    else if(remaining<=0&&!holes.some(h=>h.busy))finish(null);
+  if(state==='playing'&&remaining<=0&&!holes.some(h=>h.busy)){
+    const maxVotes=Math.max(...activeKeys.map(p=>counts[p]));
+    const topParties=activeKeys.filter(p=>counts[p]===maxVotes);
+    const winner=topParties.length===1?topParties[0]:null;
+    finish(winner);
   }
 }
 function chooseTarget(p){if(p.lane.axis==='z')p.target.set(p.lane.center+range(-2.6,2.6),range(-79,49));else p.target.set(range(-28,28),p.lane.center+range(-2.6,2.6));p.route=[];}
@@ -526,8 +535,8 @@ function resetWorld(){
   if(ward===54)for(let i=0;i<12;i++){const p=makePerson(-39+range(-3,3),-72+i*10,null);p.lane={axis:'z',center:-39};p.voice=i;chooseTarget(p)}
   player=makeHole(selected,WARDS[ward].x,WARDS[ward].z,true);
   activeKeys.filter(p=>p!==selected).forEach((p,i)=>makeHole(p,[-24,24,0][i],ward===82?[-53,-45,-72][i]:[-7,-3,-24][i]));
-  pointerTarget=null;stickInput={x:0,y:0};pressed.clear();elapsed=0;rallyUntil=0;rallyCooldown=0;remaining=180;
-  const tgt=wardTarget(ward);if($('#start-target-label'))$('#start-target-label').innerHTML='<b>'+tgt+'</b> to win';
+  pointerTarget=null;stickInput={x:0,y:0};pressed.clear();elapsed=0;rallyUntil=0;rallyCooldown=0;remaining=60;
+  if($('#start-target-label'))$('#start-target-label').innerHTML='<b>1:00</b> ROUND';
   batchCrowd();syncHoles();setupCrises();
 }
 function syncHoles(){holes.forEach((h,i)=>{holeUniform.value[i].set(h.g.position.x,h.g.position.z,h.mode==='respawning'?0:h.radius*h.g.scale.x);const scale=h.radius/1.075;h.dark.scale.setScalar(scale);h.throat.scale.set(scale,1,scale);h.ring.scale.setScalar(scale);h.glow.scale.setScalar(scale);h.logo.scale.setScalar(scale*(h.busy?.02:1))})}
@@ -540,8 +549,7 @@ function refreshTactics(counts){
  const notice=$('#rival-alert');
  if(threatParty){
    const n=counts[threatParty];
-   const target=wardTarget(ward);
-   const message=ranks.urgent?threatParty+' has '+n+'/'+target+' — steal their voters!':threatParty+' leads you '+n+'–'+counts[selected]+' — win their voters.';
+   const message=ranks.urgent?threatParty+' leads with '+n+' voters — steal their supporters!':threatParty+' leads you '+n+'–'+counts[selected]+' — rally more before 0:00!';
    $('#rival-message').textContent=message;
    const logo=$('#alert-party-logo');if(logo&&logoFiles[threatParty])logo.src=logoFiles[threatParty];
    notice.style.setProperty('--rival',PARTIES[threatParty].hex);
@@ -826,20 +834,25 @@ function setupVictoryShare(party, wardNum, wardMeta, votes){
   }
 }
 function start(){
-  music.enable(sound);stopConfetti();if($('#end-party-badge'))$('#end-party-badge').hidden=true;$('#next-ward').hidden=true;$('#retry-ward').hidden=true;if($('#victory-share-box'))$('#victory-share-box').hidden=true;resetWorld();state='playing';$('#game').classList.add('playing');$('#start').hidden=true;$('#start').style.display='none';$('#location').hidden=true;$('#hud').hidden=false;$('#pause').hidden=false;$('#sound').hidden=true;$('#modal').hidden=true;$('#your-party').textContent='YOU · '+selected;$('#status').textContent=ward===54?'Explore the beach and promenade. Caps mean loyal.':'Caps mean loyal. Explore the side streets.';if($('#crisis-hud'))$('#crisis-hud').hidden=(crises.length===0);updateUI();drawMap();toast('Canvass voters & fix broken infrastructure across Ward '+ward+'!');beep(360);
+  music.enable(sound);stopConfetti();if($('#end-party-badge'))$('#end-party-badge').hidden=true;$('#next-ward').hidden=true;$('#retry-ward').hidden=true;if($('#victory-share-box'))$('#victory-share-box').hidden=true;resetWorld();state='playing';$('#game').classList.add('playing');$('#start').hidden=true;$('#start').style.display='none';$('#location').hidden=true;$('#hud').hidden=false;$('#pause').hidden=false;$('#sound').hidden=true;$('#modal').hidden=true;$('#your-party').textContent='YOU · '+selected;$('#status').textContent=ward===54?'Explore the beach and promenade. Caps mean loyal.':'Caps mean loyal. Explore the side streets.';if($('#crisis-hud'))$('#crisis-hud').hidden=(crises.length===0);updateUI();drawMap();toast('1:00 RUSH! Rally the MOST voters in 1 minute to win Ward '+ward+'!');beep(360);
 }
 function finish(winner){
- const tally=scores();if(!winner){const high=Math.max(...Object.values(tally)),leaders=keys.filter(p=>tally[p]===high);winner=leaders.length===1?leaders[0]:null}
+ const tally=scores();
+ const maxVotes=Math.max(...activeKeys.map(p=>tally[p]));
+ const topParties=activeKeys.filter(p=>tally[p]===maxVotes);
+ if(winner===undefined||winner===null){
+   winner=topParties.length===1?topParties[0]:null;
+ }
  state='ended';$('#game').classList.remove('playing');$('#hud').hidden=true;$('#pause').hidden=true;$('#sound').hidden=true;$('#modal').hidden=false;$('#resume').hidden=true;speechBubbles.forEach(b=>b.el.remove());speechBubbles.length=0;
  if(winner&&logoFiles[winner]){if($('#end-party-badge')){$('#end-party-badge').hidden=false;$('#end-party-logo').src=logoFiles[winner];$('#end-party-badge').style.setProperty('--party-win',PARTIES[winner]?.hex||'#65f395');}}else{if($('#end-party-badge'))$('#end-party-badge').hidden=true;}
  canAdvance=winner===selected;
  if(canAdvance){
    wardWins[ward]=selected;
    const wardInfo=WARDS[ward]||{name:'Ward '+ward,short:'Ward '+ward};
-   $('#end-eyebrow').textContent='WARD '+ward+' · OFFICIAL RESULT';
-   $('#end-title').textContent='Our party '+selected+' just won Ward '+ward+' ('+(wardInfo.short||wardInfo.name)+')!';
-   $('#end-copy').textContent='';
-   $('#end-copy').hidden=true;
+   $('#end-eyebrow').textContent='WARD '+ward+' · 1-MINUTE TIME ATTACK VICTORY!';
+   $('#end-title').textContent='Our party '+selected+' won Ward '+ward+' ('+(wardInfo.short||wardInfo.name)+')!';
+   $('#end-copy').textContent='You rallied '+tally[selected]+' voters in 1 minute—the most in the ward!';
+   $('#end-copy').hidden=false;
    $('#next-ward').hidden=false;
    $('#next-ward').textContent='Continue to '+WARDS[nextWard()].name+' →';
    $('#retry-ward').hidden=true;
@@ -848,13 +861,14 @@ function finish(winner){
    fireConfetti();
    music.cue('win');
  } else {
-   $('#end-eyebrow').textContent='WARD '+ward+' · DEFEAT';
-   if(typeof window!=='undefined'&&!window.location){
-     $('#end-title').textContent=winner?winner+' wins Ward '+ward+'!':'Ward '+ward+' is tied!';
+   $('#end-eyebrow').textContent='WARD '+ward+' · TIME EXPIRED';
+   if(winner){
+     $('#end-title').textContent=winner+' won Ward '+ward+' with '+tally[winner]+' voters!';
+     $('#end-copy').textContent='You had '+tally[selected]+' voters. The competition was faster—canvass quicker next round!';
    } else {
-     $('#end-title').textContent='Ah, you lost Ward '+ward+'!';
+     $('#end-title').textContent='Ward '+ward+' tied with '+maxVotes+' voters!';
+     $('#end-copy').textContent='Time ran out with no clear majority. Play again to take the lead!';
    }
-   $('#end-copy').textContent=winner?('The ward went to '+winner+'. Try a different route next round.'):'No outright winner. Play the ward again to settle it.';
    $('#end-copy').hidden=false;
    $('#next-ward').hidden=true;
    $('#retry-ward').hidden=false;
@@ -863,7 +877,7 @@ function finish(winner){
    stopConfetti();
    music.cue('lose');
  }
- $('#end-score').innerHTML='<div class="end-number">'+(winner?tally[winner]:Math.max(...Object.values(tally)))+'<small> voters</small></div>';
+ $('#end-score').innerHTML='<div class="end-number">'+(winner?tally[winner]:maxVotes)+'<small> top voters</small></div><div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:4px;">Your score: <b>'+tally[selected]+' voters</b> in 1:00</div>';
  $('#restart').textContent='Choose party or ward';
 }
 function pause(){
@@ -936,14 +950,15 @@ function moveHoles(dt){
  let vx=0,vz=0;const dx=(pressed.has('d')||pressed.has('arrowright')?1:0)-(pressed.has('a')||pressed.has('arrowleft')?1:0)+stickInput.x,dy=(pressed.has('s')||pressed.has('arrowdown')?1:0)-(pressed.has('w')||pressed.has('arrowup')?1:0)+stickInput.y;
  if(Math.hypot(dx,dy)>.08){const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0);right.y=0;right.normalize();const down=new THREE.Vector3().crossVectors(right,new THREE.Vector3(0,1,0));vx=right.x*dx+down.x*dy;vz=right.z*dx+down.z*dy;pointerTarget=null;player.route=[]}else if(pointerTarget&&player.route.length){const target=player.route[0];vx=target.x-player.g.position.x;vz=target.z-player.g.position.z;if(Math.hypot(vx,vz)<.18){player.route.shift();if(!player.route.length)pointerTarget=null;vx=vz=0}}
  const len=Math.hypot(vx,vz);if(len>0&&player.mode==='active'){player.mapAngle=Math.atan2(vx,vz);moveOnRoad(player.g.position,vx/len*6.4*dt*Math.min(1,len),vz/len*6.4*dt*Math.min(1,len),player.radius+.12);}
+ const diff=getWardDifficulty(ward);
  for(const h of holes){if(h.mode!=='active')continue;h.ring.material.color.set(elapsed<h.shieldUntil?0xffffff:PARTIES[h.party].color);h.sign.material.opacity=elapsed<h.shieldUntil?.65+Math.sin(elapsed*9)*.3:1;h.logo.material.opacity=THREE.MathUtils.lerp(h.logo.material.opacity,h.busy?0:1,Math.min(1,dt*16));h.ring.scale.setScalar(h.radius/1.075*(1+Math.sin(elapsed*(h.busy?14:3))*(h.busy?.045:.018)));h.glow.material.opacity=.6+Math.sin(elapsed*2)*.13;if(h.isPlayer)continue;
  if(player&&player.mode==='active'&&elapsed>h.shieldUntil&&elapsed>player.shieldUntil&&h.radius>=player.radius*1.15){const dist=Math.hypot(h.g.position.x-player.g.position.x,h.g.position.z-player.g.position.z);if(dist<18&&elapsed>(h.lastWarnTime||0)+8){h.lastWarnTime=elapsed;toast('⚠️ DANGER: '+h.party+' is BIGGER than you! Evade them or they will swallow your voters!')}}
  h.wait-=dt;h.repath-=dt;
  const huntRange=18+Math.max(0,h.radius-1.075)*38;
  const prey=h.prey&&canHuntHole(h,h.prey,elapsed)&&h.g.position.distanceTo(h.prey.g.position)<huntRange*1.3?h.prey:holes.filter(other=>canHuntHole(h,other,elapsed)&&h.g.position.distanceTo(other.g.position)<huntRange).sort((a,b)=>a.g.position.distanceToSquared(h.g.position)-b.g.position.distanceToSquared(h.g.position))[0];
  if(h.prey!==prey){h.prey=prey;h.repath=0;h.target=null}
- if(prey){const chaseSpeed=Math.min(4.8,2.8+(h.radius-1.075)*1.8);if(h.repath<=0){h.route=routeBetween(h.g.position,prey.g.position);h.repath=.45}const next=h.route[0];if(next){const dx=next.x-h.g.position.x,dz=next.z-h.g.position.z,d=Math.hypot(dx,dz);if(d<.2)h.route.shift();else moveOnRoad(h.g.position,dx/d*chaseSpeed*dt,dz/d*chaseSpeed*dt,h.radius+.12)}continue}
- if(!h.target||h.target.party===h.party||h.target.state!=='walk'||h.target.cool>0||h.target.loyal){const eligible=people.filter(p=>p.party!==h.party&&p.state==='walk'&&p.cool===0&&!p.loyal);eligible.sort((a,b)=>a.g.position.distanceTo(h.g.position)-b.g.position.distanceTo(h.g.position));h.target=eligible[0];h.repath=0;if(!h.target)continue}if(h.repath<=0){h.route=routeBetween(h.g.position,h.target.g.position);h.repath=.8}if(!h.route.length)continue;const target=h.route[0],dx=target.x-h.g.position.x,dz=target.z-h.g.position.z,d=Math.hypot(dx,dz);if(d<.2)h.route.shift();else moveOnRoad(h.g.position,dx/d*1.1*dt,dz/d*1.1*dt,h.radius+.12);
+ if(prey){const chaseSpeed=Math.min(5.2,(2.4+(h.radius-1.075)*1.6)*diff.chaseMult);if(h.repath<=0){h.route=routeBetween(h.g.position,prey.g.position);h.repath=Math.max(0.2,diff.repathInterval*0.6)}const next=h.route[0];if(next){const dx=next.x-h.g.position.x,dz=next.z-h.g.position.z,d=Math.hypot(dx,dz);if(d<.2)h.route.shift();else moveOnRoad(h.g.position,dx/d*chaseSpeed*dt,dz/d*chaseSpeed*dt,h.radius+.12)}continue}
+ if(!h.target||h.target.party===h.party||h.target.state!=='walk'||h.target.cool>0||h.target.loyal){const eligible=people.filter(p=>p.party!==h.party&&p.state==='walk'&&p.cool===0&&!p.loyal);eligible.sort((a,b)=>a.g.position.distanceTo(h.g.position)-b.g.position.distanceTo(h.g.position));h.target=eligible[0];h.repath=0;if(!h.target)continue}if(h.repath<=0){h.route=routeBetween(h.g.position,h.target.g.position);h.repath=diff.repathInterval}if(!h.route.length)continue;const target=h.route[0],dx=target.x-h.g.position.x,dz=target.z-h.g.position.z,d=Math.hypot(dx,dz);if(d<.2)h.route.shift();else moveOnRoad(h.g.position,dx/d*diff.canvassSpeed*dt,dz/d*diff.canvassSpeed*dt,h.radius+.12);
  }updateHoleBattles(dt);syncHoles();
 }
 
@@ -963,7 +978,7 @@ $('#party-select').innerHTML=keys.map(p=>'<button data-party="'+p+'" style="--p:
 $('#party-select').addEventListener('pointerover',e=>{if(e.target.closest('[data-party]'))uiHoverSound();});
 $('#party-select').addEventListener('click',e=>{const b=e.target.closest('[data-party]');if(!b)return;uiSelectSound();selected=b.dataset.party;document.documentElement.style.setProperty('--accent',PARTIES[selected].hex);document.documentElement.style.setProperty('--party','#'+PARTIES[selected].color.toString(16).padStart(6,'0'));document.querySelectorAll('[data-party]').forEach(btn=>{btn.classList.toggle('selected',btn===b);btn.setAttribute('aria-pressed',String(btn===b))});if(state==='start'){resetWorld();updateUI()}});
 $('#ward-select').addEventListener('pointerover',e=>{if(e.target.closest('[data-ward]'))uiHoverSound();});
-$('#ward-select').addEventListener('click',e=>{const b=e.target.closest('[data-ward]');if(!b)return;uiSelectSound();ward=Number(b.dataset.ward);document.querySelectorAll('[data-ward]').forEach(btn=>btn.setAttribute('aria-pressed',String(Number(btn.dataset.ward)===ward)));const tgt=wardTarget(ward);if($('#start-target-label'))$('#start-target-label').innerHTML='<b>'+tgt+'</b> to win';if($('#start-diff-tag'))$('#start-diff-tag').innerHTML='<b>'+(WARDS[ward]?.diff||'MEDIUM')+'</b>';resetWorld()});$('#next-ward').addEventListener('click',advanceWard);$('#retry-ward')?.addEventListener('click',()=>{stopConfetti();$('#modal').hidden=true;start()});
+$('#ward-select').addEventListener('click',e=>{const b=e.target.closest('[data-ward]');if(!b)return;uiSelectSound();ward=Number(b.dataset.ward);document.querySelectorAll('[data-ward]').forEach(btn=>btn.setAttribute('aria-pressed',String(Number(btn.dataset.ward)===ward)));if($('#start-target-label'))$('#start-target-label').innerHTML='<b>1:00</b> ROUND';if($('#start-diff-tag'))$('#start-diff-tag').innerHTML='<b>'+(WARDS[ward]?.diff||'MEDIUM')+'</b>';resetWorld()});$('#next-ward').addEventListener('click',advanceWard);$('#retry-ward')?.addEventListener('click',()=>{stopConfetti();$('#modal').hidden=true;start()});
 $('#play').addEventListener('pointerover',()=>uiHoverSound());
 $('#play').addEventListener('click',()=>{uiSelectSound();start();});$('#pause').addEventListener('click',()=>{if(state==='playing')pause();else if(state==='paused')resumeGame()});$('#resume').addEventListener('click',resumeGame);$('#restart').addEventListener('click',()=>{state='start';$('#game').classList.remove('playing');$('#modal').hidden=true;$('#hud').hidden=true;$('#pause').hidden=true;$('#sound').hidden=true;$('#start').hidden=false;$('#start').style.display='';$('#location').hidden=false;resetWorld()});$('#boost').addEventListener('click',rally);$('#sound').addEventListener('click',()=>{sound=!sound;$('#sound .off-line').hidden=sound;$('#sound').setAttribute('aria-label',sound?'Mute sound':'Enable sound');music.enable(sound).then(ok=>{sound=ok;$('#sound .off-line').hidden=sound})});$('#close-rival-alert')?.addEventListener('click',()=>{const a=$('#rival-alert');a.classList.remove('visible');clearTimeout(a.dismissTimer);setTimeout(()=>{a.hidden=true},250)});
 $('#toggle-standings')?.addEventListener('click',e=>{e.stopPropagation();const b=$('.leaderboard');b.classList.toggle('collapsed');$('#toggle-standings').textContent=b.classList.contains('collapsed')?'🏆':'▾'});
