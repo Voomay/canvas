@@ -2,13 +2,16 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import zlib from 'zlib';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = parseInt(process.env.PORT || process.argv[2] || '3003', 10);
+const PORT = parseInt(process.env.PORT || process.argv[2] || '3011', 10);
 const HOST = '0.0.0.0';
 const DIST_DIR = path.resolve(__dirname, 'dist');
+const FILE_CACHE = new Map();
+const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.mjs', '.json', '.svg', '.txt', '.wasm']);
 
 
 const MIME_TYPES = {
@@ -90,10 +93,42 @@ const server = http.createServer((req, res) => {
   }
 
   fs.stat(safePath, (err, stats) => {
-    if (err) {
+    if (err || !stats.isFile()) {
       // If file not found, try fallback or 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('404 Not Found');
+      return;
+    }
+
+    const ext = path.extname(safePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const etag = `W/"${stats.size}-${Math.floor(stats.mtimeMs)}"`;
+    const accept = String(req.headers['accept-encoding'] || '');
+    const enc = COMPRESSIBLE.has(ext) ? (/\bbr\b/.test(accept) ? 'br' : (/\bgzip\b/.test(accept) ? 'gzip' : '')) : '';
+
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });
+      res.end();
+      return;
+    }
+
+    const send = (body) => {
+      const headers = {
+        'Content-Type': contentType,
+        'Content-Length': body.length,
+        'Cache-Control': 'no-cache',
+        'ETag': etag,
+        'Vary': 'Accept-Encoding'
+      };
+      if (enc) headers['Content-Encoding'] = enc;
+      res.writeHead(200, headers);
+      res.end(req.method === 'HEAD' ? undefined : body);
+    };
+
+    const key = `${safePath}|${enc}`;
+    const hit = FILE_CACHE.get(key);
+    if (hit && hit.etag === etag) {
+      send(hit.body);
       return;
     }
 
@@ -103,20 +138,16 @@ const server = http.createServer((req, res) => {
         res.end('404 Not Found');
         return;
       }
-
-      const ext = path.extname(safePath).toLowerCase();
-      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Length': data.length,
-        'Cache-Control': 'no-cache'
-      });
-
-      if (req.method === 'HEAD') {
-        res.end();
+      const done = (body) => {
+        FILE_CACHE.set(key, { etag, body });
+        send(body);
+      };
+      if (enc === 'br') {
+        zlib.brotliCompress(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } }, (e, out) => done(e ? data : out));
+      } else if (enc === 'gzip') {
+        zlib.gzip(data, { level: 6 }, (e, out) => done(e ? data : out));
       } else {
-        res.end(data);
+        done(data);
       }
     });
   });

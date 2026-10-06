@@ -814,3 +814,10 @@
   50% { box-shadow: 0 0 18px rgba(255, 170, 68, 0.75); }
 }
 
+
+/* Keep the crisis pill clear of the mission banner on larger screens */
+@media (min-width: 701px) { .crisis-hud { top: 132px !important; } }
+/* Mobile touch comfort: no text selection / tap highlight / overscroll while playing */
+html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+#game{touch-action:none;-webkit-user-select:none;user-select:none}
+@media (prefers-reduced-motion: reduce){.crisis-hud{animation:none !important}}

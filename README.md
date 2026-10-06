@@ -17,8 +17,8 @@ A 3D Neighbourhood Arcade Game built with Three.js exploring South African commu
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Voomay/game.git
-   cd game
+   git clone https://github.com/Voomay/canvas.git
+   cd canvas
    ```
 
 2. Start the local server:
@@ -27,7 +27,7 @@ A 3D Neighbourhood Arcade Game built with Three.js exploring South African commu
    ```
 
 3. Open in your browser:
-   [http://localhost:3003](http://localhost:3003)
+   [http://localhost:3011](http://localhost:3011)
 
 ## Tech Stack
 - **Three.js** - 3D Graphics & Canvas rendering
