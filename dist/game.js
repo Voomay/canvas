@@ -27,7 +27,7 @@ const WARDS={
 const WARD_ORDER=[79,18,82,87,44,42,116,57,115,54];
 let selected='PA',state='start',remaining=60,elapsed=0,rallyUntil=0,rallyCooldown=0,lastTime=0,uiTime=0,sound=true,audioCtx,player,scene,renderer,camera,shadowLight;
 let pointerTarget=null,dragging=false,stickInput={x:0,y:0},frame=0;
-const MOBILE=innerWidth<=900||(typeof navigator!=='undefined'&&navigator.maxTouchPoints>1);let renderClock=0;const crowdBatches=[];let crowdColorsDirty=true;
+const isMobileDevice=()=>{if(typeof navigator==='undefined')return false;const ua=navigator.userAgent||'';const touch=navigator.maxTouchPoints>1;const small=window.innerWidth<=900||window.innerHeight<=600;return /Android|iPhone|iPad|iPod|Mobile|Silk|BlackBerry/i.test(ua)||(touch&&small)};const MOBILE=isMobileDevice();let renderClock=0;const crowdBatches=[];let crowdColorsDirty=true;
 const speechBubbles=[],worldAnims=[];
 let bubbleClock=0;
 const holeUniform={value:Array.from({length:4},()=>new THREE.Vector3(1000,1000,1.075))};
@@ -443,7 +443,7 @@ function advanceWard(){
 }
 
 function environment(){
- scene.background=new THREE.Color(0x7cbee9);scene.fog=new THREE.Fog(0x9ac5e2,120,360);scene.add(new THREE.HemisphereLight(0xd9efff,0x817156,1.4));shadowLight=new THREE.DirectionalLight(0xfffaea,3.4);shadowLight.position.set(-24,34,18);shadowLight.castShadow=true;shadowLight.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);Object.assign(shadowLight.shadow.camera,{left:-32,right:32,top:34,bottom:-34,near:.5,far:115});shadowLight.shadow.normalBias=.025;shadowLight.shadow.bias=-.0001;scene.add(shadowLight);scene.add(shadowLight.target);const bounceLight=new THREE.DirectionalLight(0xd9b380,.7);bounceLight.position.set(0,-1,0);scene.add(bounceLight);
+ scene.background=new THREE.Color(0x7cbee9);scene.fog=new THREE.Fog(0x9ac5e2,120,360);scene.add(new THREE.HemisphereLight(0xd9efff,0x817156,1.4));shadowLight=new THREE.DirectionalLight(0xfffaea,3.4);shadowLight.position.set(-24,34,18);shadowLight.castShadow=!MOBILE;shadowLight.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);Object.assign(shadowLight.shadow.camera,{left:-32,right:32,top:34,bottom:-34,near:.5,far:115});shadowLight.shadow.normalBias=.025;shadowLight.shadow.bias=-.0001;scene.add(shadowLight);scene.add(shadowLight.target);const bounceLight=new THREE.DirectionalLight(0xd9b380,.7);bounceLight.position.set(0,-1,0);scene.add(bounceLight);
  if(ward===54){coastEnvironment();return}
  if(ward===18||ward===87){buildKhayelitsha({THREE,scene,box,sphere,cylinder,mesh,label,tree,plant,taxi,streetLamp,communityField,partyPosters,batchScenery,cutMaterial,VERTICAL,HORIZONTAL,ward});mountain();return}
  const gm=groundMaps(0xaaa486,[60,60],5,.1),gmat=cutMaterial(0xffffff,gm.map,.95,.02,gm.bump);const vastGround=box(700,.4,700,gmat,0,-.32,-15);vastGround.receiveShadow=true;
@@ -620,7 +620,7 @@ function resetWorld(){
   for(const h of holes){scene.remove(h.g);h.g.traverse(m=>{if(m.isMesh){m.geometry.dispose();m.material.dispose()}});h.sign.material.map.dispose();h.sign.material.dispose()}holes.length=0;
   for(const p of particles){scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose()}particles.length=0;
   speechBubbles.forEach(b=>b.el.remove());speechBubbles.length=0;seed=6821;bubbleClock=0;
-  const maxPeople = MOBILE ? 52 : ((ward===79||ward===18)?55:105);
+  const maxPeople = MOBILE ? 26 : ((ward===79||ward===18)?55:105);
   for(let i=0;i<maxPeople;i++){
     const axis=i<90?'z':'x',center=axis==='z'?VERTICAL[i%3]:HORIZONTAL[(i-90)%5],x=axis==='z'?center+range(-2.8,2.8):range(-28,28),z=axis==='z'?range(-79,49):center+range(-2.8,2.8);
     const party=i<32?activeKeys[i%4]:null,p=makePerson(x,z,party);
@@ -1450,7 +1450,7 @@ let qualityScale=1,perfAcc=0,perfN=0,perfCool=0;
 function resize(){
   frameMountain();
   renderer.setSize(innerWidth,innerHeight);
-  const maxDpr=MOBILE?1.5:2.0;
+  const maxDpr=MOBILE?1.0:1.5;
   const dpr=Math.min(window.devicePixelRatio||1,maxDpr)*qualityScale;
   renderer.setPixelRatio(dpr);
   camera.aspect=innerWidth/innerHeight;
@@ -1483,7 +1483,7 @@ window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup',
 const joy=$('#joystick');let joyId=null;function stickMove(e){if(e.pointerId!==joyId)return;const r=joy.getBoundingClientRect(),max=r.width*.38;let x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,d=Math.hypot(x,y);if(d>max){x=x/d*max;y=y/d*max;d=max}const norm=d/max;const speedMult=norm<0.08?0:Math.min(1,(norm-0.08)/0.5);stickInput={x:d>0?(x/d)*speedMult:0,y:d>0?(y/d)*speedMult:0};$('#stick').style.transform=`translate(${x}px,${y}px)`;pointerTarget=null}joy.addEventListener('pointerdown',e=>{if(state!=='playing')return;joyId=e.pointerId;joy.setPointerCapture(joyId);stickMove(e)});joy.addEventListener('pointermove',stickMove);function stickEnd(){joyId=null;stickInput={x:0,y:0};$('#stick').style.transform=''}joy.addEventListener('pointerup',stickEnd);joy.addEventListener('pointercancel',stickEnd);
 let envMapTexture=null;
 function setupRealism(rend,scn){
- if(!rend||!scn)return;
+ if(!rend||!scn||MOBILE)return;
  if(!envMapTexture){
   try{
    const pmrem=new THREE.PMREMGenerator(rend);pmrem.compileEquirectangularShader();

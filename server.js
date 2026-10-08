@@ -7,7 +7,7 @@ import zlib from 'zlib';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = parseInt(process.env.PORT || process.argv[2] || '3011', 10);
+const PORT = parseInt(process.env.PORT || process.argv[2] || '3000', 10);
 const HOST = '0.0.0.0';
 const DIST_DIR = path.resolve(__dirname, 'dist');
 const FILE_CACHE = new Map();

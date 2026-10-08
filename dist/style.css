@@ -821,3 +821,15 @@
 html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 #game{touch-action:none;-webkit-user-select:none;user-select:none}
 @media (prefers-reduced-motion: reduce){.crisis-hud{animation:none !important}}
+
+/* Extreme mobile performance: eliminate all GPU compositor blur bottlenecks */
+@media (max-width: 900px), (pointer: coarse) {
+  *, *::before, *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .glass {
+    background: rgba(18, 45, 52, 0.94) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  }
+}
