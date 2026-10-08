@@ -1069,7 +1069,7 @@ function setupVictoryShare(party, wardNum, wardMeta, votes){
         await navigator.clipboard.writeText(shareText);
         if(copyText) copyText.textContent = 'Copied! ✓';
         toast('Announcement copied to clipboard! Share it with your branches.');
-        setTimeout(() => { if(copyText) copyText.textContent = 'Copy Announcement'; }, 2200);
+        setTimeout(() => { if(copyText) copyText.textContent = 'Copy Text'; }, 2200);
       } catch(err){
         toast('Ready to share: ' + shareText.slice(0, 45) + '…');
       }
