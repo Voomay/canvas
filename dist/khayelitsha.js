@@ -2,7 +2,7 @@ import {surfaceMat,stdMat,glassMat,scaledBox,corrugatedPanel,bx,cyl,sph,rng,gabl
 // Lightweight, reusable neighbourhood kit inspired by the supplied Khayelitsha references.
 // The same road coordinates drive the game navigation and this rendered surface.
 export function buildKhayelitsha(api){
- const {THREE,scene,box,sphere,cylinder,mesh,label,tree,plant,taxi,streetLamp,communityField,partyPosters,batchScenery,cutMaterial,VERTICAL,HORIZONTAL,ward}=api;
+ const {THREE,scene,box,sphere,cylinder,mesh,label,tree,plant,taxi,streetLamp,communityField,partyPosters,batchScenery,cutMaterial,VERTICAL,HORIZONTAL,ward,buildPerimeterWalls}=api;
  const siteC=ward===87;let seed=siteC?8771:1819;
  const rand=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646};
  const palette=[0x258d91,0xc9a345,0xa55e3c,0x648477,0x477e9d,0xc48c6c];
@@ -69,7 +69,7 @@ export function buildKhayelitsha(api){
  for(const x of VERTICAL){box(8.4,.1,136,road,x,-.005,-15);for(let z=-82;z<53;z+=1.3){if(HORIZONTAL.some(v=>Math.abs(z-v)<5.4)||((x===0||x===24)&&z>-55&&z<-47))continue;for(const side of [-1,1]){box(1.8,.18,1.26,paving,x+side*5.2,.11,z);box(.16,.25,1.26,0xd9cfb7,x+side*4.31,.14,z)}}for(let z=-81;z<52;z+=4){if(HORIZONTAL.some(v=>Math.abs(z-v)<6))continue;box(.13,.012,1.65,paint,x,.057,z)}}
  for(const z of HORIZONTAL){box(62,.1,8.4,road,0,.002,z);for(let x=-30;x<31;x+=1.3){if(VERTICAL.some(v=>Math.abs(x-v)<5.4))continue;for(const side of [-1,1])box(1.26,.18,1.8,paving,x,.11,z+side*5.2)}for(let x=-29;x<30;x+=4){if(VERTICAL.some(v=>Math.abs(x-v)<5.4))continue;box(1.65,.012,.13,paint,x,.06,z)}for(const x of VERTICAL)for(const side of [-1,1])for(let i=-3;i<=3;i++){box(.45,.012,1.15,paint,x+i,.063,z+side*5.45);box(1.15,.012,.45,paint,x+side*5.45,.063,z+i)}}
  let index=0;
- for(const roadX of VERTICAL)for(const side of [-1,1])for(const z of [-76,-50,-24,2,28,50]){if(z===-50&&((roadX===0&&side===1)||(roadX===24&&side===-1)))continue;home(roadX+side*9,z,index++,side);if(index%3===0)tree(roadX+side*9,z-6,.85)}
+ for(const roadX of VERTICAL)for(const side of [-1,1])for(const z of [-76,-50,-24,2,28,50]){if(z===-50&&((roadX===0&&side===1)||(roadX===24&&side===-1)))continue;home(roadX+side*9,z,index++,side);if(index%3===0 && Math.abs(roadX+side*9) < 28 && z > -60 && z < 35)tree(roadX+side*9,z-6,.85)}
  if(siteC)for(const z of [-72,-46,-20,6,32,49])home(-40,z,index++,1);
  // Site C has denser corner stalls; Harare keeps an open market and exercise field.
  for(const [x,z,name] of [[8.8,-5,'SISONKE SPAZA'],[-32,-31,siteC?'SITE C MARKET':'KUYASA MARKET']]){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);put(scaledBox(4,2.45,3,2.2,true),siteC?walls[4]:walls[1],0,1.28,0,g);roofUnit(g,4,3,2.54,true);block(3.4,1.55,.08,0x233d3e,0,1.05,1.54,g);label(name,'#f1c953','#17414b',3.8,.5,g,0,2.35,1.59,45);const a=block(4.5,.08,1.3,0x427a65,0,2,2,g);a.rotation.x=.12;for(let i=0;i<6;i++){block(.4,.45,.4,[0xdab15b,0xb57843,0x88a14e][i%3],-1.4+i*.56,.35,2.5,g)}}
@@ -80,7 +80,8 @@ export function buildKhayelitsha(api){
  // Small surface damage and drain grates; playable repair crises are added by the game.
  const diskGeo=new THREE.CircleGeometry(1,12);geometries.push(diskGeo);for(const [x,z] of [[-1,-31],[25,22],[-25,-57],[1,34]]){const patch=mesh(diskGeo,cutMaterial(0x3f443f));patch.rotation.x=-Math.PI/2;patch.position.set(x,.062,z);patch.scale.set(.62,.43,1);for(let i=0;i<5;i++)box(.045,.02,.6,0x3e423e,x+Math.cos(i*1.3)*.58,.065,z+Math.sin(i*1.3)*.5)}
  for(const [x,z] of [[3.8,-29],[-27.8,18],[27.8,-62]]){box(.6,.018,.9,0x343b3b,x,.066,z);for(let i=0;i<5;i++)box(.48,.025,.045,0x85897c,x,.08,z-.34+i*.16)}
-  {let sd=siteC?31:17;const rr=()=>{sd=(sd*16807)%2147483647;return(sd-1)/2147483646};for(let i=0;i<190;i++){let x,z;if(rr()<.5){x=(rr()<.5?-1:1)*(46+rr()*64);z=-112+rr()*190}else{x=-75+rr()*165;z=rr()<.5?(-125+rr()*35):(60+rr()*40)}if(Math.abs(x)<46&&z>-100&&z<62)continue;const s=makeShrub(i);s.position.set(x,0,z);s.scale.setScalar(.8+rr()*1.4);s.rotation.y=rr()*6;scene.add(s)}}
- communityField();partyPosters();taxi(-27,-4,0);taxi(3.5,21,Math.PI);batchScenery();
+ communityField();partyPosters();taxi(-27,-4,0);taxi(3.5,21,Math.PI);
+ if(buildPerimeterWalls)buildPerimeterWalls(false,true);
+ batchScenery();
  scene.userData.khayelitsha={homes:index,variant:siteC?'Site C':'Harare & Kuyasa',roadTypes:['straight','T junction','four-way crossing'],materials,dispose(){for(const m of materials){m.map?.dispose();m.dispose()}for(const g of geometries)g.dispose()}};
 }
